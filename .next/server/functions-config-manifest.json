@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/ares/chat": {},
+    "/api/ares/dashboard": {},
+    "/api/ares/greeting": {},
+    "/api/ares/whatsapp/webhook": {},
+    "/api/auth/onboard": {},
+    "/api/auth/signup": {},
+    "/api/automations": {},
+    "/api/automations/[id]": {},
+    "/api/conversations": {},
+    "/api/health": {},
+    "/api/image/[id]": {},
+    "/api/integrations": {},
+    "/api/orders": {},
+    "/api/orders/[id]": {},
+    "/api/products": {},
+    "/api/products/[id]": {},
+    "/api/settings": {},
+    "/api/uploads/[businessId]/[filename]": {}
+  }
+}
