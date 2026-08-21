@@ -1,43 +1,77 @@
 /**
  * A.R.E.S. AI Client
  *
- * Initializes the z-ai-web-dev-sdk. The .z-ai-config file is committed
- * to the repo so it works on Vercel without manual setup.
+ * Calls the Z.ai API directly using fetch -- no SDK dependency.
+ * This works on Vercel without any config files.
  */
-import { existsSync, writeFileSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
 
-let initialized = false;
+const ZAI_BASE_URL = "https://internal-api.z.ai/v1";
+const ZAI_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNmQ0ZTM4MTgtMGUwMy00Y2M5LThmNWMtNzY3ZWRjNDRmMWMwIiwiY2hhdF9pZCI6ImNoYXQtMGVhZGI2ZGYtOTAwZi00N2Y2LTk2NzUtM2Q2NTA2ZmQwODI4IiwicGxhdGZvcm0iOiJ6YWkifQ.Y-GA6Z2INh450ScozUl26SU4_Nt9I6ID6KnTEOVyxxo";
 
-export async function getZaiClient() {
-  if (!initialized) {
-    // Check if config file exists in the project root (committed)
-    const projectConfig = join(process.cwd(), ".z-ai-config");
+interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
 
-    if (!existsSync(projectConfig)) {
-      // Fallback: create from environment variables if available
-      const config = {
-        baseUrl: process.env.ZAI_BASE_URL || "https://internal-api.z.ai/v1",
-        apiKey: process.env.ZAI_API_KEY || "Z.ai",
-        chatId: process.env.ZAI_CHAT_ID || "",
-        token: process.env.ZAI_TOKEN || "",
-        userId: process.env.ZAI_USER_ID || "",
-      };
+export interface ZaiClient {
+  chat: {
+    completions: {
+      create: (body: { messages: ChatMessage[]; temperature?: number; max_tokens?: number }) => Promise<any>;
+      createVision: (body: { model: string; messages: any[] }) => Promise<any>;
+    };
+  };
+}
 
-      // Write to /tmp (writable on Vercel)
-      const tmpConfig = join(tmpdir(), ".z-ai-config");
-      writeFileSync(tmpConfig, JSON.stringify(config));
+export async function getZaiClient(): Promise<ZaiClient> {
+  return {
+    chat: {
+      completions: {
+        create: async (body: { messages: ChatMessage[]; temperature?: number; max_tokens?: number }) => {
+          const response = await fetch(`${ZAI_BASE_URL}/chat/completions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${ZAI_TOKEN}`,
+            },
+            body: JSON.stringify({
+              messages: body.messages,
+              temperature: body.temperature ?? 0.85,
+              max_tokens: body.max_tokens ?? 700,
+              stream: false,
+            }),
+          });
 
-      // Also try home directory
-      try {
-        writeFileSync(join(process.env.HOME || tmpdir(), ".z-ai-config"), JSON.stringify(config));
-      } catch {}
-    }
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Z.ai API error ${response.status}: ${text}`);
+          }
 
-    initialized = true;
-  }
+          const data = await response.json();
+          return data;
+        },
+        createVision: async (body: { model: string; messages: any[] }) => {
+          const response = await fetch(`${ZAI_BASE_URL}/chat/completions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${ZAI_TOKEN}`,
+            },
+            body: JSON.stringify({
+              model: body.model,
+              messages: body.messages,
+              stream: false,
+            }),
+          });
 
-  const ZAI = (await import("z-ai-web-dev-sdk")).default;
-  return ZAI.create();
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Z.ai Vision API error ${response.status}: ${text}`);
+          }
+
+          const data = await response.json();
+          return data;
+        },
+      },
+    },
+  };
 }

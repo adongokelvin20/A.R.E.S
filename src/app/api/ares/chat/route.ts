@@ -71,7 +71,13 @@ export async function POST(req: NextRequest) {
     let reply =
       (completion as any)?.choices?.[0]?.message?.content ??
       (completion as any)?.content ??
-      "Hmm, I spaced out for a second -- could you say that again?";
+      (completion as any)?.choices?.[0]?.text ??
+      null;
+
+    if (!reply) {
+      console.error("[A.R.E.S. chat] No reply in completion:", JSON.stringify(completion).slice(0, 500));
+      throw new Error("AI returned no response content");
+    }
 
     // ===== Extract LEARNED facts and save them =====
     const learnedMatch = reply.match(/LEARNED:\s*(.+?)(?:\n|$)/i);
@@ -216,7 +222,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("[A.R.E.S. chat] error:", err);
     return NextResponse.json(
-      { error: "AI orchestration failed", detail: String(err?.message ?? err) },
+      { error: "AI chat failed", detail: String(err?.message ?? err).slice(0, 200) },
       { status: 500 }
     );
   }

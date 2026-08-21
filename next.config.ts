@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   allowedDevOrigins: ["*.space-z.ai", "*.chatglm.cn"],
-  serverExternalPackages: ["bcryptjs", "@prisma/client", "z-ai-web-dev-sdk"],
+  serverExternalPackages: ["bcryptjs", "@prisma/client"],
 };
 
 export default nextConfig;

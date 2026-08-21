@@ -48,7 +48,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Request failed");
+      if (!res.ok) throw new Error(json?.detail || json?.error || "Request failed");
       setMessages((prev) => [...prev, { role: "assistant", content: json.reply, images: json.images }]);
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong");
@@ -56,7 +56,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
         ...prev,
         {
           role: "assistant",
-          content: `I hit a snag. ${e?.message ?? "Please try again."}`,
+          content: `Sorry, I had trouble responding. ${e?.message ?? "Please try again."}`,
         },
       ]);
     } finally {
