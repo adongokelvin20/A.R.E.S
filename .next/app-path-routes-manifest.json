@@ -11,6 +11,7 @@
   "/api/automations/[id]/route": "/api/automations/[id]",
   "/api/automations/route": "/api/automations",
   "/api/conversations/route": "/api/conversations",
+  "/api/health/route": "/api/health",
   "/api/image/[id]/route": "/api/image/[id]",
   "/api/integrations/route": "/api/integrations",
   "/api/orders/[id]/route": "/api/orders/[id]",

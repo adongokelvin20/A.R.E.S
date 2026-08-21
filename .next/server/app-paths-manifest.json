@@ -11,6 +11,7 @@
   "/api/automations/[id]/route": "app/api/automations/[id]/route.js",
   "/api/automations/route": "app/api/automations/route.js",
   "/api/conversations/route": "app/api/conversations/route.js",
+  "/api/health/route": "app/api/health/route.js",
   "/api/image/[id]/route": "app/api/image/[id]/route.js",
   "/api/integrations/route": "app/api/integrations/route.js",
   "/api/orders/[id]/route": "app/api/orders/[id]/route.js",

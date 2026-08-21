@@ -10,11 +10,11 @@
  * - When the AI confirms an order, the order is created in the database
  */
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { buildBusinessContext } from "@/lib/ares-ai";
+import { getZaiClient } from "@/lib/ai-client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       { role: "user", content: message },
     ];
 
-    const zai = await ZAI.create();
+    const zai = await getZaiClient();
     const completion = await zai.chat.completions.create({
       messages,
       temperature: 0.85, // higher temp = more varied, human-like responses

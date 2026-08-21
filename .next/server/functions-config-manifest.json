@@ -10,6 +10,7 @@
     "/api/automations": {},
     "/api/automations/[id]": {},
     "/api/conversations": {},
+    "/api/health": {},
     "/api/image/[id]": {},
     "/api/integrations": {},
     "/api/orders": {},

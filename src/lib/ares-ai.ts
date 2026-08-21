@@ -229,8 +229,8 @@ export async function generateOwnerGreeting(businessId: string): Promise<string>
 
   // Try to generate via AI for warmth + variety, with fallback to template
   try {
-    const ZAI = (await import("z-ai-web-dev-sdk")).default;
-    const zai = await ZAI.create();
+    const { getZaiClient } = await import("@/lib/ai-client");
+    const zai = await getZaiClient();
     // Vary the style each time so it never feels repetitive
     const styles = [
       "warm and casual, like a friend greeting you",

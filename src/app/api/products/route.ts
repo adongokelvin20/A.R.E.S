@@ -72,8 +72,8 @@ export async function POST(req: NextRequest) {
       // If no manual imageAlt provided, analyze the image with VLM
       if (!imageAlt) {
         try {
-          const ZAI = (await import("z-ai-web-dev-sdk")).default;
-          const zai = await ZAI.create();
+          const { getZaiClient } = await import("@/lib/ai-client");
+          const zai = await getZaiClient();
           const visionRes = await zai.chat.completions.createVision({
             model: "glm-4v",
             messages: [
