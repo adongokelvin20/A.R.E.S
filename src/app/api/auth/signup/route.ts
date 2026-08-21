@@ -7,7 +7,7 @@
  * Returns: { ok, businessId, email }
  */
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -28,6 +28,9 @@ function makeSlugUnique(base: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Ensure database tables exist (auto-creates them on first call)
+    await ensureDatabase();
+
     const body = await req.json();
     const { email, password, ownerName, businessName } = body as {
       email?: string;

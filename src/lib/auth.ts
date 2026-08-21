@@ -6,7 +6,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
@@ -22,6 +22,9 @@ export const authOptions: NextAuthOptions = {
         const email = creds?.email?.toString().trim().toLowerCase();
         const password = creds?.password?.toString();
         if (!email || !password) return null;
+
+        // Ensure database tables exist (auto-creates them on first call)
+        await ensureDatabase();
 
         const user = await db.user.findFirst({
           where: { email, status: "ACTIVE" },
