@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
     "build": "prisma generate && next build",
-    "postbuild": "prisma db push --accept-data-loss || echo 'Database push skipped (no DATABASE_URL or offline)'",
     "postinstall": "prisma generate",
     "start": "next start -p 3000",
     "lint": "eslint .",
