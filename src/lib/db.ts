@@ -4,22 +4,31 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+// Only create the Prisma client if we have a valid DATABASE_URL
+// This prevents build-time crashes when DATABASE_URL is a placeholder
+function createPrismaClient() {
+  const url = process.env.DATABASE_URL
+  if (!url || url.includes('user:password') || url.includes('host:port')) {
+    // Return a dummy client during build or when no real DB is connected
+    return null as any
+  }
+  return new PrismaClient({
     log: ['error'],
   })
+}
+
+export const db = globalForPrisma.prisma ?? createPrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 
 /**
  * Ensure the database tables exist.
  * Runs at runtime (not build time) on the first API request.
- * Creates all tables using raw SQL if they don't exist.
  */
 let tablesEnsured = false
 export async function ensureDatabase() {
   if (tablesEnsured) return
+  if (!db) return
 
   // Skip during build time
   if (process.env.NEXT_PHASE === 'phase-production-build') {
@@ -27,11 +36,9 @@ export async function ensureDatabase() {
   }
 
   try {
-    // Quick check if tables exist
     await db.user.findFirst({ select: { id: true } })
     tablesEnsured = true
   } catch (e) {
-    // Tables don't exist -- create them
     console.log('[A.R.E.S.] Creating database tables...')
 
     const statements = [
