@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Kevtech logo -- impressive layered geometric mark.
+ * A.R.E.S. logo -- impressive layered geometric mark.
  *
  * Concept: three interlocking diamond shards converging upward,
  * representing routing/execution/convergence. Each layer has a

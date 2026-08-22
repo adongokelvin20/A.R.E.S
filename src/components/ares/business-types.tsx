@@ -30,7 +30,7 @@ export function AresBusinessTypes() {
             One platform. Every sector.
           </h2>
           <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-            Kevtech adapts to your business -- not the other way around. Pick your industry and a specific subtype, and your dashboard, AI behavior, and tools all configure themselves to match.
+            A.R.E.S. adapts to your business -- not the other way around. Pick your industry and a specific subtype, and your dashboard, AI behavior, and tools all configure themselves to match.
           </p>
         </div>
 

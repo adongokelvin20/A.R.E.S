@@ -1,5 +1,5 @@
 /**
- * Kevtech AI chat endpoint.
+ * A.R.E.S. AI chat endpoint.
  *
  * POST /api/ares/chat
  *   { message, history?, conversationId? }
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       null;
 
     if (!reply) {
-      console.error("[Kevtech chat] No reply in completion:", JSON.stringify(completion).slice(0, 500));
+      console.error("[A.R.E.S. chat] No reply in completion:", JSON.stringify(completion).slice(0, 500));
       // Fallback response instead of crashing
       reply = "I'm having a bit of trouble right now -- mind repeating that?";
     }
@@ -221,11 +221,11 @@ export async function POST(req: NextRequest) {
       images: mentionedImages,
     });
   } catch (err: any) {
-    console.error("[Kevtech chat] error:", err?.message ?? err);
+    console.error("[A.R.E.S. chat] error:", err?.message ?? err);
     // Return a graceful fallback instead of an error
     return NextResponse.json({
       reply: "Sorry, I'm having trouble connecting right now. Give me a moment and try again.",
-      agentName: "Kevtech",
+      agentName: "A.R.E.S.",
       sectorLabel: "business",
       businessName: "your business",
       conversationId: null,

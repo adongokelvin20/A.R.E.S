@@ -11,7 +11,7 @@ export function LegalLayout({ children, title }: { children: React.ReactNode; ti
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
             <AresLogo className="h-7 w-7" />
-            <span className="text-sm font-bold tracking-wider text-ares-navy">Kevtech</span>
+            <span className="text-sm font-bold tracking-wider text-ares-navy">A.R.E.S.</span>
           </Link>
           <Link href="/" className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-ares-sea-deep">
             <ArrowLeft className="h-3.5 w-3.5" /> Back to site
@@ -27,8 +27,8 @@ export function LegalLayout({ children, title }: { children: React.ReactNode; ti
       </main>
       <footer className="border-t border-ares-line bg-ares-mist">
         <div className="mx-auto max-w-3xl px-4 py-6 text-center text-xs text-muted-foreground sm:px-6">
-          <p>Kevtech -- Automated Routing and Execution System</p>
-          <p className="mt-1">Created by Kelvin Ayinbisa</p>
+          <p>A.R.E.S. -- Automated Routing and Execution System</p>
+          <p className="mt-1">Created by Kelvin Ayinbisa · Kevtech</p>
         </div>
       </footer>
     </div>

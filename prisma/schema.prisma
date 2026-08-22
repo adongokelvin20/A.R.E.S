@@ -38,7 +38,7 @@ model Business {
   sectorCategory String?
   sectorSubtype  String?
   // AI personalization
-  agentName     String   @default("Kevtech")
+  agentName     String   @default("A.R.E.S.")
   agentPersonality String @default("professional")
   agentInstructions String @default("")
   // AI learning — accumulated facts the AI extracts from conversations

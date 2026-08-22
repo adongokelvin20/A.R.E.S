@@ -257,7 +257,7 @@ function ConnectModal({
             </button>
           </div>
           <p className="text-center text-[10px] text-muted-foreground">
-            Kevtech verifies your credentials against the gateway before marking this as connected.
+            A.R.E.S. verifies your credentials against the gateway before marking this as connected.
           </p>
         </form>
       </div>

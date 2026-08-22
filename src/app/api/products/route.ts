@@ -1,5 +1,5 @@
 /**
- * Kevtech products API
+ * A.R.E.S. products API
  *
  * GET  /api/products              -- list products
  * POST /api/products              -- create with dynamic fields + optional image

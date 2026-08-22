@@ -12,7 +12,7 @@ export function AresFooter() {
             <div className="flex items-center gap-2.5">
               <AresLogo className="h-9 w-9" />
               <div>
-                <div className="text-sm font-bold tracking-[0.14em] text-ares-navy">Kevtech</div>
+                <div className="text-sm font-bold tracking-[0.14em] text-ares-navy">A.R.E.S.</div>
                 <div className="text-[9px] tracking-wide text-muted-foreground">AUTOMATED ROUTING & EXECUTION</div>
               </div>
             </div>
@@ -46,7 +46,7 @@ export function AresFooter() {
         </div>
 
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-ares-line pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center">
-          <div>© {new Date().getFullYear()} Kevtech -- AI Business Operating System.</div>
+          <div>© {new Date().getFullYear()} A.R.E.S. -- Automated Routing and Execution System.</div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link href="/legal/terms" className="hover:text-ares-sea-deep">Terms</Link>
             <Link href="/legal/privacy" className="hover:text-ares-sea-deep">Privacy</Link>

@@ -1,5 +1,5 @@
 /**
- * Kevtech integrations API
+ * A.R.E.S. integrations API
  *
  * GET  /api/integrations           -- list integrations for the business
  * POST /api/integrations           -- connect or update an integration

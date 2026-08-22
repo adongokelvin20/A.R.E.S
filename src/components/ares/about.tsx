@@ -17,13 +17,13 @@ export function AresAbout() {
             </h2>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>
-                Kevtech started with a simple frustration: small businesses in Ghana and across Africa were losing customers because they couldn't respond to WhatsApp messages fast enough. Owners were stretched thin. Inventory was guessed at. Orders got lost in chat threads.
+                A.R.E.S. started with a simple frustration: small businesses in Ghana and across Africa were losing customers because they couldn't respond to WhatsApp messages fast enough. Owners were stretched thin. Inventory was guessed at. Orders got lost in chat threads.
               </p>
               <p>
                 The platform isn't a chatbot bolted onto a dashboard. It's a multi-tenant operating system where every business gets its own isolated environment, its own AI trained on its own catalog, and its own automations. The AI doesn't hallucinate prices or make up products -- it only references what's actually in your database.
               </p>
               <p>
-                Today Kevtech serves clothing stores, restaurants, schools, real estate agencies, and service businesses. Tomorrow, it serves whatever you build on top of it.
+                Today A.R.E.S. serves clothing stores, restaurants, schools, real estate agencies, and service businesses. Tomorrow, it serves whatever you build on top of it.
               </p>
             </div>
           </div>
@@ -34,7 +34,7 @@ export function AresAbout() {
             <div className="overflow-hidden rounded-2xl border border-ares-line">
               <img
                 src="/images/showcase.jpg"
-                alt="Kevtech platform showcase"
+                alt="A.R.E.S. platform showcase"
                 className="aspect-[4/3] w-full object-cover"
               />
             </div>
@@ -48,11 +48,11 @@ export function AresAbout() {
                 </div>
                 <div className="mt-2 text-2xl font-semibold ares-serif">Kelvin Ayinbisa</div>
                 <p className="mt-2 text-sm leading-relaxed text-white/70">
-                  Designer and engineer of the Kevtech platform. Built from the ground up to give small businesses the same AI firepower that enterprises spend millions on -- at a fraction of the cost, with a focus on African business workflows first.
+                  Designer and engineer of the A.R.E.S. platform. Built from the ground up to give small businesses the same AI firepower that enterprises spend millions on -- at a fraction of the cost, with a focus on African business workflows first.
                 </p>
                 <div className="mt-5 flex items-center gap-2">
                   <AresLogo className="h-6 w-6" variant="mono-light" />
-                  <span className="text-[11px] tracking-wide text-white/60">Kevtech -- Automated Routing & Execution System</span>
+                  <span className="text-[11px] tracking-wide text-white/60">A.R.E.S. -- Automated Routing & Execution System</span>
                 </div>
               </div>
             </div>

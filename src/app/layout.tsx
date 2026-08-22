@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kevtech -- AI Business Operating System",
+  title: "A.R.E.S. -- by Kevtech",
   description:
-    "Kevtech gives your business an AI employee that talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
+    "A.R.E.S. gives your business an AI employee that talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
   keywords: [
-    "Kevtech",
+    "A.R.E.S.",
     "AI Business Operating System",
     "AI Employee",
     "WhatsApp AI",
@@ -31,15 +31,15 @@ export const metadata: Metadata = {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "Kevtech -- AI Business Operating System",
+    title: "A.R.E.S. -- by Kevtech",
     description:
       "Your AI employee for business. Talks to customers, takes orders, and runs operations.",
-    siteName: "Kevtech",
+    siteName: "A.R.E.S.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kevtech -- AI Business Operating System",
+    title: "A.R.E.S. -- by Kevtech",
     description:
       "Your AI employee for business. Talks to customers, takes orders, and runs operations.",
   },

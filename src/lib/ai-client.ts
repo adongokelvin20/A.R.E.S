@@ -1,5 +1,5 @@
 /**
- * Kevtech AI Client
+ * A.R.E.S. AI Client
  *
  * Calls the Z.ai API directly using fetch -- no SDK dependency.
  * Works on Vercel without any config files.
@@ -45,7 +45,7 @@ export async function getZaiClient(): Promise<ZaiClient> {
 
             if (!response.ok) {
               const text = await response.text();
-              console.error("[Kevtech AI] API error:", response.status, text.slice(0, 200));
+              console.error("[A.R.E.S. AI] API error:", response.status, text.slice(0, 200));
               throw new Error(`AI API returned ${response.status}`);
             }
 
@@ -59,7 +59,7 @@ export async function getZaiClient(): Promise<ZaiClient> {
               null;
 
             if (!content) {
-              console.error("[Kevtech AI] No content in response:", JSON.stringify(data).slice(0, 300));
+              console.error("[A.R.E.S. AI] No content in response:", JSON.stringify(data).slice(0, 300));
               throw new Error("AI returned empty response");
             }
 
@@ -88,7 +88,7 @@ export async function getZaiClient(): Promise<ZaiClient> {
 
           if (!response.ok) {
             const text = await response.text();
-            console.error("[Kevtech AI] Vision API error:", response.status, text.slice(0, 200));
+            console.error("[A.R.E.S. AI] Vision API error:", response.status, text.slice(0, 200));
             throw new Error(`Vision API returned ${response.status}`);
           }
 

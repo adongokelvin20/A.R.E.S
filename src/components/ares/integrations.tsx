@@ -74,7 +74,7 @@ export function AresIntegrations() {
                 Built for African business workflows, scales anywhere
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Kevtech ships first-class support for Mobile Money, Ghanaian phone formats, local
+                A.R.E.S. ships first-class support for Mobile Money, Ghanaian phone formats, local
                 payment providers, and the GHS currency -- but the same provider-agnostic
                 architecture works for Nigeria, Kenya, South Africa, the US, the UK, and beyond.
               </p>

@@ -1,5 +1,5 @@
 /**
- * Kevtech orders API
+ * A.R.E.S. orders API
  *
  * GET  /api/orders  -- list orders for the authenticated business
  * POST /api/orders  -- create an order with fulfillment type + delivery details
