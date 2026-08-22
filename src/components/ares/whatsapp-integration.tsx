@@ -9,7 +9,7 @@ const FLOW_STEPS = [
   },
   {
     label: "Signature verified",
-    detail: "A.R.E.S. validates the HMAC-SHA256 webhook signature against the per-tenant secret.",
+    detail: "Kevtech validates the HMAC-SHA256 webhook signature against the per-tenant secret.",
   },
   {
     label: "Tenant resolved",
@@ -17,7 +17,7 @@ const FLOW_STEPS = [
   },
   {
     label: "Customer matched",
-    detail: "A.R.E.S. looks up the customer by WhatsApp ID or creates a new lead record.",
+    detail: "Kevtech looks up the customer by WhatsApp ID or creates a new lead record.",
   },
   {
     label: "AI orchestrator",
@@ -47,7 +47,7 @@ export function AresWhatsApp() {
             <span className="ares-text-gradient">official APIs only</span>
           </h2>
           <p className="mt-5 text-balance text-base text-muted-foreground sm:text-lg">
-            A.R.E.S. supports the official Meta WhatsApp Business Platform (Cloud API) and
+            Kevtech supports the official Meta WhatsApp Business Platform (Cloud API) and
             WAAPI.io as an alternative gateway. No unofficial scraping. No automation hacks. No
             fake connections -- every integration shows its real status.
           </p>
@@ -72,7 +72,7 @@ export function AresWhatsApp() {
               <GatewayCard
                 name="WAAPI.io"
                 badge="Alternative"
-                description="A lighter alternative gateway for businesses that want a faster setup. A.R.E.S. treats it as a first-class channel with the same audit guarantees."
+                description="A lighter alternative gateway for businesses that want a faster setup. Kevtech treats it as a first-class channel with the same audit guarantees."
                 features={[
                   "REST + Webhook API",
                   "Instance-based isolation",

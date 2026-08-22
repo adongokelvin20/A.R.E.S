@@ -100,7 +100,7 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
           className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-ares-sea-deep"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to A.R.E.S.
+          Back to Kevtech
         </a>
 
         <div className="overflow-hidden rounded-3xl border border-ares-line bg-white shadow-[0_30px_80px_-40px_rgba(11,31,51,0.25)]">
@@ -111,7 +111,7 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
             <div className="flex flex-col items-center text-center">
               <AresLogo className="h-14 w-14" />
               <div className="mt-3">
-                <div className="font-mono text-lg font-bold tracking-[0.18em] text-ares-navy">A.R.E.S.</div>
+                <div className="font-mono text-lg font-bold tracking-[0.18em] text-ares-navy">Kevtech</div>
                 <div className="text-[10px] tracking-wide text-muted-foreground">
                   AUTOMATED ROUTING &amp; EXECUTION SYSTEM
                 </div>
@@ -250,7 +250,7 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
               {mode === "signup" ? (
                 <>Already have an account? <button onClick={() => setMode("login")} className="font-semibold text-ares-sea-deep hover:underline">Log in</button></>
               ) : (
-                <>New to A.R.E.S.? <button onClick={() => setMode("signup")} className="font-semibold text-ares-sea-deep hover:underline">Create a workspace</button></>
+                <>New to Kevtech? <button onClick={() => setMode("signup")} className="font-semibold text-ares-sea-deep hover:underline">Create a workspace</button></>
               )}
             </p>
           </div>

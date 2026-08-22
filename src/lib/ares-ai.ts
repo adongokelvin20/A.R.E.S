@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. AI Core -- human, personalized, learning, sector-bound.
+ * Kevtech AI Core -- human, personalized, learning, sector-bound.
  *
  * The AI:
  * - Uses the owner's custom instructions as its personality
@@ -29,7 +29,7 @@ export async function buildBusinessContext(businessId: string, customerPhone?: s
   const sectorPrompt = subtype?.systemPrompt ?? "You work at a business. Help customers with their questions.";
   const sectorLabel = subtype?.label ?? business.type ?? "business";
 
-  const agentName = business.agentName || "A.R.E.S.";
+  const agentName = business.agentName || "Kevtech";
   const ownerName = business.ownerFirstName || "the owner";
   const customInstructions = (business.agentInstructions || "").trim();
 
@@ -203,7 +203,7 @@ export async function generateOwnerGreeting(businessId: string): Promise<string>
   });
   if (!business) return "Welcome back.";
 
-  const agentName = business.agentName || "A.R.E.S.";
+  const agentName = business.agentName || "Kevtech";
   const ownerFirst = business.ownerFirstName || "there";
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";

@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. onboarding -- completes the business profile after signup.
+ * Kevtech onboarding -- completes the business profile after signup.
  *
  * POST /api/auth/onboard
  *   { businessId, sectorCategory, sectorSubtype, country, description, phone, address,
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         currency: countryInfo.currency,
         phone: phone ?? null,
         address: address ?? null,
-        agentName: agentName?.trim() || "A.R.E.S.",
+        agentName: agentName?.trim() || "Kevtech",
         agentInstructions: agentInstructions ?? "",
         ownerFirstName: ownerFirstName?.trim() || null,
         enabledModules: JSON.stringify(subtype.modules),

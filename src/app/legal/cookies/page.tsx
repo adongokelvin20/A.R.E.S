@@ -37,7 +37,7 @@ export default function CookiesPage() {
         </section>
         <section>
           <h2 className="text-base font-semibold text-ares-navy">7. Contact</h2>
-          <p className="mt-2">For questions about our use of cookies, contact us at privacy@ares-system.com.</p>
+          <p className="mt-2">For questions about our use of cookies, contact us at privacy@kevtech.com.</p>
         </section>
       </div>
     </LegalLayout>

@@ -39,10 +39,10 @@ export async function ensureDatabase() {
     await db.user.findFirst({ select: { id: true } })
     tablesEnsured = true
   } catch (e) {
-    console.log('[A.R.E.S.] Creating database tables...')
+    console.log('[Kevtech] Creating database tables...')
 
     const statements = [
-      `CREATE TABLE IF NOT EXISTS "Business" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "slug" TEXT NOT NULL, "type" TEXT NOT NULL, "industry" TEXT, "description" TEXT, "country" TEXT NOT NULL DEFAULT 'GH', "currency" TEXT NOT NULL DEFAULT 'GHS', "timezone" TEXT NOT NULL DEFAULT 'Africa/Accra', "language" TEXT NOT NULL DEFAULT 'en', "phone" TEXT, "email" TEXT, "address" TEXT, "logoUrl" TEXT, "configuration" TEXT NOT NULL DEFAULT '{}', "enabledModules" TEXT NOT NULL DEFAULT '[]', "plan" TEXT NOT NULL DEFAULT 'STARTER', "status" TEXT NOT NULL DEFAULT 'ACTIVE', "agentName" TEXT NOT NULL DEFAULT 'A.R.E.S.', "agentPersonality" TEXT NOT NULL DEFAULT 'professional', "agentInstructions" TEXT NOT NULL DEFAULT '', "agentLearnings" TEXT NOT NULL DEFAULT '[]', "ownerFirstName" TEXT, "sectorCategory" TEXT, "sectorSubtype" TEXT, "onboardedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Business_pkey" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "Business" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "slug" TEXT NOT NULL, "type" TEXT NOT NULL, "industry" TEXT, "description" TEXT, "country" TEXT NOT NULL DEFAULT 'GH', "currency" TEXT NOT NULL DEFAULT 'GHS', "timezone" TEXT NOT NULL DEFAULT 'Africa/Accra', "language" TEXT NOT NULL DEFAULT 'en', "phone" TEXT, "email" TEXT, "address" TEXT, "logoUrl" TEXT, "configuration" TEXT NOT NULL DEFAULT '{}', "enabledModules" TEXT NOT NULL DEFAULT '[]', "plan" TEXT NOT NULL DEFAULT 'STARTER', "status" TEXT NOT NULL DEFAULT 'ACTIVE', "agentName" TEXT NOT NULL DEFAULT 'Kevtech', "agentPersonality" TEXT NOT NULL DEFAULT 'professional', "agentInstructions" TEXT NOT NULL DEFAULT '', "agentLearnings" TEXT NOT NULL DEFAULT '[]', "ownerFirstName" TEXT, "sectorCategory" TEXT, "sectorSubtype" TEXT, "onboardedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Business_pkey" PRIMARY KEY ("id"))`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "Business_slug_key" ON "Business"("slug")`,
       `CREATE TABLE IF NOT EXISTS "User" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "email" TEXT NOT NULL, "name" TEXT NOT NULL, "passwordHash" TEXT, "role" TEXT NOT NULL DEFAULT 'OWNER', "status" TEXT NOT NULL DEFAULT 'ACTIVE', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "User_pkey" PRIMARY KEY ("id"))`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "User_businessId_email_key" ON "User"("businessId", "email")`,
@@ -88,6 +88,6 @@ export async function ensureDatabase() {
     }
 
     tablesEnsured = true
-    console.log('[A.R.E.S.] Database tables created successfully')
+    console.log('[Kevtech] Database tables created successfully')
   }
 }

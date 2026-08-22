@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const business = await db.business.update({
       where: { id: businessId },
       data: {
-        agentName: agentName?.trim() || "A.R.E.S.",
+        agentName: agentName?.trim() || "Kevtech",
         agentInstructions: agentInstructions ?? "",
       },
     });

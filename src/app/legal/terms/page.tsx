@@ -8,11 +8,11 @@ export default function TermsPage() {
       <div className="space-y-6">
         <section>
           <h2 className="text-base font-semibold text-ares-navy">1. Acceptance of Terms</h2>
-          <p className="mt-2">By signing up for or using A.R.E.S. (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
+          <p className="mt-2">By signing up for or using Kevtech (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
         </section>
         <section>
           <h2 className="text-base font-semibold text-ares-navy">2. Description of Service</h2>
-          <p className="mt-2">A.R.E.S. provides an AI-powered business management platform that includes customer communication tools, order management, inventory tracking, and automation features. The Service is provided on a subscription basis.</p>
+          <p className="mt-2">Kevtech provides an AI-powered business management platform that includes customer communication tools, order management, inventory tracking, and automation features. The Service is provided on a subscription basis.</p>
         </section>
         <section>
           <h2 className="text-base font-semibold text-ares-navy">3. Your Account</h2>
@@ -60,7 +60,7 @@ export default function TermsPage() {
         </section>
         <section>
           <h2 className="text-base font-semibold text-ares-navy">12. Contact</h2>
-          <p className="mt-2">For questions about these Terms, contact us at legal@ares-system.com.</p>
+          <p className="mt-2">For questions about these Terms, contact us at legal@kevtech.com.</p>
         </section>
       </div>
     </LegalLayout>

@@ -126,7 +126,7 @@ export function AresAppShell({
           </button>
           <div className="flex items-center gap-2">
             <AresLogo className="h-7 w-7" />
-            <span className="font-mono text-sm font-bold tracking-wider text-ares-navy">A.R.E.S.</span>
+            <span className="font-mono text-sm font-bold tracking-wider text-ares-navy">Kevtech</span>
           </div>
           <div className="w-9" />
         </div>

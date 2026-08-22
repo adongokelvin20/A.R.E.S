@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. AI chat endpoint.
+ * Kevtech AI chat endpoint.
  *
  * POST /api/ares/chat
  *   { message, history?, conversationId? }
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     const zai = await getZaiClient();
     const completion = await zai.chat.completions.create({
       messages,
-      temperature: 0.85, // higher temp = more varied, human-like responses
+      temperature: 0.85,
       max_tokens: 700,
     });
 
@@ -75,8 +75,9 @@ export async function POST(req: NextRequest) {
       null;
 
     if (!reply) {
-      console.error("[A.R.E.S. chat] No reply in completion:", JSON.stringify(completion).slice(0, 500));
-      throw new Error("AI returned no response content");
+      console.error("[Kevtech chat] No reply in completion:", JSON.stringify(completion).slice(0, 500));
+      // Fallback response instead of crashing
+      reply = "I'm having a bit of trouble right now -- mind repeating that?";
     }
 
     // ===== Extract LEARNED facts and save them =====
@@ -220,11 +221,17 @@ export async function POST(req: NextRequest) {
       images: mentionedImages,
     });
   } catch (err: any) {
-    console.error("[A.R.E.S. chat] error:", err);
-    return NextResponse.json(
-      { error: "AI chat failed", detail: String(err?.message ?? err).slice(0, 200) },
-      { status: 500 }
-    );
+    console.error("[Kevtech chat] error:", err?.message ?? err);
+    // Return a graceful fallback instead of an error
+    return NextResponse.json({
+      reply: "Sorry, I'm having trouble connecting right now. Give me a moment and try again.",
+      agentName: "Kevtech",
+      sectorLabel: "business",
+      businessName: "your business",
+      conversationId: null,
+      orderCreated: null,
+      images: [],
+    });
   }
 }
 

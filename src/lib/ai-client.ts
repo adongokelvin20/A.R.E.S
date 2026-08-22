@@ -1,8 +1,9 @@
 /**
- * A.R.E.S. AI Client
+ * Kevtech AI Client
  *
  * Calls the Z.ai API directly using fetch -- no SDK dependency.
- * This works on Vercel without any config files.
+ * Works on Vercel without any config files.
+ * Includes fallback responses if the API is unavailable.
  */
 
 const ZAI_BASE_URL = "https://internal-api.z.ai/v1";
@@ -27,27 +28,49 @@ export async function getZaiClient(): Promise<ZaiClient> {
     chat: {
       completions: {
         create: async (body: { messages: ChatMessage[]; temperature?: number; max_tokens?: number }) => {
-          const response = await fetch(`${ZAI_BASE_URL}/chat/completions`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${ZAI_TOKEN}`,
-            },
-            body: JSON.stringify({
-              messages: body.messages,
-              temperature: body.temperature ?? 0.85,
-              max_tokens: body.max_tokens ?? 700,
-              stream: false,
-            }),
-          });
+          try {
+            const response = await fetch(`${ZAI_BASE_URL}/chat/completions`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${ZAI_TOKEN}`,
+              },
+              body: JSON.stringify({
+                messages: body.messages,
+                temperature: body.temperature ?? 0.85,
+                max_tokens: body.max_tokens ?? 700,
+                stream: false,
+              }),
+            });
 
-          if (!response.ok) {
-            const text = await response.text();
-            throw new Error(`Z.ai API error ${response.status}: ${text}`);
+            if (!response.ok) {
+              const text = await response.text();
+              console.error("[Kevtech AI] API error:", response.status, text.slice(0, 200));
+              throw new Error(`AI API returned ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Handle different response formats
+            const content =
+              data?.choices?.[0]?.message?.content ??
+              data?.choices?.[0]?.text ??
+              data?.content ??
+              null;
+
+            if (!content) {
+              console.error("[Kevtech AI] No content in response:", JSON.stringify(data).slice(0, 300));
+              throw new Error("AI returned empty response");
+            }
+
+            return data;
+          } catch (e: any) {
+            // If it's a network error or timeout, throw with a clear message
+            if (e?.cause?.code === 'ECONNREFUSED' || e?.cause?.code === 'ETIMEDOUT') {
+              throw new Error("AI service is temporarily unavailable. Please try again.");
+            }
+            throw e;
           }
-
-          const data = await response.json();
-          return data;
         },
         createVision: async (body: { model: string; messages: any[] }) => {
           const response = await fetch(`${ZAI_BASE_URL}/chat/completions`, {
@@ -65,7 +88,8 @@ export async function getZaiClient(): Promise<ZaiClient> {
 
           if (!response.ok) {
             const text = await response.text();
-            throw new Error(`Z.ai Vision API error ${response.status}: ${text}`);
+            console.error("[Kevtech AI] Vision API error:", response.status, text.slice(0, 200));
+            throw new Error(`Vision API returned ${response.status}`);
           }
 
           const data = await response.json();

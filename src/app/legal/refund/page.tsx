@@ -8,7 +8,7 @@ export default function RefundPage() {
       <div className="space-y-6">
         <section>
           <h2 className="text-base font-semibold text-ares-navy">1. Subscription Refunds</h2>
-          <p className="mt-2">You may request a full refund within 7 days of your initial subscription purchase. After the 7-day period, subscriptions are non-refundable. To request a refund, contact us at billing@ares-system.com with your account email and order number.</p>
+          <p className="mt-2">You may request a full refund within 7 days of your initial subscription purchase. After the 7-day period, subscriptions are non-refundable. To request a refund, contact us at billing@kevtech.com with your account email and order number.</p>
         </section>
         <section>
           <h2 className="text-base font-semibold text-ares-navy">2. Cancellation</h2>
@@ -41,7 +41,7 @@ export default function RefundPage() {
         </section>
         <section>
           <h2 className="text-base font-semibold text-ares-navy">8. Contact</h2>
-          <p className="mt-2">For refund requests or billing questions, contact us at billing@ares-system.com.</p>
+          <p className="mt-2">For refund requests or billing questions, contact us at billing@kevtech.com.</p>
         </section>
       </div>
     </LegalLayout>

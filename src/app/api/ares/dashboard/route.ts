@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. dashboard data endpoint (auth-aware, no demo seeding).
+ * Kevtech dashboard data endpoint (auth-aware, no demo seeding).
  *
  * GET /api/ares/dashboard
  *

@@ -15,16 +15,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "A.R.E.S. -- Automated Routing and Execution System",
+  title: "Kevtech -- AI Business Operating System",
   description:
-    "A.R.E.S. is a multi-tenant AI Business Operating System. A business signs up, A.R.E.S. learns what they do, and they receive an AI employee that communicates with customers, monitors operations, executes authorized actions, and runs the business with them.",
+    "Kevtech gives your business an AI employee that talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
   keywords: [
-    "A.R.E.S.",
-    "Automated Routing and Execution System",
+    "Kevtech",
     "AI Business Operating System",
     "AI Employee",
     "WhatsApp AI",
-    "Multi-tenant SaaS",
     "Business Automation",
     "Ghana AI",
   ],
@@ -33,17 +31,17 @@ export const metadata: Metadata = {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "A.R.E.S. -- Automated Routing and Execution System",
+    title: "Kevtech -- AI Business Operating System",
     description:
-      "Your AI employee for business. Multi-tenant AI Business Operating System with WhatsApp, automation, and a real command center for your operations.",
-    siteName: "A.R.E.S.",
+      "Your AI employee for business. Talks to customers, takes orders, and runs operations.",
+    siteName: "Kevtech",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "A.R.E.S. -- Automated Routing and Execution System",
+    title: "Kevtech -- AI Business Operating System",
     description:
-      "Your AI employee for business. Multi-tenant AI Business Operating System.",
+      "Your AI employee for business. Talks to customers, takes orders, and runs operations.",
   },
 };
 

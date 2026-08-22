@@ -63,8 +63,8 @@ export function AresSidebar({
           <div className="flex items-center gap-2.5">
             <AresLogo className="h-9 w-9" />
             <div>
-              <div className="font-mono text-sm font-bold tracking-[0.18em] text-ares-navy">A.R.E.S.</div>
-              <div className="text-[10px] tracking-wide text-muted-foreground">Command Center</div>
+              <div className="font-mono text-sm font-bold tracking-[0.18em] text-ares-navy">Kevtech</div>
+              <div className="text-[10px] tracking-wide text-muted-foreground">Kevtech Dashboard</div>
             </div>
           </div>
           <button

@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. authentication -- NextAuth credentials provider.
+ * Kevtech authentication -- NextAuth credentials provider.
  * Tenant is ALWAYS resolved from the authenticated session, never from
  * a client-supplied business_id.
  */

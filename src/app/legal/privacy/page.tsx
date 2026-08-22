@@ -66,7 +66,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2 className="text-base font-semibold text-ares-navy">12. Contact</h2>
-          <p className="mt-2">For privacy questions or requests, contact us at privacy@ares-system.com.</p>
+          <p className="mt-2">For privacy questions or requests, contact us at privacy@kevtech.com.</p>
         </section>
       </div>
     </LegalLayout>

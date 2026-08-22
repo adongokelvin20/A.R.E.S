@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. Sector Catalog -- comprehensive, hierarchical, with dynamic product fields.
+ * Kevtech Sector Catalog -- comprehensive, hierarchical, with dynamic product fields.
  *
  * Each subtype defines:
  * - modules: which modules are active

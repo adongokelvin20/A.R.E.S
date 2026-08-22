@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. signup -- creates the owner + business shell.
+ * Kevtech signup -- creates the owner + business shell.
  * Onboarding (sector, agent name, etc.) is a separate step.
  *
  * POST /api/auth/signup
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         enabledModules: JSON.stringify(["customers", "orders", "products"]),
         plan: "STARTER",
         status: "ACTIVE",
-        agentName: "A.R.E.S.",
+        agentName: "Kevtech",
         agentPersonality: "professional",
         ownerFirstName: ownerName.trim().split(" ")[0],
       },

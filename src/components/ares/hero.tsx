@@ -28,7 +28,7 @@ export function AresHero() {
           <div className="ares-fade-up mb-8 flex items-center gap-3">
             <AresLogo className="h-12 w-12" />
             <div>
-              <div className="text-lg font-bold tracking-[0.14em] text-white">A.R.E.S.</div>
+              <div className="text-lg font-bold tracking-[0.14em] text-white">Kevtech</div>
               <div className="text-[10px] tracking-wide text-white/50">AUTOMATED ROUTING & EXECUTION</div>
             </div>
           </div>
@@ -48,7 +48,7 @@ export function AresHero() {
           </h1>
 
           <p className="ares-fade-up mt-6 max-w-lg text-balance text-base leading-relaxed text-white/70 sm:text-lg" style={{ animationDelay: "240ms" }}>
-            A.R.E.S. learns what your business does, talks to your customers on WhatsApp, takes orders, monitors operations, and gets things done -- while you focus on the work that matters.
+            Kevtech learns what your business does, talks to your customers on WhatsApp, takes orders, monitors operations, and gets things done -- while you focus on the work that matters.
           </p>
 
           {/* CTAs */}
