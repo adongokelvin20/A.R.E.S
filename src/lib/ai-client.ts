@@ -1,15 +1,9 @@
 /**
  * A.R.E.S. AI Client
  *
- * Primary: Uses the z-ai-web-dev-sdk (works on Z.ai sandbox)
- * Fallback: Uses Google Gemini API (works on Vercel/production)
- *
- * On Vercel, set these environment variables:
- *   GOOGLE_AI_KEY=your-google-ai-api-key
- *   (Get a free key at https://aistudio.google.com/app/apikey)
- *
- * Without a Google AI key, the system uses smart template-based
- * responses so the chat still works (just not AI-powered).
+ * On Vercel: Uses Google Gemini API (publicly accessible)
+ * On Z.ai sandbox: Uses the z-ai-web-dev-sdk directly
+ * Fallback: Smart template responses (no API key needed)
  */
 
 const ZAI_CONFIG = {
@@ -21,49 +15,47 @@ const ZAI_CONFIG = {
 };
 
 let clientInstance: any = null;
-let mode: "zai" | "gemini" | "fallback" | null = null;
 
 export async function getZaiClient() {
   if (clientInstance) return clientInstance;
 
-  // Try Z.ai SDK first (works on sandbox)
-  try {
-    const ZAIModule = await import("z-ai-web-dev-sdk");
-    const ZAI = ZAIModule.default;
-    const testClient = new ZAI(ZAI_CONFIG);
-    // Quick test to see if the API is reachable
-    const testRes = await testClient.chat.completions.create({
-      messages: [{ role: "user", content: "Say OK" }],
-      max_tokens: 5,
-    });
-    if (testRes?.choices?.[0]?.message?.content) {
-      clientInstance = testClient;
-      mode = "zai";
+  // Check if we're on Vercel (production) -- skip Z.ai SDK entirely
+  // because internal-api.z.ai is not accessible from Vercel
+  const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === "production";
+
+  if (!isVercel) {
+    // On sandbox/dev: try Z.ai SDK
+    try {
+      const ZAIModule = await import("z-ai-web-dev-sdk");
+      const ZAI = ZAIModule.default;
+      clientInstance = new ZAI(ZAI_CONFIG);
       console.log("[A.R.E.S. AI] Using Z.ai SDK (sandbox mode)");
       return clientInstance;
+    } catch (e: any) {
+      console.log("[A.R.E.S. AI] Z.ai SDK failed, trying Gemini");
     }
-  } catch (e: any) {
-    console.log("[A.R.E.S. AI] Z.ai SDK not available:", e?.message?.slice(0, 100));
   }
 
-  // Try Google Gemini (works on Vercel)
+  // On Vercel or SDK failed: try Google Gemini
   const geminiKey = process.env.GOOGLE_AI_KEY;
   if (geminiKey) {
-    clientInstance = createGeminiClient(geminiKey);
-    mode = "gemini";
-    console.log("[A.R.E.S. AI] Using Google Gemini API");
-    return clientInstance;
+    try {
+      clientInstance = createGeminiClient(geminiKey);
+      console.log("[A.R.E.S. AI] Using Google Gemini API");
+      return clientInstance;
+    } catch (e: any) {
+      console.error("[A.R.E.S. AI] Gemini setup failed:", e?.message);
+    }
   }
 
-  // Fallback: smart template responses (no API key needed)
+  // Fallback: smart template responses
   clientInstance = createFallbackClient();
-  mode = "fallback";
-  console.log("[A.R.E.S. AI] Using fallback mode (no API key set)");
+  console.log("[A.R.E.S. AI] Using fallback mode (no API key or all APIs failed)");
   return clientInstance;
 }
 
 export function getAIMode() {
-  return mode;
+  return clientInstance?._mode || "unknown";
 }
 
 /**
@@ -72,7 +64,8 @@ export function getAIMode() {
 function createGeminiClient(apiKey: string) {
   const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
-  return {
+  const client = {
+    _mode: "gemini",
     chat: {
       completions: {
         create: async (body: any) => {
@@ -100,11 +93,17 @@ function createGeminiClient(apiKey: string) {
 
           if (!response.ok) {
             const text = await response.text();
-            throw new Error(`Gemini API error ${response.status}: ${text.slice(0, 200)}`);
+            console.error("[A.R.E.S. AI] Gemini error:", response.status, text.slice(0, 200));
+            throw new Error(`Gemini API error ${response.status}: ${text.slice(0, 100)}`);
           }
 
           const data = await response.json();
           const content = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+          if (!content) {
+            console.error("[A.R.E.S. AI] Gemini returned empty:", JSON.stringify(data).slice(0, 200));
+            throw new Error("Gemini returned empty response");
+          }
 
           // Return in OpenAI format so the rest of the code doesn't need to change
           return {
@@ -115,8 +114,10 @@ function createGeminiClient(apiKey: string) {
           };
         },
         createVision: async (body: any) => {
-          // Gemini vision uses the same endpoint with image parts
-          const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+          // For vision, use gemini-1.5-pro which supports images
+          const VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+
+          const response = await fetch(`${VISION_URL}?key=${apiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
@@ -126,30 +127,37 @@ function createGeminiClient(apiKey: string) {
             throw new Error(`Gemini Vision API error ${response.status}`);
           }
 
-          return await response.json();
+          const data = await response.json();
+          const content = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Product image uploaded.";
+
+          return {
+            choices: [{
+              message: { content, role: "assistant" },
+            }],
+          };
         },
       },
     },
   };
+
+  return client;
 }
 
 /**
  * Fallback client -- generates smart responses without an API.
- * Uses the business context and catalog to give useful answers.
  */
 function createFallbackClient() {
   return {
+    _mode: "fallback",
     chat: {
       completions: {
         create: async (body: any) => {
           const lastMessage = body.messages?.filter((m: any) => m.role === "user")?.slice(-1)[0]?.content || "";
           const systemPrompt = body.messages?.find((m: any) => m.role === "system")?.content || "";
 
-          // Extract business name and catalog from system prompt
           const businessNameMatch = systemPrompt.match(/work at ([^.]+)/);
           const businessName = businessNameMatch ? businessNameMatch[1] : "your business";
 
-          // Generate a helpful response based on the message
           let reply = "";
 
           if (/hello|hi|hey|good morning|good afternoon|good evening/i.test(lastMessage)) {
@@ -173,7 +181,6 @@ function createFallbackClient() {
             reply = `I've noted your message. Let me help you with that -- could you give me a bit more detail about what you need?`;
           }
 
-          // Return in OpenAI format
           return {
             choices: [{
               message: { content: reply, role: "assistant" },
@@ -182,7 +189,6 @@ function createFallbackClient() {
           };
         },
         createVision: async (body: any) => {
-          // Return a generic description for vision
           return {
             choices: [{
               message: { content: "Product image uploaded successfully.", role: "assistant" },
