@@ -124,8 +124,8 @@ export function AresProducts({ data, onChanged }: { data: any; onChanged: () => 
               <div key={p.id} className="group overflow-hidden rounded-2xl border border-ares-line bg-white transition-all hover:border-ares-sea/30 hover:shadow-sm">
                 <div className="relative aspect-square bg-ares-mist">
                   <ProductImage src={p.imageUrl ?? ""} alt={p.imageAlt || p.name} name={p.name} />
-                  <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 text-rose-600 opacity-0 shadow-sm backdrop-blur-sm transition-opacity hover:bg-white group-hover:opacity-100 disabled:opacity-50" aria-label="Delete">
-                    {deletingId === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-rose-600 shadow-sm backdrop-blur-sm transition-colors hover:bg-white disabled:opacity-50" aria-label="Delete">
+                    {deletingId === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                   </button>
                   {p.imageUrl && p.imageAlt && (
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ares-navy/80 to-transparent p-2">
