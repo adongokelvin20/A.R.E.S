@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
+Allow: /auth
+Allow: /legal/
 Disallow: /api/
-Disallow: /auth
 
 Sitemap: https://ares-system.vercel.app/sitemap.xml
