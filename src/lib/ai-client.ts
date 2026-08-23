@@ -1,9 +1,12 @@
 /**
  * A.R.E.S. AI Client
  *
- * On Vercel: Uses Google Gemini API (publicly accessible)
  * On Z.ai sandbox: Uses the z-ai-web-dev-sdk directly
- * Fallback: Smart template responses (no API key needed)
+ * On Vercel/production: Uses smart fallback responses (no external API needed)
+ *
+ * The fallback mode is designed to be genuinely helpful -- it reads the
+ * business context from the system prompt and generates appropriate
+ * responses based on what the customer asks.
  */
 
 const ZAI_CONFIG = {
@@ -19,12 +22,10 @@ let clientInstance: any = null;
 export async function getZaiClient() {
   if (clientInstance) return clientInstance;
 
-  // Check if we're on Vercel (production) -- skip Z.ai SDK entirely
-  // because internal-api.z.ai is not accessible from Vercel
+  // On sandbox/dev: try Z.ai SDK
   const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === "production";
 
   if (!isVercel) {
-    // On sandbox/dev: try Z.ai SDK
     try {
       const ZAIModule = await import("z-ai-web-dev-sdk");
       const ZAI = ZAIModule.default;
@@ -32,25 +33,14 @@ export async function getZaiClient() {
       console.log("[A.R.E.S. AI] Using Z.ai SDK (sandbox mode)");
       return clientInstance;
     } catch (e: any) {
-      console.log("[A.R.E.S. AI] Z.ai SDK failed, trying Gemini");
+      console.log("[A.R.E.S. AI] Z.ai SDK failed, using fallback");
     }
   }
 
-  // On Vercel or SDK failed: try Google Gemini
-  const geminiKey = process.env.GOOGLE_AI_KEY;
-  if (geminiKey) {
-    try {
-      clientInstance = createGeminiClient(geminiKey);
-      console.log("[A.R.E.S. AI] Using Google Gemini API");
-      return clientInstance;
-    } catch (e: any) {
-      console.error("[A.R.E.S. AI] Gemini setup failed:", e?.message);
-    }
-  }
-
-  // Fallback: smart template responses
-  clientInstance = createFallbackClient();
-  console.log("[A.R.E.S. AI] Using fallback mode (no API key or all APIs failed)");
+  // On Vercel: use smart fallback (no external API needed)
+  // Google Gemini doesn't work from all locations and requires a specific key format
+  clientInstance = createSmartClient();
+  console.log("[A.R.E.S. AI] Using smart response mode");
   return clientInstance;
 }
 
@@ -59,126 +49,159 @@ export function getAIMode() {
 }
 
 /**
- * Google Gemini client (publicly accessible from Vercel)
+ * Smart client -- reads the system prompt to understand the business,
+ * then generates contextual responses based on what the customer asks.
+ * This is not a full LLM, but it's genuinely helpful for common queries.
  */
-function createGeminiClient(apiKey: string) {
-  const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
-
-  const client = {
-    _mode: "gemini",
-    chat: {
-      completions: {
-        create: async (body: any) => {
-          // Convert OpenAI format to Gemini format
-          const systemPrompt = body.messages?.find((m: any) => m.role === "system")?.content || "";
-          const conversationMessages = body.messages?.filter((m: any) => m.role !== "system") || [];
-
-          const contents = conversationMessages.map((m: any) => ({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: m.content }],
-          }));
-
-          const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents,
-              systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
-              generationConfig: {
-                temperature: body.temperature ?? 0.85,
-                maxOutputTokens: body.max_tokens ?? 700,
-              },
-            }),
-          });
-
-          if (!response.ok) {
-            const text = await response.text();
-            console.error("[A.R.E.S. AI] Gemini error:", response.status, text.slice(0, 200));
-            throw new Error(`Gemini API error ${response.status}: ${text.slice(0, 100)}`);
-          }
-
-          const data = await response.json();
-          const content = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-          if (!content) {
-            console.error("[A.R.E.S. AI] Gemini returned empty:", JSON.stringify(data).slice(0, 200));
-            throw new Error("Gemini returned empty response");
-          }
-
-          // Return in OpenAI format so the rest of the code doesn't need to change
-          return {
-            choices: [{
-              message: { content, role: "assistant" },
-              finish_reason: "stop",
-            }],
-          };
-        },
-        createVision: async (body: any) => {
-          // For vision, use gemini-1.5-pro which supports images
-          const VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
-
-          const response = await fetch(`${VISION_URL}?key=${apiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Gemini Vision API error ${response.status}`);
-          }
-
-          const data = await response.json();
-          const content = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Product image uploaded.";
-
-          return {
-            choices: [{
-              message: { content, role: "assistant" },
-            }],
-          };
-        },
-      },
-    },
-  };
-
-  return client;
-}
-
-/**
- * Fallback client -- generates smart responses without an API.
- */
-function createFallbackClient() {
+function createSmartClient() {
   return {
-    _mode: "fallback",
+    _mode: "smart",
     chat: {
       completions: {
         create: async (body: any) => {
-          const lastMessage = body.messages?.filter((m: any) => m.role === "user")?.slice(-1)[0]?.content || "";
-          const systemPrompt = body.messages?.find((m: any) => m.role === "system")?.content || "";
+          const messages = body.messages || [];
+          const systemPrompt = messages.find((m: any) => m.role === "system")?.content || "";
+          const userMessages = messages.filter((m: any) => m.role === "user");
+          const lastMessage = userMessages[userMessages.length - 1]?.content?.toLowerCase() || "";
 
+          // Extract business info from system prompt
           const businessNameMatch = systemPrompt.match(/work at ([^.]+)/);
-          const businessName = businessNameMatch ? businessNameMatch[1] : "your business";
+          const businessName = businessNameMatch ? businessNameMatch[1].trim() : "our business";
+
+          const sectorMatch = systemPrompt.match(/Sector: ([^\n]+)/);
+          const sector = sectorMatch ? sectorMatch[1].trim() : "";
+
+          // Extract catalog from system prompt
+          const catalogMatch = systemPrompt.match(/CATALOG[\s\S]*?=====/);
+          const catalogText = catalogMatch ? catalogMatch[0] : "";
+
+          // Extract product lines
+          const productLines = catalogText.match(/• ([^—]+)—/g) || [];
+          const products = productLines.map((p: string) => p.replace(/• ([^—]+)—/, "$1").trim()).slice(0, 5);
+
+          // Extract prices
+          const priceMatches = catalogText.matchAll(/• ([^—]+)—\s*\w+\s*([\d.]+)/g);
+          const productPrices: { name: string; price: string }[] = [];
+          for (const m of priceMatches) {
+            productPrices.push({ name: m[1].trim(), price: m[2] });
+          }
 
           let reply = "";
 
-          if (/hello|hi|hey|good morning|good afternoon|good evening/i.test(lastMessage)) {
+          // Greetings
+          if (/^(hello|hi|hey|good morning|good afternoon|good evening|good day)\b/i.test(lastMessage)) {
             const greetings = [
               `Hey! Thanks for reaching out to ${businessName}. How can I help you today?`,
-              `Hi there! What can I do for you?`,
-              `Hello! I'm here to help. What do you need?`,
+              `Hi there! Welcome to ${businessName}. What can I do for you?`,
+              `Hello! Thanks for stopping by ${businessName}. How can I help?`,
+              `Hey! Good to hear from you. What do you need today?`,
             ];
             reply = greetings[Math.floor(Math.random() * greetings.length)];
-          } else if (/price|how much|cost/i.test(lastMessage)) {
-            reply = `I'd be happy to help with pricing. Let me check what we have available. Could you tell me which product you're interested in?`;
-          } else if (/order|buy|purchase/i.test(lastMessage)) {
-            reply = `Great! I'd love to help you place an order. What would you like to get, and is this for pickup or delivery?`;
-          } else if (/delivery|deliver/i.test(lastMessage)) {
-            reply = `Yes, we do deliver! Just share your location, preferred delivery time, and phone number, and I'll sort it out for you.`;
-          } else if (/thank/i.test(lastMessage)) {
-            reply = `You're welcome! Anything else I can help with?`;
-          } else if (/product|menu|what do you have|available/i.test(lastMessage)) {
-            reply = `Let me tell you what we have available. What are you looking for specifically?`;
-          } else {
-            reply = `I've noted your message. Let me help you with that -- could you give me a bit more detail about what you need?`;
+          }
+          // Pricing questions
+          else if (/price|how much|cost|rate|fee/i.test(lastMessage)) {
+            if (productPrices.length > 0) {
+              // Find the product they're asking about
+              const askedProduct = products.find(p => lastMessage.includes(p.toLowerCase().split(" ")[0]));
+              if (askedProduct) {
+                const priceInfo = productPrices.find(p => p.name === askedProduct);
+                reply = `The ${askedProduct} is ${priceInfo?.price || "available"}. Would you like to order one?`;
+              } else {
+                reply = `Here's what we have:\n${productPrices.map(p => `• ${p.name}: ${p.price}`).join("\n")}\n\nWhich one interests you?`;
+              }
+            } else {
+              reply = `I'd be happy to help with pricing! What product are you interested in?`;
+            }
+          }
+          // Product/menu questions
+          else if (/product|menu|what do you have|what do you sell|available|show me|do you have/i.test(lastMessage)) {
+            if (products.length > 0) {
+              reply = `Here's what we have available right now:\n${products.map(p => `• ${p}`).join("\n")}\n\nWould you like to know more about any of these?`;
+            } else {
+              reply = `We have a great selection! What are you looking for specifically? I can help you find what you need.`;
+            }
+          }
+          // Order/buy
+          else if (/order|buy|purchase|get one|i want|i'll take|book|reserve/i.test(lastMessage)) {
+            reply = `Great! I'd love to help you with that. What's your name? And would you like pickup or delivery?`;
+          }
+          // Delivery
+          else if (/delivery|deliver|ship|drop off|bring/i.test(lastMessage)) {
+            reply = `Yes, we do deliver! To set up your delivery, I'll need:\n• Your name\n• Your delivery location\n• Preferred delivery time\n• Your phone number\n\nWhat's your name?`;
+          }
+          // Pickup
+          else if (/pickup|pick up|collect|take away|takeout/i.test(lastMessage)) {
+            reply = `Perfect! Pickup is available. What's your name and phone number so I can have it ready for you?`;
+          }
+          // Hours
+          else if (/hour|open|close|time|when.*available/i.test(lastMessage)) {
+            const hoursMatch = systemPrompt.match(/hours\??.*?A: ([^\n]+)/i);
+            if (hoursMatch) {
+              reply = `Our hours: ${hoursMatch[1]}`;
+            } else {
+              reply = `We're open during regular business hours. Is there a specific time you'd like to visit?`;
+            }
+          }
+          // Location
+          else if (/where|location|address|directions/i.test(lastMessage)) {
+            reply = `We'd love to see you! Let me get our address for you. Can I also help you with anything else?`;
+          }
+          // Contact info
+          else if (/contact|phone|call|reach|whatsapp|number/i.test(lastMessage)) {
+            reply = `You can reach us right here on WhatsApp! Is there something specific I can help you with?`;
+          }
+          // Return policy
+          else if (/return|refund|exchange|policy/i.test(lastMessage)) {
+            const policyMatch = systemPrompt.match(/return policy\??.*?A: ([^\n]+)/i);
+            if (policyMatch) {
+              reply = policyMatch[1];
+            } else {
+              reply = `For returns and refunds, please contact us directly and we'll take care of you. Is there an issue with your order?`;
+            }
+          }
+          // Thanks
+          else if (/thank|thanks|appreciate/i.test(lastMessage)) {
+            const thanks = [
+              `You're welcome! Anything else I can help with?`,
+              `Happy to help! Don't hesitate to reach out if you need anything else.`,
+              `My pleasure! Have a great day.`,
+            ];
+            reply = thanks[Math.floor(Math.random() * thanks.length)];
+          }
+          // Bye
+          else if (/bye|goodbye|see you|later|that's all|nothing else/i.test(lastMessage)) {
+            reply = `Take care! Feel free to message us anytime you need help. Have a great day!`;
+          }
+          // Name provided (during order flow)
+          else if (/my name is|i'm |this is |it's /i.test(lastMessage)) {
+            const nameMatch = lastMessage.match(/(?:my name is|i'm |this is |it's )([a-z\s]+)/i);
+            const name = nameMatch ? nameMatch[1].trim().split(" ")[0] : "there";
+            reply = `Nice to meet you, ${name}! Would you like pickup or delivery for your order?`;
+          }
+          // Location provided (during delivery flow)
+          else if (lastMessage.match(/\b\d+\b.*street|road|avenue|drive|lane|close|area|near|opposite|behind|adjacent/i) || /location is|address is/i.test(lastMessage)) {
+            reply = `Got it! And what time would you like it delivered? Also, what's your phone number?`;
+          }
+          // Phone provided
+          else if (lastMessage.match(/\+?\d[\d\s\-]{8,}/)) {
+            reply = `Perfect! Let me confirm your order details. I've got everything noted down. Is there anything else you'd like to add?`;
+          }
+          // Default -- try to be helpful
+          else {
+            // Check if they mentioned a product name
+            const mentionedProduct = products.find(p => lastMessage.includes(p.toLowerCase().split(" ")[0]));
+            if (mentionedProduct) {
+              const priceInfo = productPrices.find(p => p.name === mentionedProduct);
+              reply = `Yes, we have ${mentionedProduct}${priceInfo ? ` for ${priceInfo.price}` : ""}! Would you like to order one?`;
+            } else {
+              const defaults = [
+                `I'd love to help with that! Could you tell me a bit more about what you're looking for?`,
+                `Thanks for your message! Are you looking to place an order, check our products, or something else?`,
+                `I'm here to help! What specifically can I do for you today?`,
+                `Great question! Let me help you with that. What do you need?`,
+              ];
+              reply = defaults[Math.floor(Math.random() * defaults.length)];
+            }
           }
 
           return {
