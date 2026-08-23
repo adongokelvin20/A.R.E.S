@@ -1,8 +1,8 @@
 /**
  * A.R.E.S. AI Client
  *
- * Uses the z-ai-web-dev-sdk with the config injected directly,
- * bypassing the file-based config loading (which fails on Vercel).
+ * Uses the z-ai-web-dev-sdk with config injected directly into the constructor,
+ * completely bypassing the file-based config loading that fails on Vercel.
  */
 
 const ZAI_CONFIG = {
@@ -18,70 +18,14 @@ let clientInstance: any = null;
 export async function getZaiClient() {
   if (clientInstance) return clientInstance;
 
-  // Try to write config file to all locations the SDK checks
-  const { writeFileSync, existsSync } = await import("fs");
-  const { join } = await import("path");
-  const { tmpdir } = await import("os");
-
-  const configStr = JSON.stringify(ZAI_CONFIG);
-
-  // Write to cwd
-  try { writeFileSync(join(process.cwd(), ".z-ai-config"), configStr); } catch {}
-
-  // Write to home
-  try {
-    const home = process.env.HOME || process.env.HOMEPATH || tmpdir();
-    writeFileSync(join(home, ".z-ai-config"), configStr);
-  } catch {}
-
-  // Write to /etc
-  try { writeFileSync("/etc/.z-ai-config", configStr); } catch {}
-
-  // Set HOME env var to tmpdir if not set
-  if (!process.env.HOME) {
-    process.env.HOME = tmpdir();
-    // Write config to tmpdir as well
-    try { writeFileSync(join(tmpdir(), ".z-ai-config"), configStr); } catch {}
-  }
-
-  // Now try to create the client
+  // Import the ZAI class directly
   const ZAIModule = await import("z-ai-web-dev-sdk");
   const ZAI = ZAIModule.default;
 
-  try {
-    clientInstance = await ZAI.create();
-    return clientInstance;
-  } catch (fileError: any) {
-    // If file-based config fails, manually create a client by
-    // calling the internal constructor with our config directly
-    console.log("[A.R.E.S. AI] File config failed, using direct injection");
+  // Call the constructor directly with our config object.
+  // This completely bypasses the loadConfig() file-reading logic
+  // that fails on Vercel (where /etc/.z-ai-config doesn't exist).
+  clientInstance = new ZAI(ZAI_CONFIG);
 
-    // The SDK's ZAI class has a private constructor, but we can
-    // create an instance by accessing the class prototype
-    try {
-      // Try creating with a mock that bypasses loadConfig
-      const zaiInstance = Object.create(ZAI.prototype);
-
-      // Set the config directly on the instance
-      zaiInstance.config = ZAI_CONFIG;
-
-      // Initialize the chat/audio/images/video/async/functions APIs
-      // by calling the same methods the constructor would
-      const { createChatCompletion, createChatCompletionVision } = zaiInstance;
-      
-      // Rebuild the client structure manually
-      zaiInstance.chat = {
-        completions: {
-          create: (body: any) => createChatCompletion.call(zaiInstance, body),
-          createVision: (body: any) => createChatCompletionVision.call(zaiInstance, body),
-        },
-      };
-
-      clientInstance = zaiInstance;
-      return clientInstance;
-    } catch (injectError: any) {
-      console.error("[A.R.E.S. AI] Direct injection also failed:", injectError?.message);
-      throw injectError;
-    }
-  }
+  return clientInstance;
 }

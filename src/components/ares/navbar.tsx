@@ -34,7 +34,7 @@ export function AresNavbar() {
           <AresLogo className="h-8 w-8" />
           <div className="flex flex-col leading-none">
             <span className="text-sm font-bold tracking-[0.14em] text-ares-navy">A.R.E.S.</span>
-            <span className="text-[9px] tracking-wide text-muted-foreground">AUTOMATED ROUTING & EXECUTION</span>
+            <span className="text-[9px] tracking-wide text-muted-foreground">by Kevtech Corporation</span>
           </div>
         </Link>
 

@@ -28,7 +28,7 @@ export function LegalLayout({ children, title }: { children: React.ReactNode; ti
       <footer className="border-t border-ares-line bg-ares-mist">
         <div className="mx-auto max-w-3xl px-4 py-6 text-center text-xs text-muted-foreground sm:px-6">
           <p>A.R.E.S. -- Automated Routing and Execution System</p>
-          <p className="mt-1">Created by Kelvin Ayinbisa · Kevtech</p>
+          <p className="mt-1">© Kevtech Corporation</p>
         </div>
       </footer>
     </div>

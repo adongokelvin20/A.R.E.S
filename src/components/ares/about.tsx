@@ -13,24 +13,23 @@ export function AresAbout() {
               The story
             </div>
             <h2 className="text-balance text-3xl font-semibold leading-tight tracking-tight text-ares-navy sm:text-4xl ares-serif">
-              Built to give every business an AI employee -- not just the big ones.
+              Kevtech Corporation built A.R.E.S. to give every business an AI employee.
             </h2>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>
-                A.R.E.S. started with a simple frustration: small businesses in Ghana and across Africa were losing customers because they couldn't respond to WhatsApp messages fast enough. Owners were stretched thin. Inventory was guessed at. Orders got lost in chat threads.
+                Kevtech Corporation started with a simple frustration: small businesses in Ghana and across Africa were losing customers because they couldn't respond to WhatsApp messages fast enough. Owners were stretched thin. Inventory was guessed at. Orders got lost in chat threads.
               </p>
               <p>
-                The platform isn't a chatbot bolted onto a dashboard. It's a multi-tenant operating system where every business gets its own isolated environment, its own AI trained on its own catalog, and its own automations. The AI doesn't hallucinate prices or make up products -- it only references what's actually in your database.
+                So we built A.R.E.S. -- the Automated Routing and Execution System. It's not a chatbot bolted onto a dashboard. It's a complete AI employee that learns your business, talks to your customers, takes orders, manages inventory, and runs operations alongside you. Every business gets its own isolated environment with an AI trained on its own catalog.
               </p>
               <p>
-                Today A.R.E.S. serves clothing stores, restaurants, schools, real estate agencies, and service businesses. Tomorrow, it serves whatever you build on top of it.
+                Today A.R.E.S. serves clothing stores, restaurants, schools, real estate agencies, clinics, pharmacies, and service businesses across 12 industries. Tomorrow, it serves whatever you build on top of it. That's the Kevtech vision -- AI that works for everyone.
               </p>
             </div>
           </div>
 
-          {/* Right: creator card + showcase image */}
+          {/* Right: showcase image + company card */}
           <div className="space-y-6">
-            {/* Showcase image */}
             <div className="overflow-hidden rounded-2xl border border-ares-line">
               <img
                 src="/images/showcase.jpg"
@@ -39,16 +38,16 @@ export function AresAbout() {
               />
             </div>
 
-            {/* Creator card */}
+            {/* Company card */}
             <div className="relative overflow-hidden rounded-2xl border border-ares-line bg-gradient-to-br from-ares-navy to-ares-sea-deep p-6 text-white">
               <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-ares-sea/20 blur-3xl" />
               <div className="relative">
                 <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/50">
-                  Created by
+                  A product of
                 </div>
-                <div className="mt-2 text-2xl font-semibold ares-serif">Kelvin Ayinbisa</div>
+                <div className="mt-2 text-2xl font-semibold ares-serif">Kevtech Corporation</div>
                 <p className="mt-2 text-sm leading-relaxed text-white/70">
-                  Designer and engineer of the A.R.E.S. platform. Built from the ground up to give small businesses the same AI firepower that enterprises spend millions on -- at a fraction of the cost, with a focus on African business workflows first.
+                  Building AI tools that level the playing field for African businesses. Kevtech Corporation designs technology that works the way you work -- fast, practical, and built for the real world.
                 </p>
                 <div className="mt-5 flex items-center gap-2">
                   <AresLogo className="h-6 w-6" variant="mono-light" />

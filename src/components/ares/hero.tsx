@@ -18,28 +18,24 @@ export function AresHero() {
         >
           <source src="/videos/hero-bg.mp4" type="video/mp4" />
         </video>
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-ares-navy/85 via-ares-navy/75 to-ares-sea-deep/80" />
       </div>
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 pt-24 pb-16 sm:px-6">
         <div className="max-w-2xl">
+          {/* Company badge */}
+          <div className="ares-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/60 backdrop-blur-sm" style={{ animationDelay: "0ms" }}>
+            <span className="font-semibold text-white/80">Kevtech</span>
+            <span>Corporation presents</span>
+          </div>
+
           {/* Brand */}
-          <div className="ares-fade-up mb-8 flex items-center gap-3">
+          <div className="ares-fade-up mb-8 flex items-center gap-3" style={{ animationDelay: "60ms" }}>
             <AresLogo className="h-12 w-12" />
             <div>
               <div className="text-lg font-bold tracking-[0.14em] text-white">A.R.E.S.</div>
-              <div className="text-[10px] tracking-wide text-white/50">AUTOMATED ROUTING & EXECUTION</div>
+              <div className="text-[10px] tracking-wide text-white/40">AUTOMATED ROUTING & EXECUTION SYSTEM</div>
             </div>
-          </div>
-
-          {/* Status pill */}
-          <div className="ares-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur-sm" style={{ animationDelay: "80ms" }}>
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ares-sea opacity-70" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-ares-sea" />
-            </span>
-            The AI employee for your business
           </div>
 
           {/* Headline */}
@@ -48,7 +44,7 @@ export function AresHero() {
           </h1>
 
           <p className="ares-fade-up mt-6 max-w-lg text-balance text-base leading-relaxed text-white/70 sm:text-lg" style={{ animationDelay: "240ms" }}>
-            A.R.E.S. learns what your business does, talks to your customers on WhatsApp, takes orders, monitors operations, and gets things done -- while you focus on the work that matters.
+            From Kevtech Corporation -- A.R.E.S. learns your business, talks to your customers on WhatsApp, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
           </p>
 
           {/* CTAs */}
@@ -72,7 +68,7 @@ export function AresHero() {
             ].map((s) => (
               <div key={s.l}>
                 <div className="font-mono text-2xl font-bold text-white sm:text-3xl">{s.v}</div>
-                <div className="mt-1 text-[11px] leading-tight text-white/50">{s.l}</div>
+                <div className="mt-1 text-[11px] leading-tight text-white/40">{s.l}</div>
               </div>
             ))}
           </div>
