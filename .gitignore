@@ -60,3 +60,5 @@ server.log
 
 # Skills
 /skills/
+.z-ai-config
+scripts/test-ai.ts
