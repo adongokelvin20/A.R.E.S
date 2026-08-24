@@ -158,17 +158,24 @@ export async function POST(req: NextRequest) {
     });
 
     // ===== Find product images to include in the reply =====
-    // If the AI mentioned a product by name and that product has an image, attach it.
+    // Only send images when the AI is pitching/selling a product, not on every mention.
+    // We check if the reply contains sales-oriented language alongside the product name.
     const allProducts = await db.product.findMany({
       where: { businessId, status: "ACTIVE", imageUrl: { not: null } },
       select: { id: true, name: true, imageUrl: true, imageAlt: true, price: true, currency: true },
     });
     const mentionedImages: { productId: string; name: string; imageUrl: string; price: number; currency: string }[] = [];
     const replyLower = reply.toLowerCase();
-    for (const p of allProducts) {
-      if (p.imageUrl && p.name && replyLower.includes(p.name.toLowerCase().split(" ")[0])) {
-        mentionedImages.push({ productId: p.id, name: p.name, imageUrl: p.imageUrl, price: p.price, currency: p.currency });
-        if (mentionedImages.length >= 3) break; // max 3 images
+
+    // Only attach images if the reply feels like a pitch or product recommendation
+    const isPitching = /would you like|interested|recommend|check this|here's|take a look|this is our|bestseller|popular|available for|going for|only |just |perfect for|great choice/i.test(reply);
+
+    if (isPitching) {
+      for (const p of allProducts) {
+        if (p.imageUrl && p.name && replyLower.includes(p.name.toLowerCase().split(" ")[0])) {
+          mentionedImages.push({ productId: p.id, name: p.name, imageUrl: p.imageUrl, price: p.price, currency: p.currency });
+          if (mentionedImages.length >= 2) break; // max 2 images per message
+        }
       }
     }
 

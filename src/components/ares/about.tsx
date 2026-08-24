@@ -17,7 +17,7 @@ export function AresAbout() {
             </h2>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>
-                Founded by <span className="font-semibold text-ares-navy">Kelvin Ayinbisa</span>, Kevtech Corporation builds technology that creates real, measurable value for businesses. We don't build apps -- we build systems that transform how businesses operate.
+                Founded by <span className="font-semibold text-ares-navy">Kelvin</span>, Kevtech Corporation builds technology that creates real, measurable value for businesses. We don't build apps -- we build systems that transform how businesses operate.
               </p>
               <p>
                 A.R.E.S. is our flagship product. It's not a chatbot. It's a complete AI employee that learns your business, talks to your customers, takes orders, manages inventory, and runs operations alongside you. Every business gets its own isolated environment with an AI trained on its own catalog.

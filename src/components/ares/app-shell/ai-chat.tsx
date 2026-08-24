@@ -13,12 +13,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
   const agentName = data.business.agentName;
   const businessName = data.business.name;
   const sector = data.business.sectorSubtype ?? data.business.type;
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      content: `Hi, I'm ${agentName} -- your AI employee for ${businessName}. I'm bound to your ${sector.replace(/_/g, " ").toLowerCase()} business and I only reference your real catalog. Ask me anything a customer would ask, or anything you'd want me to handle.`,
-    },
-  ]);
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +89,16 @@ export function AresAiChatPanel({ data }: { data: any }) {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto ares-scroll bg-ares-mist p-4">
         <div className="space-y-3">
+          {messages.length === 0 && !loading && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-ares-foam text-ares-sea-deep">
+                <Bot className="h-6 w-6" />
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Send a message to start chatting with {agentName}
+              </p>
+            </div>
+          )}
           {messages.map((m, i) => (
             <div key={i} className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
               <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${m.role === "user" ? "bg-ares-navy text-white" : "bg-ares-sea-deep text-white"}`}>
