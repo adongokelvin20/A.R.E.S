@@ -21,11 +21,11 @@ const FLOW_STEPS = [
   },
   {
     label: "intelligent orchestrator",
-    detail: "Sector-bound AI retrieves business context, knowledge, and available tools.",
+    detail: "Sector-bound assistant retrieves business context, knowledge, and available tools.",
   },
   {
     label: "Authorized action",
-    detail: "AI executes only permitted tools. High-risk actions require owner approval.",
+    detail: "It executes only permitted tools. High-risk actions require owner approval.",
   },
   {
     label: "Outbound reply",

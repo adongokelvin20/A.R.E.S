@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { MessageSquare, ArrowLeft, User, Bot, ChevronDown, ChevronRight, RefreshCw, Flag } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 
 interface Group {
   key: string;
@@ -25,7 +24,6 @@ interface Message {
 export function AresConversations({ data }: { data: any }) {
   const [groups, setGroups] = useState<Group[] | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<any[] | null>(null);
   const [allMessages, setAllMessages] = useState<Message[] | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,21 +42,19 @@ export function AresConversations({ data }: { data: any }) {
   async function expandGroup(key: string) {
     if (expandedKey === key) {
       setExpandedKey(null);
-      setConversations(null);
       setAllMessages(null);
       return;
     }
     setExpandedKey(key);
-    setConversations(null);
     setAllMessages(null);
     setLoading(true);
     try {
+      // Get all conversations for this customer
       const res = await fetch(`/api/conversations?customer=${encodeURIComponent(key)}`);
       const json = await res.json();
       const convos = json.conversations ?? [];
-      setConversations(convos);
 
-      // Fetch all messages from all conversations for this customer
+      // Fetch all messages from all conversations
       const allMsgs: Message[] = [];
       for (const c of convos) {
         const msgRes = await fetch(`/api/conversations?id=${c.id}`);
@@ -67,18 +63,17 @@ export function AresConversations({ data }: { data: any }) {
           allMsgs.push(...msgJson.conversation.messages);
         }
       }
-      // Sort by date ascending so it reads like a continuous conversation
+      // Sort by date so it reads like one continuous conversation
       allMsgs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       setAllMessages(allMsgs);
     } catch (e) {
-      setConversations([]);
       setAllMessages([]);
     } finally {
       setLoading(false);
     }
   }
 
-  // Full thread view -- continuous scroll of all messages
+  // Full thread -- continuous scroll
   if (expandedKey && allMessages) {
     const group = groups?.find(g => g.key === expandedKey);
     return (
@@ -91,12 +86,11 @@ export function AresConversations({ data }: { data: any }) {
             <h2 className="text-lg font-semibold text-ares-navy">{group?.customerName || "Customer"}</h2>
             <p className="text-xs text-muted-foreground">
               {group?.customerPhone && `${group.customerPhone} · `}
-              {allMessages.length} messages · {conversations?.length || 0} conversation{(conversations?.length || 0) === 1 ? "" : "s"}
+              {allMessages.length} messages
             </p>
           </div>
         </div>
 
-        {/* Continuous message thread -- scroll through everything */}
         <div className="max-h-[calc(100vh-16rem)] overflow-y-auto ares-scroll rounded-2xl border border-ares-line bg-white p-4">
           <div className="space-y-3">
             {allMessages.map((m) => {
@@ -132,7 +126,7 @@ export function AresConversations({ data }: { data: any }) {
     );
   }
 
-  // List view -- grouped by customer
+  // List view
   return (
     <div className="space-y-5">
       <div>

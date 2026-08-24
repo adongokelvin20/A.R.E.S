@@ -53,7 +53,7 @@ export function AresHero() {
               "We don't build apps. We build systems of immense value -- technology that transforms how businesses operate, designed for the businesses that need it most."
             </p>
             <p className="mt-2 text-xs text-ares-sea/70">
-              Kelvin, Founder & CEO of Kevtech Corporation | Creator of A.R.E.S.
+              Kelvin, Founder of Kevtech Corporation | Creator of A.R.E.S.
             </p>
           </div>
 
