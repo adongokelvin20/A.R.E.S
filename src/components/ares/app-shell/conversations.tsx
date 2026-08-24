@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MessageSquare, ArrowLeft, User, Bot, ChevronDown, ChevronRight, RefreshCw, Flag } from "lucide-react";
+import { MessageSquare, ArrowLeft, User, Bot, ChevronDown, ChevronRight, Flag } from "lucide-react";
 
 interface Group {
   key: string;
@@ -49,12 +49,9 @@ export function AresConversations({ data }: { data: any }) {
     setAllMessages(null);
     setLoading(true);
     try {
-      // Get all conversations for this customer
       const res = await fetch(`/api/conversations?customer=${encodeURIComponent(key)}`);
       const json = await res.json();
       const convos = json.conversations ?? [];
-
-      // Fetch all messages from all conversations
       const allMsgs: Message[] = [];
       for (const c of convos) {
         const msgRes = await fetch(`/api/conversations?id=${c.id}`);
@@ -63,7 +60,6 @@ export function AresConversations({ data }: { data: any }) {
           allMsgs.push(...msgJson.conversation.messages);
         }
       }
-      // Sort by date so it reads like one continuous conversation
       allMsgs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       setAllMessages(allMsgs);
     } catch (e) {
@@ -73,7 +69,6 @@ export function AresConversations({ data }: { data: any }) {
     }
   }
 
-  // Full thread -- continuous scroll
   if (expandedKey && allMessages) {
     const group = groups?.find(g => g.key === expandedKey);
     return (
@@ -126,7 +121,6 @@ export function AresConversations({ data }: { data: any }) {
     );
   }
 
-  // List view
   return (
     <div className="space-y-5">
       <div>

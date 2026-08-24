@@ -33,11 +33,10 @@ export async function POST(req: NextRequest) {
     const businessId = session.user.businessId;
 
     const body = await req.json();
-    const { message, history = [], conversationId, mode = "customer" } = body as {
+    const { message, history = [], conversationId } = body as {
       message?: string;
       history?: ChatTurn[];
       conversationId?: string;
-      mode?: "customer" | "owner";
     };
 
     if (!message || typeof message !== "string") {
@@ -46,45 +45,11 @@ export async function POST(req: NextRequest) {
 
     const ctx = await buildBusinessContext(businessId);
 
-    // ===== Build the system prompt based on mode =====
-    // Owner mode: full business data access, analysis, summaries
-    // Customer mode: only catalog/knowledge, no private business info
-    let systemPrompt = ctx.systemPrompt;
-
-    if (mode === "owner") {
-      // Owner gets full business data access for analysis
-      systemPrompt = `You are ${ctx.agentName}, the business assistant for ${ctx.business.name}. You're talking to the OWNER (${ctx.business.ownerFirstName || "the owner"}), not a customer.
-
-You have FULL access to all business data. Give the owner real insights.
-
-===== LIVE BUSINESS DATA =====
-${ctx.realTimeData}
-
-===== PRODUCT CATALOG =====
-${ctx.productLines || "(no products yet)"}
-
-===== KNOWLEDGE BASE =====
-${ctx.knowledgeLines || "(none yet)"}
-
-${ctx.systemPrompt.includes("WHAT YOU'VE LEARNED") ? ctx.systemPrompt.match(/WHAT YOU'VE LEARNED[\s\S]*?(?======|$)/)?.[0] || "" : ""}
-
-===== HOW TO RESPOND TO THE OWNER =====
-- Be direct and analytical. Use numbers and data.
-- "You made GH₵ 1,200 today across 8 orders" not "sales are good."
-- For summaries, use bullet points: sales, orders, customers, alerts.
-- For recommendations, be specific and actionable.
-- Don't say "based on the data" -- just present the info.
-- Flag problems clearly: low stock, dropped sales, unanswered customers.
-- If the owner asks about revenue, give exact numbers from the data above.
-- If the owner asks about products, reference the actual catalog above with prices and stock.
-- Be concise but thorough.`;
-    }
-
     // ===== Internal lookup (hidden from the user) =====
     const internalNotes = await performInternalLookup(businessId, message);
 
     const messages: ChatTurn[] = [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: ctx.systemPrompt },
       ...(history || [])
         .filter((m) => m && m.role && m.content)
         .slice(-8)
@@ -99,8 +64,8 @@ ${ctx.systemPrompt.includes("WHAT YOU'VE LEARNED") ? ctx.systemPrompt.match(/WHA
     const zai = await getZaiClient();
     const completion = await zai.chat.completions.create({
       messages,
-      temperature: 0.95,
-      max_tokens: 1000,
+      temperature: 0.85,
+      max_tokens: 700,
     });
 
     let reply =
@@ -141,7 +106,6 @@ ${ctx.systemPrompt.includes("WHAT YOU'VE LEARNED") ? ctx.systemPrompt.match(/WHA
     let flagged = false;
     if (flagMatch && flagMatch[1]) {
       flagged = true;
-      // Remove the marker from the user-visible reply
       reply = reply.replace(/FLAG_FOR_OWNER:\s*.+?(?:\n|$)/i, "").trim();
     }
 
@@ -202,23 +166,17 @@ ${ctx.systemPrompt.includes("WHAT YOU'VE LEARNED") ? ctx.systemPrompt.match(/WHA
     });
 
     // ===== Find product images to include in the reply =====
-    // Send product images whenever the AI mentions a product by name.
-    // This covers: recommendations, pricing, availability, ordering, and casual mentions.
+    // If the AI mentioned a product by name and that product has an image, attach it.
     const allProducts = await db.product.findMany({
       where: { businessId, status: "ACTIVE", imageUrl: { not: null } },
       select: { id: true, name: true, imageUrl: true, imageAlt: true, price: true, currency: true },
     });
     const mentionedImages: { productId: string; name: string; imageUrl: string; price: number; currency: string }[] = [];
     const replyLower = reply.toLowerCase();
-
     for (const p of allProducts) {
-      if (!p.imageUrl || !p.name) continue;
-      // Match by full name or first word of the product name
-      const productNameLower = p.name.toLowerCase();
-      const firstWord = productNameLower.split(" ")[0];
-      if (replyLower.includes(productNameLower) || replyLower.includes(firstWord)) {
+      if (p.imageUrl && p.name && replyLower.includes(p.name.toLowerCase().split(" ")[0])) {
         mentionedImages.push({ productId: p.id, name: p.name, imageUrl: p.imageUrl, price: p.price, currency: p.currency });
-        if (mentionedImages.length >= 3) break;
+        if (mentionedImages.length >= 3) break; // max 3 images
       }
     }
 

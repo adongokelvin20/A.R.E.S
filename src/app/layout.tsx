@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     "Business Automation",
     "Ghana Tech",
   ],
-  authors: [{ name: "Kelvin" }],
+  authors: [{ name: "Kelvin Ayinbisa" }],
   icons: {
     icon: "/icon.svg",
   },

@@ -13,17 +13,17 @@ export function AresAbout() {
               The story
             </div>
             <h2 className="text-balance text-3xl font-semibold leading-tight tracking-tight text-ares-navy sm:text-4xl ares-serif">
-              Kevtech Corporation builds systems of immense value.
+              Kevtech Corporation built A.R.E.S. to give every business a digital employee.
             </h2>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>
-                Founded by <span className="font-semibold text-ares-navy">Kelvin</span>, Kevtech Corporation builds technology that creates real, measurable value for businesses. We don't build apps -- we build systems that transform how businesses operate.
+                Kevtech Corporation started with a simple frustration: small businesses in Ghana and across Africa were losing customers because they couldn't respond to WhatsApp messages fast enough. Owners were stretched thin. Inventory was guessed at. Orders got lost in chat threads.
               </p>
               <p>
-                A.R.E.S. is our flagship product. It's not a chatbot. It's a complete digital employee that learns your business, talks to your customers, takes orders, manages inventory, and runs operations alongside you. Every business gets its own isolated environment with an assistant trained on its own catalog.
+                So we built A.R.E.S. -- the Automated Routing and Execution System. It's not a chatbot bolted onto a dashboard. It's a complete digital employee that learns your business, talks to your customers, takes orders, manages inventory, and runs operations alongside you. Every business gets its own isolated environment with an assistant trained on its own catalog.
               </p>
               <p>
-                Today A.R.E.S. serves clothing stores, restaurants, schools, clinics, pharmacies, real estate agencies, and service businesses across 12 industries. Tomorrow, it serves whatever you build on top of it. That's the Kevtech vision -- technology that works for everyone, not just the big players.
+                Today A.R.E.S. serves clothing stores, restaurants, schools, real estate agencies, clinics, pharmacies, and service businesses across 12 industries. Tomorrow, it serves whatever you build on top of it. That's the Kevtech vision -- technology that works for everyone.
               </p>
             </div>
           </div>

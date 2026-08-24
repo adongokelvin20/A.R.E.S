@@ -21,7 +21,7 @@ export function AresOverview({
   const learnings: string[] = data.business.learnings ?? [];
   const up = k.revenueDeltaPct >= 0;
 
-  // Fetch the greeting (warm welcome on login)
+  // Fetch the AI greeting (warm welcome on login)
   const [greeting, setGreeting] = useState<string | null>(null);
   const [greetingLoading, setGreetingLoading] = useState(true);
   useEffect(() => {
@@ -43,7 +43,7 @@ export function AresOverview({
 
   return (
     <div className="space-y-5">
-      {/* Warm greeting -- always first */}
+      {/* Warm greeting from the AI -- always first */}
       {widgets.includes("greeting") && (
         <div className="relative overflow-hidden rounded-2xl border border-ares-sea/20 bg-gradient-to-br from-ares-navy via-ares-sea-deep to-ares-sea-deep p-5 text-white sm:p-6">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-ares-sea/30 blur-3xl" />

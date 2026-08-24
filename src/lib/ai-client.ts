@@ -86,9 +86,9 @@ function createOpenApiClient(apiKey: string) {
             body: JSON.stringify({
               model: "glm-4.5-flash",
               messages: body.messages,
-              temperature: body.temperature ?? 0.9,
-              max_tokens: body.max_tokens ?? 1000,
-              thinking: { type: "enabled", budget: 200 },
+              temperature: body.temperature ?? 0.85,
+              max_tokens: body.max_tokens ?? 700,
+              thinking: { type: "disabled" },
             }),
           });
 
@@ -109,8 +109,7 @@ function createOpenApiClient(apiKey: string) {
             body: JSON.stringify({
               model: "glm-4.5-flash",
               messages: body.messages,
-              max_tokens: 300,
-              thinking: { type: "enabled", budget: 100 },
+              thinking: { type: "disabled" },
             }),
           });
 
