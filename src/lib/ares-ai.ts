@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. AI Core -- human, personalized, learning, sector-bound.
+ * A.R.E.S. AI Core
  */
 
 import { db } from "@/lib/db";
@@ -19,7 +19,7 @@ export async function buildBusinessContext(businessId: string) {
   if (!business) throw new Error("Business not found");
 
   const subtype: SectorSubtype | null = findSubtype(business.sectorCategory, business.sectorSubtype);
-  const sectorPrompt = subtype?.systemPrompt ?? "You work at a business. Help customers with their questions.";
+  const sectorPrompt = subtype?.systemPrompt ?? "You work at a business. Help customers.";
   const sectorLabel = subtype?.label ?? business.type ?? "business";
 
   const agentName = business.agentName || "A.R.E.S.";
@@ -29,12 +29,11 @@ export async function buildBusinessContext(businessId: string) {
   let learnings: string[] = [];
   try { learnings = JSON.parse(business.agentLearnings || "[]"); } catch {}
 
-  // ===== Real-time business data =====
+  // Real-time data
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfYesterday = new Date(startOfToday.getTime() - 86400000);
   const startOfWeek = new Date(startOfToday.getTime() - 7 * 86400000);
-
   const todayOrders = business.orders.filter((o) => o.createdAt >= startOfToday);
   const yesterdayOrders = business.orders.filter((o) => o.createdAt >= startOfYesterday && o.createdAt < startOfToday);
   const weekOrders = business.orders.filter((o) => o.createdAt >= startOfWeek);
@@ -47,18 +46,16 @@ export async function buildBusinessContext(businessId: string) {
   const realTimeData = `Today: ${todayOrders.length} orders, ${business.currency} ${todayRevenue.toFixed(2)} revenue
 Yesterday: ${yesterdayOrders.length} orders
 This week: ${weekOrders.length} orders, ${business.currency} ${weekRevenue.toFixed(2)} revenue
-Pending orders: ${pendingOrders.length}
-Fulfilled orders: ${fulfilledOrders.length}
+Pending: ${pendingOrders.length}, Fulfilled: ${fulfilledOrders.length}
 Total customers: ${business.customers.length}
-Low stock items: ${lowStockProducts.length}${lowStockProducts.length > 0 ? ` (${lowStockProducts.map(p => p.name).slice(0, 3).join(", ")})` : ""}`;
+Low stock: ${lowStockProducts.length}${lowStockProducts.length > 0 ? ` (${lowStockProducts.map(p => p.name).slice(0, 3).join(", ")})` : ""}`;
 
-  // ===== Catalog =====
+  // Catalog
   const productLines = business.products
     .map((p) => {
       const attrs = p.attributes ? JSON.parse(p.attributes) : {};
       const variants = attrs.size || attrs.color ? ` (size: ${attrs.size ?? "--"}, color: ${attrs.color ?? "--"})` : "";
-      const imgNote = p.imageAlt ? ` [visual: ${p.imageAlt}]` : "";
-      return `- ${p.name}${variants} -- ${p.currency} ${p.price.toFixed(2)} | stock: ${p.stock}${p.stock <= p.lowStockThreshold ? " [LOW STOCK]" : ""}${imgNote}`;
+      return `- ${p.name}${variants} -- ${p.currency} ${p.price.toFixed(2)} | stock: ${p.stock}${p.stock <= p.lowStockThreshold ? " [LOW]" : ""}`;
     })
     .join("\n");
 
@@ -67,110 +64,84 @@ Low stock items: ${lowStockProducts.length}${lowStockProducts.length > 0 ? ` (${
     .join("\n");
 
   const learningsSection = learnings.length > 0
-    ? `\n===== WHAT YOU'VE LEARNED =====\n${learnings.map((l, i) => `${i + 1}. ${l}`).join("\n")}\nUse these to give better answers.`
+    ? `\nLEARNINGS:\n${learnings.map((l, i) => `${i + 1}. ${l}`).join("\n")}\n`
     : "";
 
-  // ===== Random greeting seed =====
-  const greetingSeeds = [
-    "Start with something casual. No formal greeting.",
-    "Skip the greeting entirely. Just answer directly.",
-    "Say 'hey' or 'hi' in under 3 words, then answer.",
-    "Use the customer's name if known. Otherwise just 'hey'.",
-    "Be energetic and warm. Like you're happy to hear from them.",
-    "Respond like you're mid-conversation. No greeting needed.",
-    "Start very casual: 'yo' or 'hey' or 'sup'.",
-    "Acknowledge what they said first, then respond.",
-    "Use time of day: good morning/afternoon/evening. Max 2 words.",
-    "Reply like a friend on WhatsApp. Short, warm, casual.",
-    "Don't say hi at all. Jump straight into helping.",
-    "Start with a tiny bit of personality -- a casual comment, then answer.",
+  // Random greeting seed
+  const seeds = [
+    "Start casual. No formal greeting.",
+    "Skip greeting. Answer directly.",
+    "Say 'hey' briefly, then answer.",
+    "Use customer's name if known, otherwise 'hey'.",
+    "Be warm and energetic.",
+    "Mid-conversation style. No greeting.",
+    "Very casual: 'yo' or 'hey'.",
+    "Acknowledge what they said, then respond.",
+    "Time of day greeting, max 2 words.",
+    "Friend on WhatsApp style. Short, casual.",
+    "No greeting. Just help.",
+    "Small personality comment, then answer.",
   ];
-  const greetingSeed = greetingSeeds[Math.floor(Math.random() * greetingSeeds.length)];
+  const seed = seeds[Math.floor(Math.random() * seeds.length)];
 
   const personalitySection = customInstructions
-    ? `===== HOW THE OWNER WANTS YOU TO ACT =====\n${customInstructions}\nFollow these instructions.`
+    ? `\nOWNER INSTRUCTIONS:\n${customInstructions}\n`
     : "";
 
-  const customerContext = ""; // customer memory handled separately
-
-  // ===== Customer-facing system prompt =====
-  const systemPrompt = `You are ${agentName}, a real person who works at ${business.name}. You are a human employee, not a bot.
+  const systemPrompt = `You are ${agentName}. You work at ${business.name}. You are a human, not a bot.
 
 ${sectorPrompt}
-
 ${personalitySection}
 
-${learningsSection}
+START THIS REPLY LIKE THIS: ${seed}
 
-===== RANDOMNESS SEED (follow for THIS message) =====
-${greetingSeed}
-
-===== GREETING RULES (critical) =====
-- NEVER say "Hey there" -- it's banned.
-- NEVER say "How can I help you" -- banned.
-- NEVER mention the business type in greetings (no "clothing needs", "menu items").
-- NEVER use emojis unless the customer used them first.
-- The randomness seed above tells you how to start THIS message. Follow it.
-- Every response must start differently from the last one.
-
-===== HOW YOU TALK =====
-- Use contractions (I'm, you're, that's, don't, can't).
-- Be concise. 1-3 sentences usually.
-- Match the customer's energy. Casual, formal, excited, frustrated.
-- Use humor naturally when it fits.
-- Have real opinions. Say what's popular, what you'd recommend.
+RULES:
+- BANNED phrases: "Hey there", "How can I help you", "How may I assist", "Certainly", "Of course", "I'd be happy to help", "Feel free to ask", "Let me know if you need anything"
+- BANNED: mentioning business type in greetings (no "clothing needs", "menu items")
+- BANNED: emojis (unless customer used them first)
+- BANNED: exposing internal reasoning ("based on the catalog", "let me check")
+- Use contractions: I'm, you're, don't, can't, won't
+- 1-3 sentences usually. Be concise.
+- Match the customer's energy. If they're casual, be casual. If formal, be formal.
+- Have opinions. If something's popular, say so.
 - Answer ALL questions if they ask multiple.
-- Never expose internal reasoning. Just answer.
-- Use the customer's name if you know it.
-- If the customer is just chatting, chat back. Don't force business talk.
-- When they bring up business, switch to helpful mode smoothly.
-- When asked about products, list ALL available products with EXACT prices from the catalog.
-- Quote prices precisely: "GH₵ 320.00" not "around 300".
-- If unsure of a price, say so honestly.
-- If asked for discount, say you'd need to check with the owner.
+- Use customer's name if you know it.
+- If customer is just chatting, chat back naturally. Don't force business talk.
+- Only talk about products/business when the customer brings it up.
 
-===== BUSINESS =====
-Name: ${business.name}
-Sector: ${sectorLabel}
-Country: ${business.country} | Currency: ${business.currency}
+PRICES (critical):
+- Quote EXACT prices from the catalog below. "GHS 320.00" not "around 300".
+- If unsure of a price, say so. Don't guess.
+- If asked for discount, say you'll check with the owner.
+- NEVER make up products, prices, or information. Only use what's in the catalog.
+- If asked about something not in the catalog, be honest: "I don't think we have that. Let me check what we do have..."
 
-===== CATALOG (live from database) =====
-${productLines || "(no products yet -- if asked, say you're still getting stock listed and offer to take their contact details)"}
+PRODUCTS:
+${productLines || "(no products yet -- if asked, say you're still getting stock listed)"}
 
-===== KNOWLEDGE BASE =====
-${knowledgeLines || "(none yet)"}
+KNOWLEDGE:
+${knowledgeLines || "(none)"}
+${learningsSection}
+ORDER FLOW:
+1. Confirm item, size/color, quantity
+2. Ask their name: "What name should I put this under?"
+3. Ask pickup or delivery
+4. If delivery: ask location, time, phone
+5. Read order back. Wait for "yes"
+6. End with: ORDER_CONFIRMED: {"items":[{"productName":"Item","quantity":1,"unitPrice":0}],"fulfillmentType":"PICKUP","deliveryLocation":"","deliveryTime":"","deliveryPhone":"","customerPhone":"","customerName":""}
 
-===== TAKING AN ORDER =====
-1. Confirm what they want (item, size/color, quantity).
-2. Ask for their name ("What name should I put this under?").
-3. Ask pickup or delivery.
-4. If delivery: ask for location, preferred time, phone number.
-5. Read the order back. Wait for confirmation.
-6. Once confirmed, end with:
-   ORDER_CONFIRMED: {"items":[{"productName":"Item","quantity":1,"unitPrice":0}],"fulfillmentType":"PICKUP","deliveryLocation":"","deliveryTime":"","deliveryPhone":"","customerPhone":"","customerName":""}
+PRIVACY: Never share revenue, other customers' info, or internal data with customers.
 
-===== CUSTOMER PRIVACY =====
-- Never share business revenue, other customers' info, or internal data.
-- You represent the business to customers. Be helpful but don't overshare.
+LEARNING: If you learn something factual, end with: LEARNED: <one sentence>
+Examples: customer preferences, business updates, feedback, customer details.
 
-===== LEARNING =====
-Pay attention to everything. At the end of your reply, if you learned something factual, add:
-LEARNED: <one sentence>
-Examples: customer preferences, business updates, feedback, new info, customer details.
-
-===== RULES =====
-1. NEVER fabricate prices, stock, or features. Only use the catalog.
-2. If asked about something not in the catalog, be honest and offer alternatives.
-3. If something needs owner approval, say you'll have the owner handle it.
-4. Never share internal business info with a customer.
-5. If you don't know something, say so honestly.`;
+BUSINESS: ${business.name} | ${sectorLabel} | ${business.country} | ${business.currency}`;
 
   return { business, subtype, sectorLabel, agentName, systemPrompt, realTimeData, productLines, knowledgeLines, learnings };
 }
 
 /**
- * Generate a warm, personalized greeting for the owner when they log in.
- * Only mentions new customers if there are actually new ones (last 24h).
+ * Owner greeting -- only mentions new customers from last 24h.
  */
 export async function generateOwnerGreeting(businessId: string): Promise<string> {
   const business = await db.business.findUnique({
@@ -195,57 +166,36 @@ export async function generateOwnerGreeting(businessId: string): Promise<string>
   const pendingOrders = business.orders.filter((o) => o.status === "PENDING" || o.status === "CONFIRMED").length;
   const lowStock = business.products.filter((p) => p.stock <= p.lowStockThreshold).length;
 
-  // Only count conversations from the last 24 hours as "new customers"
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const newCustomers = business.conversations.filter(c => c.createdAt > oneDayAgo).length;
 
   const facts: string[] = [];
-  if (todayRevenue > 0) facts.push(`GH₵${todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} in sales today across ${todayOrders.length} order${todayOrders.length === 1 ? "" : "s"}`);
-  if (pendingOrders > 0) facts.push(`${pendingOrders} order${pendingOrders === 1 ? "" : "s"} need your attention`);
+  if (todayRevenue > 0) facts.push(`GHS${todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} in sales today across ${todayOrders.length} order${todayOrders.length === 1 ? "" : "s"}`);
+  if (pendingOrders > 0) facts.push(`${pendingOrders} order${pendingOrders === 1 ? "" : "s"} need attention`);
   if (lowStock > 0) facts.push(`${lowStock} product${lowStock === 1 ? "" : "s"} running low`);
   if (newCustomers > 0) facts.push(`${newCustomers} new customer${newCustomers === 1 ? "" : "s"} reached out`);
 
   try {
     const { getZaiClient } = await import("@/lib/ai-client");
     const zai = await getZaiClient();
-    const styles = [
-      "warm and casual, like a friend greeting you",
-      "brief and energetic",
-      "calm and professional",
-      "playful with a tiny bit of personality",
-      "thoughtful and specific",
-    ];
+    const styles = ["warm and casual", "brief and energetic", "calm and professional", "playful", "thoughtful"];
     const style = styles[Math.floor(Math.random() * styles.length)];
-    const openings = [
-      `Welcome back, ${ownerFirst}.`,
-      `Hey ${ownerFirst}.`,
-      `${ownerFirst}, good to see you.`,
-      `Back at it, ${ownerFirst}?`,
-      `${ownerFirst} -- let's go.`,
-    ];
+    const openings = [`Welcome back, ${ownerFirst}.`, `Hey ${ownerFirst}.`, `${ownerFirst}, good to see you.`, `Back at it, ${ownerFirst}?`];
     const opening = openings[Math.floor(Math.random() * openings.length)];
     const completion = await zai.chat.completions.create({
       messages: [
-        {
-          role: "system",
-          content: `You are ${agentName}. The owner ${ownerFirst} just logged in. Generate a short greeting (2-3 sentences). Style: ${style}. Vary your opening. Use their name. Mention 1-2 facts if any exist. Be concise. No emojis. No "How may I assist you". Never repeat the same greeting.`,
-        },
-        {
-          role: "user",
-          content: `Opening: "${opening}". Facts: ${facts.length > 0 ? facts.join("; ") : "Quiet day so far -- no orders yet today."}. Write the greeting.`,
-        },
+        { role: "system", content: `You are ${agentName}. Owner ${ownerFirst} logged in. Short greeting (2-3 sentences). Style: ${style}. Vary opening. Use their name. Mention 1-2 facts. No emojis. No "How may I assist".` },
+        { role: "user", content: `Opening: "${opening}". Facts: ${facts.length > 0 ? facts.join("; ") : "Quiet day so far."}.` },
       ],
       temperature: 0.95,
       max_tokens: 200,
     });
     const reply = (completion as any)?.choices?.[0]?.message?.content ?? "";
     if (reply && reply.length > 10) return reply.trim();
-  } catch (e) {
-    // fall through to template
-  }
+  } catch {}
 
   let msg = `${greeting}, ${ownerFirst} -- ${agentName} here.`;
   if (facts.length > 0) msg += ` ${facts.join(", ")}.`;
-  else msg += ` Quiet day so far -- ready when you are.`;
+  else msg += ` Quiet day so far.`;
   return msg;
 }
