@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AresLogo } from "./logo";
 import { AresSidebar, NavItem } from "./app-shell/sidebar";
 import { AresOverview } from "./app-shell/overview";
@@ -13,6 +13,7 @@ import { AresAiChatPanel } from "./app-shell/ai-chat";
 import { AresSettings } from "./app-shell/settings";
 import { AresAudit } from "./app-shell/audit";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/hooks/use-toast";
 import { signOut } from "next-auth/react";
 
 interface AppShellProps {
@@ -59,6 +60,37 @@ export function AresAppShell({
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const seenNotifications = useRef<Set<string>>(new Set());
+
+  // Poll for notifications every 30 seconds
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/notifications");
+        if (!res.ok) return;
+        const json = await res.json();
+        for (const n of json.notifications || []) {
+          const key = `${n.type}-${n.timestamp}`;
+          if (!seenNotifications.current.has(key)) {
+            seenNotifications.current.add(key);
+            toast({
+              title: n.title,
+              description: n.message,
+            });
+          }
+        }
+      } catch {}
+    };
+
+    // Initial poll after 5 seconds (let dashboard load first)
+    const initialTimer = setTimeout(poll, 5000);
+    const interval = setInterval(poll, 30000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);

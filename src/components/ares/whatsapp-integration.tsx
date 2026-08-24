@@ -76,7 +76,7 @@ export function AresWhatsApp() {
                 features={[
                   "REST + Webhook API",
                   "Instance-based isolation",
-                  "Same AI orchestration",
+                  "Same intelligent orchestration",
                   "Identical audit logging",
                 ]}
                 status="DISCONNECTED"

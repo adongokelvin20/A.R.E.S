@@ -5,8 +5,8 @@ import { Brain, MessageSquare, Workflow, ShieldCheck, Database, Zap } from "luci
 const PILLARS = [
   {
     icon: Brain,
-    title: "An AI that understands your business",
-    body: "Your AI reads your catalog, your policies, and your past conversations before it responds. It's not a generic chatbot -- it's trained on your specific business.",
+    title: "An assistant that understands your business",
+    body: "Your assistant reads your catalog, your policies, and your past conversations before it responds. It's not a generic chatbot -- it's trained on your specific business.",
   },
   {
     icon: MessageSquare,
@@ -26,7 +26,7 @@ const PILLARS = [
   {
     icon: Database,
     title: "Real operations, not a prototype",
-    body: "Products you add show up in the AI's answers. Orders the AI takes appear in your dashboard. Integrations you connect actually work. Nothing is faked.",
+    body: "Products you add show up in your assistant's answers. Orders it takes appear in your dashboard. Integrations you connect actually work. Nothing is faked.",
   },
   {
     icon: Zap,
@@ -44,10 +44,10 @@ export function AresPlatform() {
             The platform
           </div>
           <h2 className="text-balance text-3xl font-semibold leading-tight tracking-tight text-ares-navy sm:text-4xl md:text-5xl ares-serif">
-            Not a chatbot.<br />A real AI employee.
+            Not a chatbot.<br />A real digital employee.
           </h2>
           <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-            A.R.E.S. is built as a complete AI assistant that actually runs your business. The chat is just one way you interact with it -- underneath, it's taking orders, managing inventory, and remembering your customers.
+            A.R.E.S. is built as a complete business assistant that actually runs your business. The chat is just one way you interact with it -- underneath, it's taking orders, managing inventory, and remembering your customers.
           </p>
         </div>
 

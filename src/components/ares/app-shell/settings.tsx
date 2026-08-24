@@ -29,7 +29,7 @@ export function AresSettings({ data, onChanged }: { data: any; onChanged: () => 
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? "Failed");
       setSaved(true);
-      toast({ title: "Settings saved", description: `Your AI assistant is now ${agentName}.` });
+      toast({ title: "Settings saved", description: `Your assistant is now ${agentName}.` });
       onChanged();
       setTimeout(() => setSaved(false), 2500);
     } catch (e: any) {

@@ -147,7 +147,7 @@ export function AresConversations({ data }: { data: any }) {
           <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground" />
           <h3 className="mt-3 text-sm font-semibold text-ares-navy">No conversations yet</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            When customers message your AI (via WhatsApp or the chat panel), their conversations will appear here, grouped by customer.
+            When customers message your assistant (via WhatsApp or the chat panel), their conversations will appear here, grouped by customer.
           </p>
         </div>
       )}

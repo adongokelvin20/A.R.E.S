@@ -6,17 +6,17 @@ const STEPS = [
   {
     num: "01",
     title: "Sign up and pick your business type",
-    desc: "Choose from 40+ business types across 10 industries. Your dashboard and AI assistant adapt to match.",
+    desc: "Choose from 40+ business types across 10 industries. Your dashboard and assistant adapt to match.",
   },
   {
     num: "02",
     title: "Add your products and connect WhatsApp",
-    desc: "Upload your catalog with images -- the AI analyzes each one so it can recognize products when customers describe them.",
+    desc: "Upload your catalog with images -- it analyzes each one so it can recognize products when customers describe them.",
   },
   {
     num: "03",
-    title: "Your AI starts working",
-    desc: "Customers message you on WhatsApp. Your AI answers, recommends products, takes orders with delivery details, and remembers every customer.",
+    title: "Your assistant starts working",
+    desc: "Customers message you on WhatsApp. It answers, recommends products, takes orders with delivery details, and remembers every customer.",
   },
 ];
 
@@ -47,7 +47,7 @@ export function AresHowItWorks() {
         {/* Image showcase row */}
         <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <ShowcaseImage src="/images/kevtech.jpg" alt="Business dashboard" label="Your dashboard" />
-          <ShowcaseImage src="/images/kevtecc.jpg" alt="AI assistant" label="AI assistant" />
+          <ShowcaseImage src="/images/kevtecc.jpg" alt="Assistant" label="Your assistant" />
           <ShowcaseImage src="/images/dfe.jpg" alt="Customer chat" label="Customer chats" />
           <ShowcaseImage src="/images/ai-1.jpg" alt="Orders" label="Orders" />
         </div>
@@ -57,17 +57,17 @@ export function AresHowItWorks() {
           <VideoCard
             src="/videos/feature-1.mp4"
             title="Customer conversations"
-            caption="Your AI handles WhatsApp chats naturally -- answers questions, recommends products, takes orders."
+            caption="It handles WhatsApp chats naturally -- answers questions, recommends products, takes orders."
           />
           <VideoCard
             src="/videos/feature-2.mp4"
             title="Orders and fulfillment"
-            caption="Every order the AI takes lands in your dashboard with pickup or delivery details, ready to review."
+            caption="Every order it takes lands in your dashboard with pickup or delivery details, ready to review."
           />
           <VideoCard
             src="/videos/feature-3.mp4"
             title="Always-on monitoring"
-            caption="Stock alerts, customer follow-ups, and daily briefings -- your AI watches your business around the clock."
+            caption="Stock alerts, customer follow-ups, and daily briefings -- it watches your business around the clock."
           />
         </div>
       </div>

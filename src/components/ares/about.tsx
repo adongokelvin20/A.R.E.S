@@ -20,7 +20,7 @@ export function AresAbout() {
                 Founded by <span className="font-semibold text-ares-navy">Kelvin</span>, Kevtech Corporation builds technology that creates real, measurable value for businesses. We don't build apps -- we build systems that transform how businesses operate.
               </p>
               <p>
-                A.R.E.S. is our flagship product. It's not a chatbot. It's a complete AI employee that learns your business, talks to your customers, takes orders, manages inventory, and runs operations alongside you. Every business gets its own isolated environment with an AI trained on its own catalog.
+                A.R.E.S. is our flagship product. It's not a chatbot. It's a complete digital employee that learns your business, talks to your customers, takes orders, manages inventory, and runs operations alongside you. Every business gets its own isolated environment with an assistant trained on its own catalog.
               </p>
               <p>
                 Today A.R.E.S. serves clothing stores, restaurants, schools, clinics, pharmacies, real estate agencies, and service businesses across 12 industries. Tomorrow, it serves whatever you build on top of it. That's the Kevtech vision -- technology that works for everyone, not just the big players.
@@ -47,7 +47,7 @@ export function AresAbout() {
                 </div>
                 <div className="mt-2 text-2xl font-semibold ares-serif">Kevtech Corporation</div>
                 <p className="mt-2 text-sm leading-relaxed text-white/70">
-                  Building AI tools that level the playing field for African businesses. Kevtech Corporation designs technology that works the way you work -- fast, practical, and built for the real world.
+                  Building technology that levels the playing field for African businesses. Kevtech Corporation designs technology that works the way you work -- fast, practical, and built for the real world.
                 </p>
                 <div className="mt-5 flex items-center gap-2">
                   <AresLogo className="h-6 w-6" variant="mono-light" />

@@ -17,7 +17,7 @@ export function AresFooter() {
               </div>
             </div>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              The AI employee for your business. Built by Kevtech Corporation to give every business -- not just the big ones -- access to enterprise-grade AI.
+              The digital employee for your business. Built by Kevtech Corporation to give every business -- not just the big ones -- access to enterprise-grade technology.
             </p>
           </div>
 
