@@ -18,6 +18,17 @@ export const metadata: Metadata = {
   title: "A.R.E.S. -- Digital Employee for Your Business | Kevtech Corporation",
   description:
     "A.R.E.S. by Kevtech Corporation is the digital employee for your business. It talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
+  metadataBase: new URL("https://ares-two-eta.vercel.app"),
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   keywords: [
     "A.R.E.S.",
     "Kevtech",
