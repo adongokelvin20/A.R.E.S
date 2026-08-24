@@ -99,8 +99,8 @@ ${ctx.systemPrompt.includes("WHAT YOU'VE LEARNED") ? ctx.systemPrompt.match(/WHA
     const zai = await getZaiClient();
     const completion = await zai.chat.completions.create({
       messages,
-      temperature: 0.9,
-      max_tokens: 900,
+      temperature: 0.95,
+      max_tokens: 1000,
     });
 
     let reply =
