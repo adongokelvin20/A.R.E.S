@@ -64,8 +64,8 @@ export async function POST(req: NextRequest) {
     const zai = await getZaiClient();
     const completion = await zai.chat.completions.create({
       messages,
-      temperature: 0.85,
-      max_tokens: 700,
+      temperature: 0.9,
+      max_tokens: 900,
     });
 
     let reply =

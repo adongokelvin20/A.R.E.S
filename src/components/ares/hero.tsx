@@ -6,7 +6,6 @@ import { AresLogo } from "./logo";
 export function AresHero() {
   return (
     <section className="relative min-h-screen w-full overflow-hidden">
-      {/* Full-bleed video background */}
       <div className="absolute inset-0">
         <video
           autoPlay
@@ -18,15 +17,16 @@ export function AresHero() {
         >
           <source src="/videos/hero-bg.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-br from-ares-navy/85 via-ares-navy/75 to-ares-sea-deep/80" />
+        <div className="absolute inset-0 bg-gradient-to-br from-ares-navy/90 via-ares-navy/80 to-ares-sea-deep/85" />
       </div>
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 pt-24 pb-16 sm:px-6">
         <div className="max-w-2xl">
-          {/* Company badge */}
-          <div className="ares-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/60 backdrop-blur-sm" style={{ animationDelay: "0ms" }}>
-            <span className="font-semibold text-white/80">Kevtech</span>
-            <span>Corporation presents</span>
+          {/* Kevtech Corporation badge */}
+          <div className="ares-fade-up mb-8 inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm" style={{ animationDelay: "0ms" }}>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ares-sea">Kevtech</span>
+            <span className="h-3 w-px bg-white/20" />
+            <span className="text-[11px] text-white/70">Building systems of immense value</span>
           </div>
 
           {/* Brand */}
@@ -44,11 +44,19 @@ export function AresHero() {
           </h1>
 
           <p className="ares-fade-up mt-6 max-w-lg text-balance text-base leading-relaxed text-white/70 sm:text-lg" style={{ animationDelay: "240ms" }}>
-            From Kevtech Corporation -- A.R.E.S. learns your business, talks to your customers on WhatsApp, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
+            A.R.E.S. learns your business, talks to your customers on WhatsApp, takes orders, manages inventory, and handles the daily grind -- so you can focus on what matters.
           </p>
 
+          {/* Creator credit */}
+          <div className="ares-fade-up mt-5 flex items-center gap-2 text-xs text-white/40" style={{ animationDelay: "280ms" }}>
+            <span>Created by</span>
+            <span className="font-semibold text-white/70">Kelvin Ayinbisa</span>
+            <span>·</span>
+            <span className="text-ares-sea/80">Kevtech Corporation</span>
+          </div>
+
           {/* CTAs */}
-          <div className="ares-fade-up mt-9 flex flex-col items-start gap-3 sm:flex-row" style={{ animationDelay: "320ms" }}>
+          <div className="ares-fade-up mt-8 flex flex-col items-start gap-3 sm:flex-row" style={{ animationDelay: "320ms" }}>
             <Link href="/auth" className="group inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-ares-navy shadow-[0_8px_32px_-8px_rgba(255,255,255,0.4)] transition-all hover:bg-white/90">
               Start free
               <span className="transition-transform group-hover:translate-x-0.5">→</span>
@@ -61,8 +69,8 @@ export function AresHero() {
           {/* Stats */}
           <div className="ares-fade-up mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4" style={{ animationDelay: "400ms" }}>
             {[
-              { v: "10", l: "Industries" },
-              { v: "40+", l: "Business types" },
+              { v: "12", l: "Industries" },
+              { v: "54+", l: "Business types" },
               { v: "<2 min", l: "First response" },
               { v: "24/7", l: "Always on" },
             ].map((s) => (
