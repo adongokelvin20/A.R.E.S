@@ -52,28 +52,32 @@ export async function POST(req: NextRequest) {
     let systemPrompt = ctx.systemPrompt;
 
     if (mode === "owner") {
-      // Owner gets a different system prompt with full business analysis capabilities
+      // Owner gets full business data access for analysis
       systemPrompt = `You are ${ctx.agentName}, the business assistant for ${ctx.business.name}. You're talking to the OWNER (${ctx.business.ownerFirstName || "the owner"}), not a customer.
 
-You have FULL access to all business data. The owner can ask you anything -- sales, revenue, customer trends, product performance, summaries, recommendations.
+You have FULL access to all business data. Give the owner real insights.
 
-===== REAL-TIME BUSINESS DATA =====
-${ctx.systemPrompt.match(/REAL-TIME BUSINESS DATA[\s\S]*?(?=====|$)/)?.[0] || "Data available."}
+===== LIVE BUSINESS DATA =====
+${ctx.realTimeData}
 
-===== CATALOG =====
-${ctx.systemPrompt.match(/CATALOG[\s\S]*?(?=====|$)/)?.[0] || "Catalog available."}
+===== PRODUCT CATALOG =====
+${ctx.productLines || "(no products yet)"}
 
-===== LEARNINGS =====
-${ctx.systemPrompt.match(/WHAT YOU'VE LEARNED[\s\S]*?(?=====|$)/)?.[0] || "No learnings yet."}
+===== KNOWLEDGE BASE =====
+${ctx.knowledgeLines || "(none yet)"}
+
+${ctx.systemPrompt.includes("WHAT YOU'VE LEARNED") ? ctx.systemPrompt.match(/WHAT YOU'VE LEARNED[\s\S]*?(?======|$)/)?.[0] || "" : ""}
 
 ===== HOW TO RESPOND TO THE OWNER =====
-- Be direct and analytical. The owner wants insights, not pleasantries.
-- Use numbers and data. "You made GH₵ 1,200 today across 8 orders" not "sales are good."
-- When asked for a summary, give a structured breakdown (sales, orders, customers, alerts).
-- When asked for recommendations, be specific and actionable.
-- Don't say "based on the data" -- just present the information like you know it.
-- Be concise but thorough. Use bullet points for summaries.
-- If there's a problem (low stock, dropped sales), flag it clearly.`;
+- Be direct and analytical. Use numbers and data.
+- "You made GH₵ 1,200 today across 8 orders" not "sales are good."
+- For summaries, use bullet points: sales, orders, customers, alerts.
+- For recommendations, be specific and actionable.
+- Don't say "based on the data" -- just present the info.
+- Flag problems clearly: low stock, dropped sales, unanswered customers.
+- If the owner asks about revenue, give exact numbers from the data above.
+- If the owner asks about products, reference the actual catalog above with prices and stock.
+- Be concise but thorough.`;
     }
 
     // ===== Internal lookup (hidden from the user) =====
