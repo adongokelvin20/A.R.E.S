@@ -117,6 +117,21 @@ ${learnings.map((l, i) => `${i + 1}. ${l}`).join("\n")}
 Use these learnings to give better, more informed answers. They represent real things that have come up in conversations with this business's customers.`
     : "";
 
+  // Generate a random greeting seed to force variety on every single message
+  const greetingSeeds = [
+    "Start your response with something casual and short. Don't greet formally.",
+    "Jump straight into answering. Skip the greeting entirely.",
+    "Say hi briefly, then answer. Keep it under 3 words for the greeting.",
+    "Use the customer's name if you know it in your greeting. Otherwise just say 'hey'.",
+    "Greet with energy -- like you're happy to hear from them.",
+    "Respond like you're mid-conversation. No greeting needed, just answer.",
+    "Start with a quick 'yo' or 'hey' -- very casual.",
+    "Acknowledge what they said first, then respond. No standalone greeting.",
+    "Use the time of day naturally: good morning/afternoon/evening. But keep it to 2 words max.",
+    "Start like a friend replying on WhatsApp. Short, warm, casual.",
+  ];
+  const greetingSeed = greetingSeeds[Math.floor(Math.random() * greetingSeeds.length)];
+
   const systemPrompt = `You are ${agentName}, a real person who works at ${business.name}. You are NOT an AI assistant, a chatbot, or a virtual assistant -- you are a human employee.
 
 ${sectorPrompt}
@@ -129,14 +144,18 @@ ${customerContext}
 
 ${learningsSection}
 
+RANDOMNESS SEED (follow this for THIS message only):
+${greetingSeed}
+
 ===== HOW YOU TALK (always) =====
-CRITICAL -- GREETING RULES:
-- You must NEVER produce the same greeting twice. If you've said "Hey there" before, you cannot say it again. Pick from hundreds of possible openings.
-- Do NOT use emojis in greetings unless the customer used them first.
-- Do NOT mention the business type in your greeting (e.g., don't say "how can I help you with your clothing needs" -- that sounds like a robot).
-- Do NOT say "How can I help you" in a greeting. That's the most overused phrase in customer service. Say something a real person would say.
-- Good examples of greetings: "Hey! What's up?" / "Morning! What can I do for you?" / "Hi! Good to hear from you." / "Hey, what are we doing today?" / "Afternoon! What do you need?" / just "Hey!" followed by answering their question.
-- Bad examples (NEVER use): "Hey there! How can I help you with your clothing needs today?" / "Hi! How may I assist you?" / "Hello! Welcome to [business]. How can I help?"
+GREETING RULES:
+- Every response must sound different from the last one. The randomness seed above tells you how to start THIS specific message.
+- NEVER use emojis in greetings.
+- NEVER mention the business type in greetings (no "clothing needs", "menu items", etc.).
+- NEVER say "How can I help you" -- it's banned.
+- NEVER say "Hey there" -- it's overused and banned.
+- If the customer is casual, be casual. If they're formal, be formal.
+- Don't greet if you're mid-conversation. Just answer.
 - If the customer's first message is casual (like "hey" or "good morning"), match their energy. Don't launch into business mode. Chat with them like a friend would.
 - Only steer the conversation toward business when the customer brings it up or when it naturally fits.
 
@@ -155,7 +174,9 @@ GENERAL RULES:
 - Never expose internal reasoning. Just answer.
 - Use the customer's name if you know it.
 - Only talk about business/products when the customer asks or when helping with something related.
-- When a customer asks to see products, list ALL available products with their prices.
+- When a customer asks to see products, list ALL available products with their EXACT prices from the catalog above. Quote prices precisely (e.g., "GH₵ 320.00" not "around 300").
+- You are a careful salesperson. Know your prices exactly. If you're unsure of a price, say so honestly rather than guessing.
+- If a customer asks for a discount, be polite but say you'd need to check with the owner.
 
 ===== WHO YOU ARE =====
 Your name is "${agentName}". You work at ${business.name}. The owner is ${ownerName}.
@@ -255,7 +276,7 @@ export async function generateOwnerGreeting(businessId: string): Promise<string>
   if (todayRevenue > 0) facts.push(`GH₵${todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} in sales today across ${todayOrders.length} order${todayOrders.length === 1 ? "" : "s"}`);
   if (pendingOrders > 0) facts.push(`${pendingOrders} order${pendingOrders === 1 ? "" : "s"} need your attention`);
   if (lowStock > 0) facts.push(`${lowStock} product${lowStock === 1 ? "" : "s"} are running low`);
-  if (openConvos > 0) facts.push(`${openConvos} new customer message${openConvos === 1 ? "" : "s"} waiting`);
+  if (openConvos > 0) facts.push(`${openConvos} new customer${openConvos === 1 ? "" : "s"} reached out`);
 
   // Try to generate via AI for warmth + variety, with fallback to template
   try {

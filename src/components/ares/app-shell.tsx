@@ -10,6 +10,7 @@ import { AresConversations } from "./app-shell/conversations";
 import { AresAutomations } from "./app-shell/automations";
 import { AresIntegrations } from "./app-shell/integrations";
 import { AresAiChatPanel } from "./app-shell/ai-chat";
+import { AresOwnerChat } from "./app-shell/owner-chat";
 import { AresSettings } from "./app-shell/settings";
 import { AresAudit } from "./app-shell/audit";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +32,7 @@ type View =
   | "orders"
   | "conversations"
   | "ai"
+  | "owner-chat"
   | "automations"
   | "integrations"
   | "audit"
@@ -41,7 +43,8 @@ const NAV: NavItem[] = [
   { id: "products", label: "Products", icon: "package" },
   { id: "orders", label: "Orders", icon: "shopping-bag" },
   { id: "conversations", label: "Conversations", icon: "message" },
-  { id: "ai", label: "Ask my AI", icon: "sparkles" },
+  { id: "ai", label: "Customer Agent", icon: "sparkles" },
+  { id: "owner-chat", label: "Business Analysis", icon: "brain" },
   { id: "automations", label: "Automations", icon: "workflow" },
   { id: "integrations", label: "Integrations", icon: "plug" },
   { id: "audit", label: "Audit log", icon: "scroll" },
@@ -179,6 +182,7 @@ export function AresAppShell({
               {view === "orders" && <AresOrders data={data} onChanged={load} />}
               {view === "conversations" && <AresConversations data={data} />}
               {view === "ai" && <AresAiChatPanel data={data} />}
+              {view === "owner-chat" && <AresOwnerChat data={data} />}
               {view === "automations" && <AresAutomations data={data} />}
               {view === "integrations" && <AresIntegrations data={data} onChanged={load} />}
               {view === "audit" && <AresAudit data={data} />}

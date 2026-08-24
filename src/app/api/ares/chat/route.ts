@@ -33,10 +33,11 @@ export async function POST(req: NextRequest) {
     const businessId = session.user.businessId;
 
     const body = await req.json();
-    const { message, history = [], conversationId } = body as {
+    const { message, history = [], conversationId, mode = "customer" } = body as {
       message?: string;
       history?: ChatTurn[];
       conversationId?: string;
+      mode?: "customer" | "owner";
     };
 
     if (!message || typeof message !== "string") {
@@ -45,11 +46,41 @@ export async function POST(req: NextRequest) {
 
     const ctx = await buildBusinessContext(businessId);
 
+    // ===== Build the system prompt based on mode =====
+    // Owner mode: full business data access, analysis, summaries
+    // Customer mode: only catalog/knowledge, no private business info
+    let systemPrompt = ctx.systemPrompt;
+
+    if (mode === "owner") {
+      // Owner gets a different system prompt with full business analysis capabilities
+      systemPrompt = `You are ${ctx.agentName}, the business assistant for ${ctx.business.name}. You're talking to the OWNER (${ctx.business.ownerFirstName || "the owner"}), not a customer.
+
+You have FULL access to all business data. The owner can ask you anything -- sales, revenue, customer trends, product performance, summaries, recommendations.
+
+===== REAL-TIME BUSINESS DATA =====
+${ctx.systemPrompt.match(/REAL-TIME BUSINESS DATA[\s\S]*?(?=====|$)/)?.[0] || "Data available."}
+
+===== CATALOG =====
+${ctx.systemPrompt.match(/CATALOG[\s\S]*?(?=====|$)/)?.[0] || "Catalog available."}
+
+===== LEARNINGS =====
+${ctx.systemPrompt.match(/WHAT YOU'VE LEARNED[\s\S]*?(?=====|$)/)?.[0] || "No learnings yet."}
+
+===== HOW TO RESPOND TO THE OWNER =====
+- Be direct and analytical. The owner wants insights, not pleasantries.
+- Use numbers and data. "You made GH₵ 1,200 today across 8 orders" not "sales are good."
+- When asked for a summary, give a structured breakdown (sales, orders, customers, alerts).
+- When asked for recommendations, be specific and actionable.
+- Don't say "based on the data" -- just present the information like you know it.
+- Be concise but thorough. Use bullet points for summaries.
+- If there's a problem (low stock, dropped sales), flag it clearly.`;
+    }
+
     // ===== Internal lookup (hidden from the user) =====
     const internalNotes = await performInternalLookup(businessId, message);
 
     const messages: ChatTurn[] = [
-      { role: "system", content: ctx.systemPrompt },
+      { role: "system", content: systemPrompt },
       ...(history || [])
         .filter((m) => m && m.role && m.content)
         .slice(-8)
