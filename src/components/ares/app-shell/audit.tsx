@@ -82,7 +82,7 @@ export function AresAudit({ data }: { data: any }) {
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     <ScrollText className="mx-auto mb-2 h-6 w-6" />
-                    No audit entries yet. Actions will appear here as you work.
+                    No audit entries yet. Actions will appear here as you and your AI work.
                   </td>
                 </tr>
               )}

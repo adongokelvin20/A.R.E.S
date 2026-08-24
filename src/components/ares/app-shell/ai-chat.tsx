@@ -16,7 +16,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      content: `Hi, I'm ${agentName} -- your assistant for ${businessName}. I'm bound to your ${sector.replace(/_/g, " ").toLowerCase()} business and I only reference your real catalog. Ask me anything a customer would ask, or anything you'd want me to handle.`,
+      content: `Hi, I'm ${agentName} -- your AI employee for ${businessName}. I'm bound to your ${sector.replace(/_/g, " ").toLowerCase()} business and I only reference your real catalog. Ask me anything a customer would ask, or anything you'd want me to handle.`,
     },
   ]);
   const [input, setInput] = useState("");

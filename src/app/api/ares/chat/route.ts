@@ -101,14 +101,6 @@ export async function POST(req: NextRequest) {
       reply = reply.replace(/LEARNED:\s*.+?(?:\n|$)/i, "").trim();
     }
 
-    // ===== Detect FLAGGED messages (important things the owner should know) =====
-    const flagMatch = reply.match(/FLAG_FOR_OWNER:\s*(.+?)(?:\n|$)/i);
-    let flagged = false;
-    if (flagMatch && flagMatch[1]) {
-      flagged = true;
-      reply = reply.replace(/FLAG_FOR_OWNER:\s*.+?(?:\n|$)/i, "").trim();
-    }
-
     // ===== Detect order confirmation and log the order =====
     let orderCreated = null;
     // Look for ORDER_CONFIRMED marker anywhere in the reply
@@ -191,7 +183,6 @@ export async function POST(req: NextRequest) {
           agentName: ctx.agentName,
           orderCreated: orderCreated?.id ?? null,
           images: mentionedImages,
-          flagged,
         }),
       },
     });

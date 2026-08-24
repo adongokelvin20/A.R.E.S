@@ -286,7 +286,7 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
                 <input
                   value={imageAlt}
                   onChange={(e) => setImageAlt(e.target.value)}
-                  placeholder="Describe this image (or leave blank for automatic analysis)"
+                  placeholder="Describe this image (or leave blank for AI to analyze)"
                   className="mt-2 w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-xs text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
                 />
               </div>

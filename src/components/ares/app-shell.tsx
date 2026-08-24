@@ -40,7 +40,7 @@ const NAV: NavItem[] = [
   { id: "products", label: "Products", icon: "package" },
   { id: "orders", label: "Orders", icon: "shopping-bag" },
   { id: "conversations", label: "Conversations", icon: "message" },
-  { id: "ai", label: "Customer Agent", icon: "sparkles" },
+  { id: "ai", label: "Ask my AI", icon: "sparkles" },
   { id: "automations", label: "Automations", icon: "workflow" },
   { id: "integrations", label: "Integrations", icon: "plug" },
   { id: "audit", label: "Audit log", icon: "scroll" },
