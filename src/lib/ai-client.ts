@@ -84,10 +84,11 @@ function createOpenApiClient(apiKey: string) {
               "Authorization": `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-              model: "glm-4-flash",
+              model: "glm-4.5-flash",
               messages: body.messages,
               temperature: body.temperature ?? 0.85,
               max_tokens: body.max_tokens ?? 700,
+              thinking: { type: "disabled" },
             }),
           });
 
@@ -106,8 +107,9 @@ function createOpenApiClient(apiKey: string) {
               "Authorization": `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-              model: "glm-4v-flash",
+              model: "glm-4.5-flash",
               messages: body.messages,
+              thinking: { type: "disabled" },
             }),
           });
 
