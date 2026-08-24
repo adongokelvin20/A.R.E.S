@@ -40,7 +40,7 @@ export function AresHero() {
 
           {/* Headline */}
           <h1 className="ares-fade-up text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl ares-serif" style={{ animationDelay: "160ms" }}>
-            Hire an AI employee<br />that actually <span className="text-ares-sea italic">runs</span> your business.
+            Hire a digital employee<br />that actually <span className="text-ares-sea italic">runs</span> your business.
           </h1>
 
           <p className="ares-fade-up mt-6 max-w-lg text-balance text-base leading-relaxed text-white/70 sm:text-lg" style={{ animationDelay: "240ms" }}>
