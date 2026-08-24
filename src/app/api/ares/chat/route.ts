@@ -158,8 +158,8 @@ export async function POST(req: NextRequest) {
     });
 
     // ===== Find product images to include in the reply =====
-    // Only send images when the AI is pitching/selling a product, not on every mention.
-    // We check if the reply contains sales-oriented language alongside the product name.
+    // Send product images whenever the AI mentions a product by name.
+    // This covers: recommendations, pricing, availability, ordering, and casual mentions.
     const allProducts = await db.product.findMany({
       where: { businessId, status: "ACTIVE", imageUrl: { not: null } },
       select: { id: true, name: true, imageUrl: true, imageAlt: true, price: true, currency: true },
@@ -167,15 +167,14 @@ export async function POST(req: NextRequest) {
     const mentionedImages: { productId: string; name: string; imageUrl: string; price: number; currency: string }[] = [];
     const replyLower = reply.toLowerCase();
 
-    // Only attach images if the reply feels like a pitch or product recommendation
-    const isPitching = /would you like|interested|recommend|check this|here's|take a look|this is our|bestseller|popular|available for|going for|only |just |perfect for|great choice/i.test(reply);
-
-    if (isPitching) {
-      for (const p of allProducts) {
-        if (p.imageUrl && p.name && replyLower.includes(p.name.toLowerCase().split(" ")[0])) {
-          mentionedImages.push({ productId: p.id, name: p.name, imageUrl: p.imageUrl, price: p.price, currency: p.currency });
-          if (mentionedImages.length >= 2) break; // max 2 images per message
-        }
+    for (const p of allProducts) {
+      if (!p.imageUrl || !p.name) continue;
+      // Match by full name or first word of the product name
+      const productNameLower = p.name.toLowerCase();
+      const firstWord = productNameLower.split(" ")[0];
+      if (replyLower.includes(productNameLower) || replyLower.includes(firstWord)) {
+        mentionedImages.push({ productId: p.id, name: p.name, imageUrl: p.imageUrl, price: p.price, currency: p.currency });
+        if (mentionedImages.length >= 3) break;
       }
     }
 
