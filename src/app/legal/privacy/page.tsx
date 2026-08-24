@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>To provide and maintain the Service</li>
             <li>To process transactions and manage subscriptions</li>
-            <li>To improve AI accuracy and service quality</li>
+            <li>To improve service accuracy and service quality</li>
             <li>To send important account and security notifications</li>
             <li>To provide customer support</li>
             <li>To detect and prevent fraud or abuse</li>

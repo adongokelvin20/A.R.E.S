@@ -15,35 +15,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "A.R.E.S. -- AI Employee for Your Business | Kevtech Corporation",
+  title: "A.R.E.S. -- Digital Employee for Your Business | Kevtech Corporation",
   description:
-    "A.R.E.S. by Kevtech Corporation is the AI employee for your business. It talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
+    "A.R.E.S. by Kevtech Corporation is the digital employee for your business. It talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
   keywords: [
     "A.R.E.S.",
     "Kevtech",
     "Kevtech Corporation",
-    "AI Business Operating System",
-    "AI Employee",
-    "WhatsApp AI",
+    "Business Operating System",
+    "Digital Employee",
+    "WhatsApp Assistant",
     "Business Automation",
-    "Ghana AI",
+    "Ghana Tech",
   ],
   authors: [{ name: "Kelvin" }],
   icons: {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "A.R.E.S. -- AI Employee for Your Business | Kevtech Corporation",
+    title: "A.R.E.S. -- Digital Employee for Your Business | Kevtech Corporation",
     description:
-      "The AI employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
+      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
     siteName: "A.R.E.S.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "A.R.E.S. -- AI Employee for Your Business",
+    title: "A.R.E.S. -- Digital Employee for Your Business",
     description:
-      "The AI employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
+      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
   },
 };
 

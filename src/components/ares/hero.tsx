@@ -47,12 +47,14 @@ export function AresHero() {
             A.R.E.S. learns your business, talks to your customers on WhatsApp, takes orders, manages inventory, and handles the daily grind -- so you can focus on what matters.
           </p>
 
-          {/* Founder intro */}
+          {/* Founder credit */}
           <div className="ares-fade-up mt-6 max-w-lg border-l-2 border-ares-sea/40 pl-4" style={{ animationDelay: "280ms" }}>
             <p className="text-sm italic leading-relaxed text-white/50">
-              "We don't build apps. We build systems of immense value -- technology that transforms how businesses operate, designed by Kelvin for the businesses that need it most."
+              "We don't build apps. We build systems of immense value -- technology that transforms how businesses operate, designed for the businesses that need it most."
             </p>
-            <p className="mt-2 text-xs text-ares-sea/70">— Kelvin, Founder of Kevtech Corporation</p>
+            <p className="mt-2 text-xs text-ares-sea/70">
+              Kelvin, Founder & CEO of Kevtech Corporation | Creator of A.R.E.S.
+            </p>
           </div>
 
           {/* CTAs */}

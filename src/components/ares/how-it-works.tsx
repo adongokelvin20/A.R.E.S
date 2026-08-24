@@ -29,7 +29,7 @@ export function AresHowItWorks() {
             How it works
           </div>
           <h2 className="text-balance text-3xl font-semibold leading-tight tracking-tight text-ares-navy sm:text-4xl ares-serif">
-            From signup to your first<br />AI-handled order in minutes.
+            From signup to your first<br />assistant-handled order in minutes.
           </h2>
         </div>
 

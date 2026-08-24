@@ -20,7 +20,7 @@ const FLOW_STEPS = [
     detail: "A.R.E.S. looks up the customer by WhatsApp ID or creates a new lead record.",
   },
   {
-    label: "AI orchestrator",
+    label: "intelligent orchestrator",
     detail: "Sector-bound AI retrieves business context, knowledge, and available tools.",
   },
   {
