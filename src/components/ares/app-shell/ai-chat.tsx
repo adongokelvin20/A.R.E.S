@@ -16,7 +16,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      content: `Hi, I'm ${agentName} -- your digital employee for ${businessName}. I'm bound to your ${sector.replace(/_/g, " ").toLowerCase()} business and I only reference your real catalog. Ask me anything a customer would ask, or anything you'd want me to handle.`,
+      content: `Hi, I'm ${agentName} -- your AI employee for ${businessName}. I'm bound to your ${sector.replace(/_/g, " ").toLowerCase()} business and I only reference your real catalog. Ask me anything a customer would ask, or anything you'd want me to handle.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -83,7 +83,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
           </div>
           <div>
             <div className="text-sm font-semibold">{agentName}</div>
-            <div className="text-[11px] text-white/70">Your assistant</div>
+            <div className="text-[11px] text-white/70">Your AI assistant</div>
           </div>
         </div>
         <span className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">

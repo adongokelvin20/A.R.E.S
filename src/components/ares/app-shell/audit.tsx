@@ -18,7 +18,7 @@ export function AresAudit({ data }: { data: any }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-ares-navy">Audit log</h2>
-          <p className="text-xs text-muted-foreground">Every assistant + human + system action, recorded</p>
+          <p className="text-xs text-muted-foreground">Every AI + human + system action, recorded</p>
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -82,7 +82,7 @@ export function AresAudit({ data }: { data: any }) {
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     <ScrollText className="mx-auto mb-2 h-6 w-6" />
-                    No audit entries yet. Actions will appear here as you and your assistant work.
+                    No audit entries yet. Actions will appear here as you and your AI work.
                   </td>
                 </tr>
               )}

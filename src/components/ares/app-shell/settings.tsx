@@ -29,7 +29,7 @@ export function AresSettings({ data, onChanged }: { data: any; onChanged: () => 
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? "Failed");
       setSaved(true);
-      toast({ title: "Settings saved", description: `Your assistant is now ${agentName}.` });
+      toast({ title: "Settings saved", description: `Your AI assistant is now ${agentName}.` });
       onChanged();
       setTimeout(() => setSaved(false), 2500);
     } catch (e: any) {
@@ -43,14 +43,14 @@ export function AresSettings({ data, onChanged }: { data: any; onChanged: () => 
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold text-ares-navy">Settings</h2>
-        <p className="text-xs text-muted-foreground">Personalize your assistant and manage your workspace</p>
+        <p className="text-xs text-muted-foreground">Personalize your AI assistant and manage your workspace</p>
       </div>
 
-      {/* Assistant personalization */}
+      {/* AI personalization */}
       <form onSubmit={savePersonalization} className="rounded-2xl border border-ares-line bg-white p-5">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-ares-sea-deep" />
-          <h3 className="text-sm font-semibold text-ares-navy">Your assistant</h3>
+          <h3 className="text-sm font-semibold text-ares-navy">Your AI assistant</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           Name your assistant and tell it exactly how you want it to act. Your instructions become its personality.

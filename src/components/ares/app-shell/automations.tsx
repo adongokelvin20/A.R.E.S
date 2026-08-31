@@ -92,7 +92,7 @@ export function AresAutomations({ data }: { data: any }) {
         <div>
           <h2 className="text-lg font-semibold text-ares-navy">Automations</h2>
           <p className="text-xs text-muted-foreground">
-            Personalize how your assistant acts. Automations stick until you delete them.
+            Personalize how your AI acts. Automations stick until you delete them.
           </p>
         </div>
         <button
@@ -109,7 +109,7 @@ export function AresAutomations({ data }: { data: any }) {
           <Workflow className="mx-auto h-10 w-10 text-muted-foreground" />
           <h3 className="mt-3 text-sm font-semibold text-ares-navy">No automations yet</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Create automations to control how your assistant responds to events -- like notifying you when stock is low, or auto-acknowledging customers who wait too long.
+            Create automations to control how your AI responds to events -- like notifying you when stock is low, or auto-acknowledging customers who wait too long.
           </p>
           <button
             onClick={() => setShowForm(true)}
