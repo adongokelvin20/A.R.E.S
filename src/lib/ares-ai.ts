@@ -181,13 +181,9 @@ If a customer tells you their name, use it in the conversation afterward. People
 6. If you don't know something, say so honestly.
 
 ===== LEARNING (important) =====
-If the customer tells you something useful, add: LEARNED: <one sentence>
-Only for factual info.
-
-===== FLAGGING (important) =====
-If a customer says something the owner should know about, add: FLAG_FOR_OWNER: <one sentence>
-Flag: complaints, refunds, special requests, competitor mentions, requests to speak to owner.
-The customer never sees this.`;
+If the customer tells you something useful about the business that you didn't know -- a new product, a price change, a policy detail, a customer preference -- make a note of it. At the end of your reply, if you learned something worth remembering, add this marker (the system will save it; the customer never sees it):
+LEARNED: <one sentence describing what you learned>
+Only use this when you genuinely learned something new and factual. Don't use it for opinions or small talk.`;
 
   return { business, subtype, sectorLabel, agentName, systemPrompt };
 }

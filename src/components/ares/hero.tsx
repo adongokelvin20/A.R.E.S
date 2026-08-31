@@ -40,22 +40,12 @@ export function AresHero() {
 
           {/* Headline */}
           <h1 className="ares-fade-up text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl ares-serif" style={{ animationDelay: "160ms" }}>
-            Hire a digital employee<br />that actually <span className="text-ares-sea italic">runs</span> your business.
+            Hire an AI employee<br />that actually <span className="text-ares-sea italic">runs</span> your business.
           </h1>
 
           <p className="ares-fade-up mt-6 max-w-lg text-balance text-base leading-relaxed text-white/70 sm:text-lg" style={{ animationDelay: "240ms" }}>
             From Kevtech Corporation -- A.R.E.S. learns your business, talks to your customers on WhatsApp, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
           </p>
-
-          {/* Founder credit */}
-          <div className="ares-fade-up mt-6 max-w-lg border-l-2 border-ares-sea/40 pl-4" style={{ animationDelay: "280ms" }}>
-            <p className="text-sm italic leading-relaxed text-white/50">
-              "We don't build apps. We build systems of immense value -- technology that transforms how businesses operate, designed for the businesses that need it most."
-            </p>
-            <p className="mt-2 text-xs text-ares-sea/70">
-              Kelvin, Founder of Kevtech Corporation | Creator of A.R.E.S.
-            </p>
-          </div>
 
           {/* CTAs */}
           <div className="ares-fade-up mt-9 flex flex-col items-start gap-3 sm:flex-row" style={{ animationDelay: "320ms" }}>

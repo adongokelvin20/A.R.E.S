@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MessageSquare, ArrowLeft, User, Bot, ChevronDown, ChevronRight, RefreshCw, Flag } from "lucide-react";
+import { MessageSquare, ArrowLeft, User, Bot, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 
 interface Group {
   key: string;
@@ -56,35 +56,18 @@ export function AresConversations({ data }: { data: any }) {
     if (expandedKey === key) {
       setExpandedKey(null);
       setConversations(null);
-      setThread(null);
       return;
     }
     setExpandedKey(key);
     setConversations(null);
-    setThread(null);
     setLoading(true);
     try {
       const res = await fetch(`/api/conversations?customer=${encodeURIComponent(key)}`);
       const json = await res.json();
-      const convos = json.conversations ?? [];
-      setConversations(convos);
-
-      // Fetch ALL messages from ALL conversations into one continuous thread
-      const allMsgs: any[] = [];
-      for (const c of convos) {
-        const msgRes = await fetch(`/api/conversations?id=${c.id}`);
-        const msgJson = await msgRes.json();
-        if (msgJson.conversation?.messages) {
-          allMsgs.push(...msgJson.conversation.messages);
-        }
-      }
-      // Sort by date so it reads like one continuous conversation
-      allMsgs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      setThread(allMsgs);
+      setConversations(json.conversations ?? []);
     } catch (e) {
       console.error("Failed to load customer conversations", e);
       setConversations([]);
-      setThread([]);
     } finally {
       setLoading(false);
     }
@@ -126,30 +109,21 @@ export function AresConversations({ data }: { data: any }) {
           </div>
         </div>
         <div className="space-y-3 rounded-2xl border border-ares-line bg-white p-4">
-          {thread.map((m) => {
-            let isFlagged = false;
-            try { isFlagged = JSON.parse(m.metadata || "{}")?.flagged === true; } catch {}
-            return (
+          {thread.map((m) => (
             <div key={m.id} className={`flex gap-2.5 ${m.role === "CUSTOMER" ? "" : "flex-row-reverse"}`}>
               <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${m.role === "CUSTOMER" ? "bg-ares-navy text-white" : m.role === "AI" ? "bg-ares-sea-deep text-white" : "bg-slate-400 text-white"}`}>
                 {m.role === "CUSTOMER" ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
               </div>
               <div className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm ${m.role === "CUSTOMER" ? "bg-ares-mist text-ares-navy" : m.role === "AI" ? "bg-ares-sea-deep text-white" : "bg-slate-100 text-slate-700"}`}>
-                {isFlagged && (
-                  <div className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-amber-600">
-                    <Flag className="h-3 w-3" /> Flagged for owner
-                  </div>
-                )}
                 <div className="whitespace-pre-wrap">{m.content}</div>
                 <div className={`mt-1 text-[10px] ${m.role === "AI" ? "text-white/60" : "text-muted-foreground"}`}>
                   {new Date(m.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  {m.role === "AI" && " · Assistant"}
+                  {m.role === "AI" && " · AI"}
                   {m.role === "CUSTOMER" && " · Customer"}
                 </div>
               </div>
             </div>
-            );
-          })}
+          ))}
           {thread.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">No messages in this conversation.</p>
           )}

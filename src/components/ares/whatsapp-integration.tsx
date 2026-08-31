@@ -20,12 +20,12 @@ const FLOW_STEPS = [
     detail: "A.R.E.S. looks up the customer by WhatsApp ID or creates a new lead record.",
   },
   {
-    label: "Intelligent orchestrator",
-    detail: "Sector-bound assistant retrieves business context, knowledge, and available tools.",
+    label: "AI orchestrator",
+    detail: "Sector-bound AI retrieves business context, knowledge, and available tools.",
   },
   {
     label: "Authorized action",
-    detail: "It executes only permitted tools. High-risk actions require owner approval.",
+    detail: "AI executes only permitted tools. High-risk actions require owner approval.",
   },
   {
     label: "Outbound reply",
@@ -76,7 +76,7 @@ export function AresWhatsApp() {
                 features={[
                   "REST + Webhook API",
                   "Instance-based isolation",
-                  "Same intelligent orchestration",
+                  "Same AI orchestration",
                   "Identical audit logging",
                 ]}
                 status="DISCONNECTED"

@@ -15,46 +15,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "A.R.E.S. -- Digital Employee for Your Business | Kevtech Corporation",
+  title: "A.R.E.S. -- AI Employee for Your Business | Kevtech Corporation",
   description:
-    "A.R.E.S. by Kevtech Corporation is the digital employee for your business. It talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
-  metadataBase: new URL("https://ares-two-eta.vercel.app"),
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+    "A.R.E.S. by Kevtech Corporation is the AI employee for your business. It talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
   keywords: [
     "A.R.E.S.",
     "Kevtech",
     "Kevtech Corporation",
-    "Business Operating System",
-    "Digital Employee",
-    "WhatsApp Assistant",
+    "AI Business Operating System",
+    "AI Employee",
+    "WhatsApp AI",
     "Business Automation",
-    "Ghana Tech",
+    "Ghana AI",
   ],
   authors: [{ name: "Kelvin Ayinbisa" }],
   icons: {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "A.R.E.S. -- Digital Employee for Your Business | Kevtech Corporation",
+    title: "A.R.E.S. -- AI Employee for Your Business | Kevtech Corporation",
     description:
-      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
+      "The AI employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
     siteName: "A.R.E.S.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "A.R.E.S. -- Digital Employee for Your Business",
+    title: "A.R.E.S. -- AI Employee for Your Business",
     description:
-      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
+      "The AI employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
   },
 };
 

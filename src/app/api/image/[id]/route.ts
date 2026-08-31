@@ -1,6 +1,8 @@
 /**
  * GET /api/image/[id]
+ *
  * Serves a product image from the database (base64-encoded).
+ * This works on Vercel where the filesystem is read-only.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -23,6 +25,7 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
+  // imageData is stored as "data:image/jpeg;base64,..."
   const match = product.imageData.match(/^data:image\/([a-z]+);base64,(.+)$/);
   if (!match) {
     return new NextResponse("Invalid image data", { status: 500 });

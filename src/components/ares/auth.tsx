@@ -121,7 +121,7 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
                 {mode === "signup"
-                  ? "Your digital employee is one signup away."
+                  ? "Your AI employee is one signup away."
                   : "Sign in to your command center."}
               </p>
             </div>

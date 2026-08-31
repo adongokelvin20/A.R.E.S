@@ -13,17 +13,17 @@ export function AresAbout() {
               The story
             </div>
             <h2 className="text-balance text-3xl font-semibold leading-tight tracking-tight text-ares-navy sm:text-4xl ares-serif">
-              Kevtech Corporation built A.R.E.S. to give every business a digital employee.
+              Kevtech Corporation built A.R.E.S. to give every business an AI employee.
             </h2>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>
                 Kevtech Corporation started with a simple frustration: small businesses in Ghana and across Africa were losing customers because they couldn't respond to WhatsApp messages fast enough. Owners were stretched thin. Inventory was guessed at. Orders got lost in chat threads.
               </p>
               <p>
-                So we built A.R.E.S. -- the Automated Routing and Execution System. It's not a chatbot bolted onto a dashboard. It's a complete digital employee that learns your business, talks to your customers, takes orders, manages inventory, and runs operations alongside you. Every business gets its own isolated environment with an assistant trained on its own catalog.
+                So we built A.R.E.S. -- the Automated Routing and Execution System. It's not a chatbot bolted onto a dashboard. It's a complete AI employee that learns your business, talks to your customers, takes orders, manages inventory, and runs operations alongside you. Every business gets its own isolated environment with an AI trained on its own catalog.
               </p>
               <p>
-                Today A.R.E.S. serves clothing stores, restaurants, schools, real estate agencies, clinics, pharmacies, and service businesses across 12 industries. Tomorrow, it serves whatever you build on top of it. That's the Kevtech vision -- technology that works for everyone.
+                Today A.R.E.S. serves clothing stores, restaurants, schools, real estate agencies, clinics, pharmacies, and service businesses across 12 industries. Tomorrow, it serves whatever you build on top of it. That's the Kevtech vision -- AI that works for everyone.
               </p>
             </div>
           </div>
@@ -47,7 +47,7 @@ export function AresAbout() {
                 </div>
                 <div className="mt-2 text-2xl font-semibold ares-serif">Kevtech Corporation</div>
                 <p className="mt-2 text-sm leading-relaxed text-white/70">
-                  Building technology that levels the playing field for African businesses. Kevtech Corporation designs technology that works the way you work -- fast, practical, and built for the real world.
+                  Building AI tools that level the playing field for African businesses. Kevtech Corporation designs technology that works the way you work -- fast, practical, and built for the real world.
                 </p>
                 <div className="mt-5 flex items-center gap-2">
                   <AresLogo className="h-6 w-6" variant="mono-light" />
