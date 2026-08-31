@@ -188,3 +188,23 @@ Work Log:
 
 Stage Summary:
 - A.R.E.S. v6: full rebrand (no "AI employee" anywhere, replaced with "digital employee"/"assistant"), prominent Kelvin Ayinbisa founder credit, complete Meta WhatsApp Embedded Signup with NO third party. Customer clicks "Connect WhatsApp" -> Meta popup -> approve -> ARES handles token/WABA/phone/webhook server-side. QR option encodes the same official OAuth URL. All technical complexity hidden. Lint clean. Schema postgresql for Vercel.
+
+---
+Task ID: ares-v7
+Agent: Super Z (main)
+Task: Revert AI + dashboard to 739b8ff state (initial z.ai API integration) and push to Vercel.
+
+Work Log:
+- Restored src/lib/ares-ai.ts + ai-client.ts from 739b8ff (no change -- AI core was already identical)
+- Restored all dashboard components (app-shell.tsx, app-shell/*) from 739b8ff: nav item back to "Ask my AI", "AI employee/assistant" terminology restored, manual integration forms restored (WHATSAPP_META + WHATSAPP_WAAPI + Paystack + SMTP with live verification)
+- Restored /api/integrations/route.ts from 739b8ff (WATSAPP_WAAPI support + manual WHATSAPP_META verification)
+- Restored /api/ares/chat, greeting, dashboard routes from 739b8ff
+- Kept public site rebrand (digital employee, Kelvin Ayinbisa founder credit, WhatsApp Embedded Signup landing section)
+- Kept WhatsApp Embedded Signup backend (meta-whatsapp.ts, fb-sdk.ts, /api/whatsapp/meta/* routes)
+- Lint passed clean on all restored files
+- Committed (10 files changed, 129 insertions, 360 deletions)
+- Updated git remote with new GitHub token, force-pushed to main
+- Vercel auto-deploy triggered, site responding HTTP 200
+
+Stage Summary:
+- AI + dashboard reverted to 739b8ff state (initial z.ai GLM-4.5-flash integration). Dashboard uses "AI" terminology, manual integration forms, and the 739b8ff AI core. Public site rebrand + WhatsApp Embedded Signup backend retained. Pushed to GitHub main, Vercel deploying.
