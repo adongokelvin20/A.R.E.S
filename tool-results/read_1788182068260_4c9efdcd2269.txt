@@ -1,0 +1,523 @@
+     1→"use client";
+     2→
+     3→import { useState, useEffect } from "react";
+     4→import { TrendingUp, TrendingDown, ShoppingBag, Users, Package, ArrowRight, Sparkles, AlertTriangle, BarChart3, PieChart, Activity, Brain, Loader2, Clock, MapPin } from "lucide-react";
+     5→import { useId } from "react";
+     6→
+     7→export function AresOverview({
+     8→  data,
+     9→  onNavigate,
+    10→}: {
+    11→  data: any;
+    12→  onNavigate: (v: string) => void;
+    13→}) {
+    14→  const k = data.kpis;
+    15→  const currency = data.business.currency;
+    16→  const symbol = currency === "GHS" ? "GH₵" : currency === "NGN" ? "₦" : currency === "KES" ? "KSh" : currency === "USD" ? "$" : currency === "GBP" ? "£" : currency;
+    17→  const agentName = data.business.agentName;
+    18→  const ownerFirst = data.business.ownerFirstName || "there";
+    19→  const sectorLabel = data.business.sectorLabel ?? "business";
+    20→  const widgets: string[] = data.business.widgets ?? ["greeting", "kpis", "revenue_chart", "recent_activity"];
+    21→  const learnings: string[] = data.business.learnings ?? [];
+    22→  const up = k.revenueDeltaPct >= 0;
+    23→
+    24→  // Fetch the AI greeting (warm welcome on login)
+    25→  const [greeting, setGreeting] = useState<string | null>(null);
+    26→  const [greetingLoading, setGreetingLoading] = useState(true);
+    27→  useEffect(() => {
+    28→    let mounted = true;
+    29→    fetch("/api/ares/greeting")
+    30→      .then((r) => r.json())
+    31→      .then((j) => { if (mounted && j.greeting) setGreeting(j.greeting); })
+    32→      .catch(() => {})
+    33→      .finally(() => { if (mounted) setGreetingLoading(false); });
+    34→    return () => { mounted = false; };
+    35→  }, []);
+    36→
+    37→  const cards = [
+    38→    { label: "Revenue today", value: `${symbol}${k.todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, delta: `${up ? "+" : ""}${k.revenueDeltaPct}%`, trend: up ? "up" : "down", icon: TrendingUp, accent: true, show: true },
+    39→    { label: "Orders today", value: String(k.todayOrderCount), delta: `${k.pendingOrders} pending`, trend: k.pendingOrders > 0 ? "down" : "up", icon: ShoppingBag, show: true },
+    40→    { label: "Customers", value: String(k.customerCount), delta: "all time", trend: "up", icon: Users, show: k.customerCount > 0 || true },
+    41→    { label: "Products", value: String(k.totalProducts), delta: `${k.lowStockCount} low stock`, trend: k.lowStockCount > 0 ? "down" : "up", icon: Package, show: true },
+    42→  ];
+    43→
+    44→  return (
+    45→    <div className="space-y-5">
+    46→      {/* Warm greeting from the AI -- always first */}
+    47→      {widgets.includes("greeting") && (
+    48→        <div className="relative overflow-hidden rounded-2xl border border-ares-sea/20 bg-gradient-to-br from-ares-navy via-ares-sea-deep to-ares-sea-deep p-5 text-white sm:p-6">
+    49→          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-ares-sea/30 blur-3xl" />
+    50→          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-ares-sea/20 blur-3xl" />
+    51→          <div className="relative flex items-start gap-3">
+    52→            <div className="relative shrink-0">
+    53→              <div className="ares-avatar-glow h-12 w-12 overflow-hidden rounded-full">
+    54→                <img
+    55→                  src="/images/ai-avatar.jpg"
+    56→                  alt={agentName}
+    57→                  className="ares-avatar-breathe h-full w-full object-cover"
+    58→                />
+    59→              </div>
+    60→            </div>
+    61→            <div className="flex-1">
+    62→              <div className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+    63→                {agentName} · {sectorLabel}
+    64→              </div>
+    65→              <div className="mt-2 text-sm leading-relaxed text-white/95">
+    66→                {greetingLoading ? (
+    67→                  <span className="inline-flex items-center gap-2 text-white/70">
+    68→                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+    69→                    {agentName} is saying hi...
+    70→                  </span>
+    71→                ) : greeting ? (
+    72→                  greeting
+    73→                ) : (
+    74→                  `Hey ${ownerFirst} -- ${agentName} here. Let's make today count.`
+    75→                )}
+    76→              </div>
+    77→              <div className="mt-4 flex flex-wrap gap-2">
+    78→                <button onClick={() => onNavigate("products")} className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25">
+    79→                  Add a product →
+    80→                </button>
+    81→                <button onClick={() => onNavigate("integrations")} className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25">
+    82→                  Connect WhatsApp →
+    83→                </button>
+    84→                <button onClick={() => onNavigate("ai")} className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25">
+    85→                  Talk to {agentName} →
+    86→                </button>
+    87→              </div>
+    88→            </div>
+    89→          </div>
+    90→        </div>
+    91→      )}
+    92→
+    93→      {/* KPIs */}
+    94→      {widgets.includes("kpis") && (
+    95→        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    96→          {cards.filter((c) => c.show).map((c) => (
+    97→            <div key={c.label} className={`relative overflow-hidden rounded-2xl border p-4 ${c.accent ? "border-ares-sea/30 bg-gradient-to-br from-ares-foam to-white" : "border-ares-line bg-white"}`}>
+    98→              <div className="flex items-center justify-between">
+    99→                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{c.label}</span>
+   100→                <c.icon className={`h-4 w-4 ${c.accent ? "text-ares-sea-deep" : "text-muted-foreground"}`} />
+   101→              </div>
+   102→              <div className="mt-2 font-mono text-2xl font-bold text-ares-navy sm:text-3xl">{c.value}</div>
+   103→              <div className="mt-2 flex items-center gap-1.5 text-[11px]">
+   104→                {c.trend === "up" ? <TrendingUp className="h-3 w-3 text-emerald-600" /> : <TrendingDown className="h-3 w-3 text-rose-600" />}
+   105→                <span className={`font-semibold ${c.trend === "up" ? "text-emerald-600" : "text-rose-600"}`}>{c.delta}</span>
+   106→              </div>
+   107→            </div>
+   108→          ))}
+   109→        </div>
+   110→      )}
+   111→
+   112→      {/* Charts row -- only show if widget is enabled and there's data */}
+   113→      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+   114→        {widgets.includes("revenue_chart") && (
+   115→          <div className="lg:col-span-2">
+   116→            <RevenueChart data={data} />
+   117→          </div>
+   118→        )}
+   119→        {widgets.includes("channel_chart") && <ChannelDonut data={data} />}
+   120→        {widgets.includes("appointments_today") && <AppointmentsWidget data={data} />}
+   121→        {widgets.includes("low_stock") && !widgets.includes("revenue_chart") && <LowStockWidget data={data} onNavigate={onNavigate} />}
+   122→      </div>
+   123→
+   124→      {/* Second row */}
+   125→      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+   126→        {widgets.includes("top_products") && <TopProductsChart data={data} onNavigate={onNavigate} />}
+   127→        {widgets.includes("orders_today") && <OrdersTodayWidget data={data} onNavigate={onNavigate} />}
+   128→        {widgets.includes("recent_activity") && <RecentActivityWidget data={data} />}
+   129→        {widgets.includes("learnings") && <LearningsWidget learnings={learnings} agentName={agentName} />}
+   130→        {widgets.includes("low_stock") && widgets.includes("revenue_chart") && <LowStockWidget data={data} onNavigate={onNavigate} />}
+   131→        {widgets.includes("pie_chart") && <OrderStatusPie data={data} />}
+   132→      </div>
+   133→
+   134→      {/* Empty state for products */}
+   135→      {widgets.includes("kpis") && k.totalProducts === 0 && (
+   136→        <div className="rounded-2xl border border-dashed border-ares-sea/30 bg-white p-6 text-center">
+   137→          <Package className="mx-auto h-8 w-8 text-ares-sea-deep" />
+   138→          <h3 className="mt-3 text-sm font-semibold text-ares-navy">No products yet</h3>
+   139→          <p className="mt-1 text-xs text-muted-foreground">{agentName} needs products in the catalog to answer customer questions accurately.</p>
+   140→          <button onClick={() => onNavigate("products")} className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-4 py-2 text-xs font-semibold text-white hover:bg-ares-sea-deep">
+   141→            Add your first product <ArrowRight className="h-3 w-3" />
+   142→          </button>
+   143→        </div>
+   144→      )}
+   145→
+   146→      {/* Alerts */}
+   147→      {data.alerts && data.alerts.length > 0 && (
+   148→        <div className="rounded-2xl border border-ares-line bg-white p-5">
+   149→          <div className="flex items-center gap-2">
+   150→            <AlertTriangle className="h-4 w-4 text-amber-500" />
+   151→            <h3 className="text-sm font-semibold text-ares-navy">Alerts</h3>
+   152→          </div>
+   153→          <ul className="mt-3 space-y-2">
+   154→            {data.alerts.slice(0, 5).map((a: any) => (
+   155→              <li key={a.id} className="flex items-start gap-2 text-xs">
+   156→                <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${a.severity === "URGENT" ? "bg-rose-500" : a.severity === "ATTENTION" ? "bg-amber-500" : "bg-ares-sea"}`} />
+   157→                <div>
+   158→                  <div className="font-medium text-ares-navy">{a.title}</div>
+   159→                  <div className="text-muted-foreground">{a.message}</div>
+   160→                </div>
+   161→              </li>
+   162→            ))}
+   163→          </ul>
+   164→        </div>
+   165→      )}
+   166→    </div>
+   167→  );
+   168→}
+   169→
+   170→/* ============ Revenue chart ============ */
+   171→function RevenueChart({ data }: { data: any }) {
+   172→  const series: { date: string; revenue: number; orders: number }[] = data.series ?? [];
+   173→  const gradientId = useId();
+   174→  const width = 760, height = 220;
+   175→  const padding = { top: 20, right: 16, bottom: 28, left: 48 };
+   176→  const innerW = width - padding.left - padding.right;
+   177→  const innerH = height - padding.top - padding.bottom;
+   178→  const maxRevenue = Math.max(...series.map((s) => s.revenue), 1);
+   179→  const points = series.map((s, i) => ({
+   180→    x: padding.left + (i / Math.max(series.length - 1, 1)) * innerW,
+   181→    y: padding.top + innerH - (s.revenue / maxRevenue) * innerH,
+   182→    ...s,
+   183→  }));
+   184→  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ");
+   185→  const areaPath = `M ${points[0]?.x ?? 0} ${padding.top + innerH} ` + points.map((p) => `L ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ") + ` L ${points[points.length - 1]?.x ?? 0} ${padding.top + innerH} Z`;
+   186→  const total = series.reduce((s, p) => s + p.revenue, 0);
+   187→
+   188→  if (series.length === 0 || total === 0) {
+   189→    return (
+   190→      <div className="rounded-2xl border border-ares-line bg-white p-5">
+   191→        <div className="flex items-center gap-2">
+   192→          <BarChart3 className="h-4 w-4 text-ares-sea-deep" />
+   193→          <div className="text-sm font-semibold text-ares-navy">Revenue · last 14 days</div>
+   194→        </div>
+   195→        <div className="flex h-48 items-center justify-center text-xs text-muted-foreground">No revenue yet. Orders will populate this chart.</div>
+   196→      </div>
+   197→    );
+   198→  }
+   199→
+   200→  return (
+   201→    <div className="rounded-2xl border border-ares-line bg-white p-5">
+   202→      <div className="flex items-start justify-between">
+   203→        <div>
+   204→          <div className="flex items-center gap-2">
+   205→            <BarChart3 className="h-4 w-4 text-ares-sea-deep" />
+   206→            <div className="text-sm font-semibold text-ares-navy">Revenue · last 14 days</div>
+   207→          </div>
+   208→          <div className="mt-1 font-mono text-2xl font-bold text-ares-navy">
+   209→            {data.business.currency === "GHS" ? "GH₵" : data.business.currency} {total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+   210→          </div>
+   211→        </div>
+   212→        <span className="inline-flex items-center gap-1.5 rounded-md bg-ares-foam px-2 py-1 text-xs font-medium text-ares-sea-deep">
+   213→          <span className="h-2 w-2 rounded-full bg-ares-sea" /> Revenue
+   214→        </span>
+   215→      </div>
+   216→      <div className="mt-3">
+   217→        <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" preserveAspectRatio="none">
+   218→          <defs>
+   219→            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+   220→              <stop offset="0%" stopColor="#0284A6" stopOpacity="0.25" />
+   221→              <stop offset="100%" stopColor="#0284A6" stopOpacity="0" />
+   222→            </linearGradient>
+   223→          </defs>
+   224→          {[0, 0.25, 0.5, 0.75, 1].map((t) => {
+   225→            const y = padding.top + t * innerH;
+   226→            return <line key={t} x1={padding.left} y1={y} x2={padding.left + innerW} y2={y} stroke="#E4ECF1" strokeDasharray="3 3" />;
+   227→          })}
+   228→          {[0, 0.5, 1].map((t) => {
+   229→            const y = padding.top + (1 - t) * innerH;
+   230→            return <text key={t} x={padding.left - 8} y={y + 3} fontSize="9" fill="#5C6B7A" textAnchor="end" fontFamily="monospace">{Math.round(t * maxRevenue)}</text>;
+   231→          })}
+   232→          <path d={areaPath} fill={`url(#${gradientId})`} />
+   233→          <path d={linePath} fill="none" stroke="#024E6E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+   234→          {points.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="3" fill="#0284A6" stroke="white" strokeWidth="1.5" />)}
+   235→          {points.map((p, i) => i % 2 === 0 ? <text key={i} x={p.x} y={height - 8} fontSize="9" fill="#5C6B7A" textAnchor="middle" fontFamily="monospace">{p.date}</text> : null)}
+   236→        </svg>
+   237→      </div>
+   238→    </div>
+   239→  );
+   240→}
+   241→
+   242→/* ============ Channel donut ============ */
+   243→function ChannelDonut({ data }: { data: any }) {
+   244→  const channels: { name: string; value: number }[] = data.channelBreakdown ?? [];
+   245→  const total = channels.reduce((s, c) => s + c.value, 0) || 1;
+   246→  const radius = 60;
+   247→  const circumference = 2 * Math.PI * radius;
+   248→  const colors: Record<string, string> = { WHATSAPP: "#25D366", WEB: "#0284A6", INSTORE: "#7AB8CC", CALL: "#0A1626", SMS: "#38BDF8", EMAIL: "#1A5694" };
+   249→  const segments = channels.map((c, i) => {
+   250→    const pct = c.value / total;
+   251→    const dash = pct * circumference;
+   252→    const offset = channels.slice(0, i).reduce((s, x) => s + (x.value / total) * circumference, 0);
+   253→    return { ...c, dash, offset, color: colors[c.name] ?? "#0284A6" };
+   254→  });
+   255→
+   256→  return (
+   257→    <div className="rounded-2xl border border-ares-line bg-white p-5">
+   258→      <div className="flex items-center gap-2"><PieChart className="h-4 w-4 text-ares-sea-deep" /><div className="text-sm font-semibold text-ares-navy">Orders by channel</div></div>
+   259→      {channels.length === 0 ? (
+   260→        <div className="flex h-48 items-center justify-center text-xs text-muted-foreground">No orders yet.</div>
+   261→      ) : (
+   262→        <div className="mt-3 flex items-center gap-5">
+   263→          <div className="relative h-32 w-32 shrink-0">
+   264→            <svg viewBox="0 0 160 160" className="h-full w-full -rotate-90">
+   265→              {segments.map((s, i) => <circle key={i} cx="80" cy="80" r={radius} fill="none" stroke={s.color} strokeWidth="14" strokeDasharray={`${s.dash} ${circumference - s.dash}`} strokeDashoffset={-s.offset} />)}
+   266→            </svg>
+   267→            <div className="absolute inset-0 flex flex-col items-center justify-center">
+   268→              <div className="font-mono text-2xl font-bold text-ares-navy">{total}</div>
+   269→              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">orders</div>
+   270→            </div>
+   271→          </div>
+   272→          <div className="flex-1 space-y-2">
+   273→            {channels.map((c) => (
+   274→              <div key={c.name} className="flex items-center justify-between text-xs">
+   275→                <div className="flex items-center gap-2">
+   276→                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: colors[c.name] ?? "#0284A6" }} />
+   277→                  <span className="font-medium text-ares-navy">{c.name}</span>
+   278→                </div>
+   279→                <div className="flex items-center gap-2">
+   280→                  <span className="text-muted-foreground">{Math.round((c.value / total) * 100)}%</span>
+   281→                  <span className="font-mono font-semibold text-ares-navy">{c.value}</span>
+   282→                </div>
+   283→              </div>
+   284→            ))}
+   285→          </div>
+   286→        </div>
+   287→      )}
+   288→    </div>
+   289→  );
+   290→}
+   291→
+   292→/* ============ Appointments widget (for clinics, salons, etc.) ============ */
+   293→function AppointmentsWidget({ data }: { data: any }) {
+   294→  // For sectors with appointments, show today's count
+   295→  const todayOrders = data.kpis?.todayOrderCount ?? 0;
+   296→  const pending = data.kpis?.pendingOrders ?? 0;
+   297→  return (
+   298→    <div className="rounded-2xl border border-ares-line bg-white p-5">
+   299→      <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-ares-sea-deep" /><div className="text-sm font-semibold text-ares-navy">Today's schedule</div></div>
+   300→      <div className="mt-4 space-y-3">
+   301→        <div className="flex items-center justify-between rounded-lg bg-ares-mist p-3">
+   302→          <span className="text-xs text-muted-foreground">Today</span>
+   303→          <span className="font-mono text-lg font-bold text-ares-navy">{todayOrders}</span>
+   304→        </div>
+   305→        <div className="flex items-center justify-between rounded-lg bg-ares-mist p-3">
+   306→          <span className="text-xs text-muted-foreground">Pending confirmation</span>
+   307→          <span className="font-mono text-lg font-bold text-amber-600">{pending}</span>
+   308→        </div>
+   309→        {todayOrders === 0 && (
+   310→          <p className="text-center text-[11px] text-muted-foreground">No appointments scheduled for today yet.</p>
+   311→        )}
+   312→      </div>
+   313→    </div>
+   314→  );
+   315→}
+   316→
+   317→/* ============ Orders today widget ============ */
+   318→function OrdersTodayWidget({ data, onNavigate }: { data: any; onNavigate: (v: string) => void }) {
+   319→  return (
+   320→    <div className="rounded-2xl border border-ares-line bg-white p-5">
+   321→      <div className="flex items-center justify-between">
+   322→        <div className="flex items-center gap-2"><ShoppingBag className="h-4 w-4 text-ares-sea-deep" /><div className="text-sm font-semibold text-ares-navy">Recent orders</div></div>
+   323→        <button onClick={() => onNavigate("orders")} className="text-[11px] font-medium text-ares-sea-deep hover:underline">View all →</button>
+   324→      </div>
+   325→      <div className="mt-3 space-y-2">
+   326→        {(data.activity ?? []).filter((a: any) => a.action?.includes("ORDER")).slice(0, 5).map((a: any) => (
+   327→          <div key={a.id} className="flex items-center justify-between rounded-lg border border-ares-line p-2.5">
+   328→            <div>
+   329→              <div className="text-xs font-medium text-ares-navy">{a.action.replace(/_/g, " ").toLowerCase()}</div>
+   330→              <div className="text-[10px] text-muted-foreground">{new Date(a.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+   331→            </div>
+   332→            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${a.result === "SUCCESS" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{a.result}</span>
+   333→          </div>
+   334→        ))}
+   335→        {(data.activity ?? []).filter((a: any) => a.action?.includes("ORDER")).length === 0 && (
+   336→          <p className="py-4 text-center text-[11px] text-muted-foreground">No orders yet today.</p>
+   337→        )}
+   338→      </div>
+   339→    </div>
+   340→  );
+   341→}
+   342→
+   343→/* ============ Low stock widget ============ */
+   344→function LowStockWidget({ data, onNavigate }: { data: any; onNavigate: (v: string) => void }) {
+   345→  const lowStock = data.lowStock ?? [];
+   346→  return (
+   347→    <div className="rounded-2xl border border-ares-line bg-white p-5">
+   348→      <div className="flex items-center justify-between">
+   349→        <div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /><div className="text-sm font-semibold text-ares-navy">Low stock</div></div>
+   350→        <button onClick={() => onNavigate("products")} className="text-[11px] font-medium text-ares-sea-deep hover:underline">Manage →</button>
+   351→      </div>
+   352→      {lowStock.length === 0 ? (
+   353→        <p className="py-4 text-center text-[11px] text-muted-foreground">All products are well-stocked.</p>
+   354→      ) : (
+   355→        <div className="mt-3 space-y-2">
+   356→          {lowStock.map((p: any) => (
+   357→            <div key={p.id} className="flex items-center justify-between rounded-lg border border-ares-line p-2.5">
+   358→              <span className="text-xs font-medium text-ares-navy">{p.name}</span>
+   359→              <span className="font-mono text-xs font-bold text-rose-600">{p.stock} left</span>
+   360→            </div>
+   361→          ))}
+   362→        </div>
+   363→      )}
+   364→    </div>
+   365→  );
+   366→}
+   367→
+   368→/* ============ Top products ============ */
+   369→function TopProductsChart({ data, onNavigate }: { data: any; onNavigate: (v: string) => void }) {
+   370→  const products: { id: string; name: string; price: number; stock: number }[] = data.topProducts ?? [];
+   371→  const maxStock = Math.max(...products.map((p) => p.stock), 1);
+   372→  return (
+   373→    <div className="rounded-2xl border border-ares-line bg-white p-5">
+   374→      <div className="flex items-center justify-between">
+   375→        <div className="flex items-center gap-2"><Package className="h-4 w-4 text-ares-sea-deep" /><div className="text-sm font-semibold text-ares-navy">Top products</div></div>
+   376→        <button onClick={() => onNavigate("products")} className="text-[11px] font-medium text-ares-sea-deep hover:underline">View all →</button>
+   377→      </div>
+   378→      {products.length === 0 ? (
+   379→        <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">No products yet.</div>
+   380→      ) : (
+   381→        <div className="mt-4 space-y-3">
+   382→          {products.map((p, i) => (
+   383→            <div key={p.id} className="flex items-center gap-3">
+   384→              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ares-foam font-mono text-xs font-bold text-ares-sea-deep">{i + 1}</div>
+   385→              <div className="min-w-0 flex-1">
+   386→                <div className="flex items-center justify-between gap-2">
+   387→                  <span className="truncate text-xs font-medium text-ares-navy">{p.name}</span>
+   388→                  <span className="font-mono text-xs text-ares-sea-deep">GH₵ {p.price.toFixed(0)}</span>
+   389→                </div>
+   390→                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ares-mist">
+   391→                  <div className="h-full rounded-full bg-gradient-to-r from-ares-sea to-ares-sea-deep" style={{ width: `${(p.stock / maxStock) * 100}%` }} />
+   392→                </div>
+   393→              </div>
+   394→              <span className="font-mono text-[10px] text-muted-foreground">{p.stock} left</span>
+   395→            </div>
+   396→          ))}
+   397→        </div>
+   398→      )}
+   399→    </div>
+   400→  );
+   401→}
+   402→
+   403→/* ============ Recent activity ============ */
+   404→function RecentActivityWidget({ data }: { data: any }) {
+   405→  const activity = (data.activity ?? []).slice(0, 8);
+   406→  return (
+   407→    <div className="rounded-2xl border border-ares-line bg-white p-5">
+   408→      <div className="flex items-center gap-2"><Activity className="h-4 w-4 text-ares-sea-deep" /><div className="text-sm font-semibold text-ares-navy">Recent activity</div></div>
+   409→      {activity.length === 0 ? (
+   410→        <p className="py-4 text-center text-[11px] text-muted-foreground">No activity yet.</p>
+   411→      ) : (
+   412→        <div className="mt-3 space-y-2">
+   413→          {activity.map((a: any) => (
+   414→            <div key={a.id} className="flex items-start gap-2.5 text-xs">
+   415→              <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${a.actorType === "AI" ? "bg-ares-sea" : a.actorType === "USER" ? "bg-ares-navy" : "bg-slate-400"}`} />
+   416→              <div className="flex-1">
+   417→                <span className="font-medium text-ares-navy">{a.actorName}</span>
+   418→                <span className="text-muted-foreground"> · {a.action.replace(/_/g, " ").toLowerCase()}</span>
+   419→                <div className="text-[10px] text-muted-foreground">{new Date(a.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+   420→              </div>
+   421→            </div>
+   422→          ))}
+   423→        </div>
+   424→      )}
+   425→    </div>
+   426→  );
+   427→}
+   428→
+   429→/* ============ Learnings widget (AI memory) ============ */
+   430→function LearningsWidget({ learnings, agentName }: { learnings: string[]; agentName: string }) {
+   431→  return (
+   432→    <div className="rounded-2xl border border-ares-sea/20 bg-gradient-to-br from-ares-foam/30 to-white p-5">
+   433→      <div className="flex items-center gap-2">
+   434→        <Brain className="h-4 w-4 text-ares-sea-deep" />
+   435→        <div className="text-sm font-semibold text-ares-navy">What {agentName} has learned</div>
+   436→      </div>
+   437→      <p className="mt-1 text-[11px] text-muted-foreground">{agentName} picks up details from customer conversations and remembers them.</p>
+   438→      {learnings.length === 0 ? (
+   439→        <p className="mt-3 py-4 text-center text-[11px] text-muted-foreground">No learnings yet -- {agentName} will start remembering things as you chat with customers.</p>
+   440→      ) : (
+   441→        <div className="mt-3 space-y-2">
+   442→          {learnings.slice(-5).reverse().map((l, i) => (
+   443→            <div key={i} className="rounded-lg border border-ares-line bg-white p-2.5">
+   444→              <div className="flex items-start gap-2">
+   445→                <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-ares-sea-deep" />
+   446→                <span className="text-xs text-ares-navy">{l}</span>
+   447→              </div>
+   448→            </div>
+   449→          ))}
+   450→        </div>
+   451→      )}
+   452→    </div>
+   453→  );
+   454→}
+   455→
+   456→/* ============ Order status pie chart ============ */
+   457→function OrderStatusPie({ data }: { data: any }) {
+   458→  const statuses: { name: string; value: number }[] = data.statusBreakdown ?? [];
+   459→  const total = statuses.reduce((s, c) => s + c.value, 0) || 1;
+   460→  const colors: Record<string, string> = {
+   461→    PENDING: "#F59E0B",
+   462→    CONFIRMED: "#0284A6",
+   463→    FULFILLED: "#10B981",
+   464→    CANCELLED: "#94A3B8",
+   465→    REFUNDED: "#EF4444",
+   466→  };
+   467→  const labels: Record<string, string> = {
+   468→    PENDING: "Pending",
+   469→    CONFIRMED: "Confirmed",
+   470→    FULFILLED: "Closed",
+   471→    CANCELLED: "Cancelled",
+   472→    REFUNDED: "Refunded",
+   473→  };
+   474→  const radius = 60;
+   475→  const circumference = 2 * Math.PI * radius;
+   476→  const segments = statuses.map((c, i) => {
+   477→    const pct = c.value / total;
+   478→    const dash = pct * circumference;
+   479→    const offset = statuses.slice(0, i).reduce((s, x) => s + (x.value / total) * circumference, 0);
+   480→    return { ...c, dash, offset, color: colors[c.name] ?? "#0284A6" };
+   481→  });
+   482→
+   483→  return (
+   484→    <div className="rounded-2xl border border-ares-line bg-white p-5">
+   485→      <div className="flex items-center gap-2">
+   486→        <PieChart className="h-4 w-4 text-ares-sea-deep" />
+   487→        <div className="text-sm font-semibold text-ares-navy">Order status</div>
+   488→      </div>
+   489→      {statuses.length === 0 ? (
+   490→        <div className="flex h-48 items-center justify-center text-xs text-muted-foreground">No orders yet.</div>
+   491→      ) : (
+   492→        <div className="mt-3 flex items-center gap-5">
+   493→          <div className="relative h-32 w-32 shrink-0">
+   494→            <svg viewBox="0 0 160 160" className="h-full w-full -rotate-90">
+   495→              {segments.map((s, i) => (
+   496→                <circle key={i} cx="80" cy="80" r={radius} fill="none" stroke={s.color} strokeWidth="14" strokeDasharray={`${s.dash} ${circumference - s.dash}`} strokeDashoffset={-s.offset} />
+   497→              ))}
+   498→            </svg>
+   499→            <div className="absolute inset-0 flex flex-col items-center justify-center">
+   500→              <div className="font-mono text-2xl font-bold text-ares-navy">{total}</div>
+   501→              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">orders</div>
+   502→            </div>
+   503→          </div>
+   504→          <div className="flex-1 space-y-2">
+   505→            {statuses.map((s) => (
+   506→              <div key={s.name} className="flex items-center justify-between text-xs">
+   507→                <div className="flex items-center gap-2">
+   508→                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: colors[s.name] ?? "#0284A6" }} />
+   509→                  <span className="font-medium text-ares-navy">{labels[s.name] ?? s.name}</span>
+   510→                </div>
+   511→                <div className="flex items-center gap-2">
+   512→                  <span className="text-muted-foreground">{Math.round((s.value / total) * 100)}%</span>
+   513→                  <span className="font-mono font-semibold text-ares-navy">{s.value}</span>
+   514→                </div>
+   515→              </div>
+   516→            ))}
+   517→          </div>
+   518→        </div>
+   519→      )}
+   520→    </div>
+   521→  );
+   522→}
+   523→

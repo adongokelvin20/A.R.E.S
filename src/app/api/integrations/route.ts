@@ -22,47 +22,17 @@ const INTEGRATION_DEFS: Record<
   {
     name: string;
     requiredFields: string[];
+    // If true, this integration connects via Meta Embedded Signup (no manual fields).
+    embeddedSignup?: boolean;
     // Optional: ping the gateway to verify the credentials are valid
     verify?: (creds: Record<string, string>) => Promise<{ ok: boolean; message?: string }>;
   }
 > = {
   WHATSAPP_META: {
     name: "WhatsApp Cloud API (Meta)",
-    requiredFields: ["phoneNumberId", "accessToken", "wabaId"],
-    verify: async (c) => {
-      // Real verification: ping Meta Graph API
-      try {
-        const url = `https://graph.facebook.com/v21.0/${c.phoneNumberId}?access_token=${encodeURIComponent(c.accessToken)}`;
-        const res = await fetch(url, { method: "GET" });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.id && data.display_phone_number) {
-            return { ok: true, message: `Verified: ${data.display_phone_number}` };
-          }
-        }
-        return { ok: false, message: "Meta rejected the credentials. Check the access token and phone number ID." };
-      } catch (e: any) {
-        return { ok: false, message: String(e?.message ?? e) };
-      }
-    },
-  },
-  WHATSAPP_WAAPI: {
-    name: "WAAPI.io",
-    requiredFields: ["instanceId", "apiKey"],
-    verify: async (c) => {
-      try {
-        const url = `https://waapi.io/api/instances/${encodeURIComponent(c.instanceId)}/status`;
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${c.apiKey}` },
-        });
-        if (res.ok) return { ok: true, message: "Instance reachable." };
-        if (res.status === 401) return { ok: false, message: "Invalid WAAPI API key." };
-        // Some plans return 404 for unknown instances
-        return { ok: false, message: `WAAPI responded with ${res.status}.` };
-      } catch (e: any) {
-        return { ok: false, message: String(e?.message ?? e) };
-      }
-    },
+    requiredFields: [],
+    embeddedSignup: true,
+    // Verification happens through the Embedded Signup callback, not a manual form.
   },
   PAYMENT_PAYSTACK: {
     name: "Paystack",
@@ -117,6 +87,7 @@ export async function GET() {
     status: i.status,
     config: JSON.parse(i.config),
     requiredFields: INTEGRATION_DEFS[i.type]?.requiredFields ?? [],
+    embeddedSignup: INTEGRATION_DEFS[i.type]?.embeddedSignup ?? false,
     lastSyncAt: i.lastSyncAt,
   }));
 
@@ -141,6 +112,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unknown integration type" }, { status: 400 });
     }
     const def = INTEGRATION_DEFS[type];
+
+    // Embedded-signup integrations (WhatsApp) connect through their own OAuth
+    // callback — never through manual credential POST.
+    if (def.embeddedSignup) {
+      return NextResponse.json(
+        { error: "This integration connects via Embedded Signup. Use the Connect button." },
+        { status: 400 }
+      );
+    }
+
     const creds = credentials ?? {};
     const missing = def.requiredFields.filter((f) => !creds[f]?.trim());
     if (missing.length) {

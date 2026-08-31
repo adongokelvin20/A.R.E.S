@@ -26,7 +26,9 @@ export function AresHero() {
           {/* Company badge */}
           <div className="ares-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/60 backdrop-blur-sm" style={{ animationDelay: "0ms" }}>
             <span className="font-semibold text-white/80">Kevtech</span>
-            <span>Corporation presents</span>
+            <span>Corporation</span>
+            <span className="text-white/30">·</span>
+            <span>Founded by Kelvin Ayinbisa</span>
           </div>
 
           {/* Brand */}
@@ -40,11 +42,11 @@ export function AresHero() {
 
           {/* Headline */}
           <h1 className="ares-fade-up text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl ares-serif" style={{ animationDelay: "160ms" }}>
-            Hire an AI employee<br />that actually <span className="text-ares-sea italic">runs</span> your business.
+            Hire a digital employee<br />that actually <span className="text-ares-sea italic">runs</span> your business.
           </h1>
 
           <p className="ares-fade-up mt-6 max-w-lg text-balance text-base leading-relaxed text-white/70 sm:text-lg" style={{ animationDelay: "240ms" }}>
-            From Kevtech Corporation -- A.R.E.S. learns your business, talks to your customers on WhatsApp, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
+            From Kevtech Corporation — A.R.E.S. learns your business, talks to your customers on WhatsApp, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
           </p>
 
           {/* CTAs */}

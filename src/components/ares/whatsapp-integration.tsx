@@ -1,36 +1,28 @@
 "use client";
 
-import { MessageCircle, Shield, Webhook, RefreshCw, ArrowRight, Lock } from "lucide-react";
+import { MessageCircle, Shield, Lock, RefreshCw, QrCode, Zap, CheckCircle2 } from "lucide-react";
 
-const FLOW_STEPS = [
+const STEPS = [
   {
-    label: "Inbound message",
-    detail: "Customer sends a WhatsApp message → Meta Cloud API or WAAPI.io gateway.",
+    label: "Click Connect WhatsApp",
+    detail: "One button inside your dashboard. No developer console, no tokens to copy, no webhook URLs to paste.",
   },
   {
-    label: "Signature verified",
-    detail: "A.R.E.S. validates the HMAC-SHA256 webhook signature against the per-tenant secret.",
+    label: "Complete Meta's secure signup",
+    detail: "A.R.E.S. opens Meta's official Embedded Signup. You log in to Facebook, pick your WhatsApp Business number, and approve — all on Meta's side.",
   },
   {
-    label: "Tenant resolved",
-    detail: "Business is identified by the receiving phone number -- never by client-supplied ID.",
+    label: "Return to A.R.E.S. connected",
+    detail: "Behind the scenes, A.R.E.S. registers your number, configures the webhook, and verifies the link. You land back in your dashboard with WhatsApp live.",
   },
-  {
-    label: "Customer matched",
-    detail: "A.R.E.S. looks up the customer by WhatsApp ID or creates a new lead record.",
-  },
-  {
-    label: "AI orchestrator",
-    detail: "Sector-bound AI retrieves business context, knowledge, and available tools.",
-  },
-  {
-    label: "Authorized action",
-    detail: "AI executes only permitted tools. High-risk actions require owner approval.",
-  },
-  {
-    label: "Outbound reply",
-    detail: "Response is sent back through the same gateway with full audit logging.",
-  },
+];
+
+const COMPLIANCE = [
+  "Official Meta Cloud API — no unofficial clients",
+  "24-hour customer service window respected",
+  "Approved templates for outbound messages",
+  "Per-tenant webhook signature verification",
+  "Opt-out and rate-limit safeguards built in",
 ];
 
 export function AresWhatsApp() {
@@ -40,51 +32,21 @@ export function AresWhatsApp() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-ares-sea/20 bg-ares-foam px-3 py-1 text-xs font-medium text-ares-sea-deep">
-            WhatsApp integration
+            WhatsApp, connected the right way
           </div>
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-ares-navy sm:text-4xl md:text-5xl">
-            WhatsApp, done properly --{" "}
-            <span className="ares-text-gradient">official APIs only</span>
+            One click to connect.{" "}
+            <span className="ares-text-gradient">Zero technical setup.</span>
           </h2>
           <p className="mt-5 text-balance text-base text-muted-foreground sm:text-lg">
-            A.R.E.S. supports the official Meta WhatsApp Business Platform (Cloud API) and
-            WAAPI.io as an alternative gateway. No unofficial scraping. No automation hacks. No
-            fake connections -- every integration shows its real status.
+            A.R.E.S. uses Meta's official Embedded Signup so you can link your WhatsApp Business
+            number without ever seeing a token, a Phone Number ID, a webhook URL, or an API key.
+            Click connect, approve on Meta, and you're live — fully compliant, fully official.
           </p>
         </div>
 
         <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Gateway cards */}
-          <div className="lg:col-span-5">
-            <div className="grid gap-4">
-              <GatewayCard
-                name="Meta WhatsApp Cloud API"
-                badge="Official"
-                description="The official WhatsApp Business Platform. Best for businesses that need template messages, official verification, and direct Meta support."
-                features={[
-                  "Official Cloud API",
-                  "Template & session messaging",
-                  "Webhook HMAC verification",
-                  "Per-tenant phone number ID",
-                ]}
-                status="DISCONNECTED"
-              />
-              <GatewayCard
-                name="WAAPI.io"
-                badge="Alternative"
-                description="A lighter alternative gateway for businesses that want a faster setup. A.R.E.S. treats it as a first-class channel with the same audit guarantees."
-                features={[
-                  "REST + Webhook API",
-                  "Instance-based isolation",
-                  "Same AI orchestration",
-                  "Identical audit logging",
-                ]}
-                status="DISCONNECTED"
-              />
-            </div>
-          </div>
-
-          {/* Flow */}
+          {/* The 3-step connect flow */}
           <div className="lg:col-span-7">
             <div className="relative h-full overflow-hidden rounded-3xl border border-ares-line bg-white p-6 sm:p-8">
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-ares-sea via-ares-sea-deep to-ares-navy" />
@@ -94,22 +56,22 @@ export function AresWhatsApp() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-ares-navy">
-                    Inbound message → authorized action
+                    From disconnected to live in under a minute
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    7-step pipeline · every step is audit-logged
+                    Three steps · no technical knowledge required
                   </p>
                 </div>
               </div>
 
               <ol className="mt-6 space-y-3">
-                {FLOW_STEPS.map((s, i) => (
+                {STEPS.map((s, i) => (
                   <li key={s.label} className="flex gap-4">
                     <div className="relative flex flex-col items-center">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ares-sea-deep font-mono text-xs font-bold text-white">
                         {i + 1}
                       </div>
-                      {i < FLOW_STEPS.length - 1 && (
+                      {i < STEPS.length - 1 && (
                         <div className="my-1 w-px flex-1 bg-gradient-to-b from-ares-sea/40 to-ares-sea/10" />
                       )}
                     </div>
@@ -124,70 +86,52 @@ export function AresWhatsApp() {
               </ol>
 
               <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-ares-line pt-5">
-                <Badge icon={Shield}>Per-tenant secret</Badge>
-                <Badge icon={Webhook}>Webhook verified</Badge>
-                <Badge icon={Lock}>No client-trusted IDs</Badge>
+                <Badge icon={Shield}>Official Meta Cloud API</Badge>
+                <Badge icon={Lock}>Embedded Signup</Badge>
+                <Badge icon={QrCode}>QR option for mobile</Badge>
                 <Badge icon={RefreshCw}>Auto-reconnect</Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* Compliance + connect options */}
+          <div className="lg:col-span-5">
+            <div className="grid gap-4">
+              <div className="overflow-hidden rounded-2xl border border-ares-line bg-gradient-to-br from-ares-navy to-ares-sea-deep p-6 text-white">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-ares-sea" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
+                    What we hide from you
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-white/80">
+                  Access tokens, Phone Number IDs, WABA IDs, webhook configuration, signature
+                  secrets, API versioning — A.R.E.S. handles all of it server-side. You never touch
+                  the Meta developer console. You never paste a credential. You just click connect.
+                </p>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-ares-line bg-white p-5">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    WhatsApp policy compliant
+                  </span>
+                </div>
+                <ul className="mt-3 space-y-2">
+                  {COMPLIANCE.map((c) => (
+                    <li key={c} className="flex items-start gap-2 text-xs text-ares-navy">
+                      <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-ares-sea" />
+                      {c}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-function GatewayCard({
-  name,
-  badge,
-  description,
-  features,
-  status,
-}: {
-  name: string;
-  badge: string;
-  description: string;
-  features: string[];
-  status: "CONNECTED" | "DISCONNECTED";
-}) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-ares-line bg-white p-5 ares-card-hover">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h4 className="font-semibold text-ares-navy">{name}</h4>
-            <span className="rounded-md bg-ares-foam px-2 py-0.5 text-[10px] font-medium text-ares-sea-deep">
-              {badge}
-            </span>
-          </div>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
-        </div>
-      </div>
-      <ul className="mt-4 space-y-1.5">
-        {features.map((f) => (
-          <li key={f} className="flex items-center gap-2 text-xs text-ares-navy">
-            <span className="h-1 w-1 rounded-full bg-ares-sea" />
-            {f}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-4 flex items-center justify-between border-t border-ares-line pt-3">
-        <div className="inline-flex items-center gap-1.5 text-xs">
-          <span
-            className={`h-2 w-2 rounded-full ${
-              status === "CONNECTED" ? "bg-emerald-500" : "bg-amber-500"
-            }`}
-          />
-          <span className="text-muted-foreground">
-            {status === "CONNECTED" ? "Connected" : "Connection required"}
-          </span>
-        </div>
-        <button className="inline-flex items-center gap-1 text-xs font-semibold text-ares-sea-deep transition-colors hover:text-ares-navy">
-          Connect
-          <ArrowRight className="h-3 w-3" />
-        </button>
-      </div>
-    </div>
   );
 }
 

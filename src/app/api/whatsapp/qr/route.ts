@@ -1,28 +1,43 @@
 /**
- * WhatsApp QR Code Connection
+ * WhatsApp QR Code Connection — direct, no third party.
  *
- * GET  /api/whatsapp/qr        -- get QR code for scanning
- * POST /api/whatsapp/qr        -- generate new QR session
+ * GET  /api/whatsapp/qr   -- returns the current QR (or generates one)
+ * POST /api/whatsapp/qr   -- generate a fresh QR session
  *
- * Uses WAAPI.io's QR-based connection flow. The business owner scans
- * the QR code with their WhatsApp app, and A.R.E.S. connects to their
- * WhatsApp number.
+ * The QR encodes the OFFICIAL Meta Embedded Signup OAuth URL. When the
+ * customer scans it with their phone camera, Meta's auth dialog opens on
+ * their phone. They log in, pick their WhatsApp Business number, approve —
+ * and Meta redirects to /api/whatsapp/meta/callback which completes the
+ * connection. No WAAPI. No unofficial clients. No third party in the link.
  *
- * WhatsApp Policy Compliance:
- * - Only responds to messages within the 24-hour customer service window
- * - Uses approved template messages for outbound contact after 24h
- * - Respects opt-out requests
- * - Rate-limits outgoing messages to prevent spam flags
- * - Never sends promotional messages outside the 24h window
+ * The businessId is carried in the OAuth `state` parameter (set when the
+ * signup URL is built), so the callback knows which business to connect.
+ *
+ * The desktop dashboard polls /api/whatsapp/status to detect the connection.
  */
-
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getMetaConfig, buildEmbeddedSignupUrl } from "@/lib/meta-whatsapp";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+async function generateQrCode(data: string): Promise<string> {
+  const QRCode = await import("qrcode");
+  const svg = await QRCode.toString(data, {
+    type: "svg",
+    errorCorrectionLevel: "M",
+    margin: 2,
+    width: 320,
+    color: {
+      dark: "#0A1626",
+      light: "#FFFFFF",
+    },
+  });
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -30,34 +45,45 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const businessId = session.user.businessId;
+  const cfg = getMetaConfig();
 
-  // Check if WhatsApp is already connected
-  const integration = await db.integration.findUnique({
-    where: { businessId_type: { businessId, type: "WHATSAPP_WAAPI" } },
-  });
-
-  if (integration?.status === "CONNECTED") {
+  if (!cfg.configured) {
     return NextResponse.json({
-      status: "connected",
-      message: "WhatsApp is already connected",
+      status: "not_configured",
+      message: "Meta WhatsApp Embedded Signup isn't configured on the server yet.",
     });
   }
 
-  // Check for existing QR session
+  // If WhatsApp is already connected, say so
+  const integration = await db.integration.findUnique({
+    where: { businessId_type: { businessId, type: "WHATSAPP_META" } },
+  });
+  if (integration?.status === "CONNECTED") {
+    const config = JSON.parse(integration.config || "{}");
+    return NextResponse.json({
+      status: "connected",
+      phoneNumber: config.phoneNumber ?? null,
+      message: "WhatsApp is already connected.",
+    });
+  }
+
+  // Return an existing QR if it's still fresh (< 5 min)
   if (integration?.config) {
     const config = JSON.parse(integration.config);
     if (config.qrCode && config.qrExpiry > Date.now()) {
       return NextResponse.json({
         status: "qr_ready",
         qrCode: config.qrCode,
+        signupUrl: config.signupUrl,
         expiresIn: Math.floor((config.qrExpiry - Date.now()) / 1000),
       });
     }
   }
 
+  // No fresh QR — caller should POST to generate one
   return NextResponse.json({
     status: "no_qr",
-    message: "Generate a QR code to connect WhatsApp",
+    message: "Generate a QR code to start the connection.",
   });
 }
 
@@ -67,79 +93,47 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const businessId = session.user.businessId;
+  const cfg = getMetaConfig();
 
-  // Get or create WAAPI integration
+  if (!cfg.configured) {
+    return NextResponse.json(
+      { status: "not_configured", error: "Meta WhatsApp Embedded Signup isn't configured on the server yet." },
+      { status: 503 }
+    );
+  }
+
+  // Build the official Meta Embedded Signup URL (redirect-based, state=businessId)
+  const signupUrl = buildEmbeddedSignupUrl(businessId);
+  const qrCode = await generateQrCode(signupUrl);
+
+  // Store the QR session so GET can return it while fresh
+  const qrExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
   let integration = await db.integration.findUnique({
-    where: { businessId_type: { businessId, type: "WHATSAPP_WAAPI" } },
+    where: { businessId_type: { businessId, type: "WHATSAPP_META" } },
   });
-
   if (!integration) {
     integration = await db.integration.create({
       data: {
         businessId,
-        type: "WHATSAPP_WAAPI",
-        name: "WhatsApp (QR Connect)",
+        type: "WHATSAPP_META",
+        name: "WhatsApp Cloud API (Meta)",
         status: "DISCONNECTED",
-        config: "{}",
-        credentials: "{}",
+        config: JSON.stringify({ qrCode, qrExpiry, signupUrl, status: "awaiting_scan" }),
+      },
+    });
+  } else {
+    await db.integration.update({
+      where: { id: integration.id },
+      data: {
+        config: JSON.stringify({ qrCode, qrExpiry, signupUrl, status: "awaiting_scan" }),
       },
     });
   }
 
-  // Generate a QR code
-  // In production, this would call WAAPI.io's API to get a real QR code.
-  // For now, we generate a QR code that encodes the connection data.
-  const connectionId = `${businessId}-${Date.now()}`;
-  const qrPayload = JSON.stringify({
-    type: "ares_whatsapp_connect",
-    businessId,
-    connectionId,
-    timestamp: Date.now(),
-  });
-
-  // Generate QR code as a data URL using a simple QR algorithm
-  // We use the qrcode library pattern (inline SVG QR)
-  const qrCode = await generateQRCode(qrPayload);
-
-  // Store the QR session
-  const qrExpiry = Date.now() + 60 * 1000; // 60 seconds
-  await db.integration.update({
-    where: { id: integration.id },
-    data: {
-      config: JSON.stringify({
-        qrCode,
-        qrExpiry,
-        connectionId,
-        status: "awaiting_scan",
-      }),
-    },
-  });
-
   return NextResponse.json({
     status: "qr_ready",
     qrCode,
-    expiresIn: 60,
-    connectionId,
+    signupUrl,
+    expiresIn: 300,
   });
-}
-
-/**
- * Generate a QR code as an SVG data URL.
- * Uses a minimal QR code generator (no external dependency).
- */
-async function generateQRCode(data: string): Promise<string> {
-  // Simple QR code generator using the qrcode library pattern
-  // We encode the data as a QR code SVG
-  const QRCode = await import("qrcode");
-  const svg = await QRCode.toString(data, {
-    type: "svg",
-    errorCorrectionLevel: "M",
-    margin: 2,
-    width: 256,
-    color: {
-      dark: "#0A1626",
-      light: "#FFFFFF",
-    },
-  });
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }

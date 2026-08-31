@@ -3,8 +3,7 @@
 import { MessageCircle, CreditCard, Mail, Smartphone, Calendar, BarChart3, Globe } from "lucide-react";
 
 const INTEGRATIONS = [
-  { name: "WhatsApp Cloud API", desc: "Official Meta Business Platform", icon: MessageCircle, status: "supported" },
-  { name: "WAAPI.io", desc: "Alternative WhatsApp gateway", icon: MessageCircle, status: "supported" },
+  { name: "WhatsApp Cloud API", desc: "Official Meta Embedded Signup", icon: MessageCircle, status: "supported" },
   { name: "MTN MoMo", desc: "Ghana Mobile Money", icon: CreditCard, status: "supported" },
   { name: "Telecel Cash", desc: "Ghana Mobile Money", icon: CreditCard, status: "supported" },
   { name: "AirtelTigo Money", desc: "Ghana Mobile Money", icon: CreditCard, status: "supported" },

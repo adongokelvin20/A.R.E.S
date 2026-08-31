@@ -15,35 +15,36 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "A.R.E.S. -- AI Employee for Your Business | Kevtech Corporation",
+  title: "A.R.E.S. — The Digital Employee for Your Business | Kevtech Corporation",
   description:
-    "A.R.E.S. by Kevtech Corporation is the AI employee for your business. It talks to customers on WhatsApp, takes orders, manages inventory, and runs operations -- so you can focus on what matters.",
+    "A.R.E.S. by Kevtech Corporation is a digital employee for your business. It talks to customers on WhatsApp, takes orders, manages inventory, and runs operations — so you can focus on what matters. Founded by Kelvin Ayinbisa.",
   keywords: [
     "A.R.E.S.",
     "Kevtech",
     "Kevtech Corporation",
-    "AI Business Operating System",
-    "AI Employee",
-    "WhatsApp AI",
+    "Kelvin Ayinbisa",
+    "Business Operating System",
+    "Digital Employee",
+    "WhatsApp Business",
     "Business Automation",
-    "Ghana AI",
+    "Ghana Business",
   ],
   authors: [{ name: "Kelvin Ayinbisa" }],
   icons: {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "A.R.E.S. -- AI Employee for Your Business | Kevtech Corporation",
+    title: "A.R.E.S. — The Digital Employee for Your Business | Kevtech Corporation",
     description:
-      "The AI employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
+      "The digital employee that talks to customers, takes orders, and runs your business. Founded by Kelvin Ayinbisa. Built by Kevtech Corporation.",
     siteName: "A.R.E.S.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "A.R.E.S. -- AI Employee for Your Business",
+    title: "A.R.E.S. — The Digital Employee for Your Business",
     description:
-      "The AI employee that talks to customers, takes orders, and runs your business. Built by Kevtech Corporation.",
+      "The digital employee that talks to customers, takes orders, and runs your business. Founded by Kelvin Ayinbisa.",
   },
 };
 

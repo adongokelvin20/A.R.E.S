@@ -172,3 +172,19 @@ Work Log:
 
 Stage Summary:
 - A.R.E.S. v5 ships with: warm AI greeting on every login (time-aware, personalized, references real data), AI learning system (extracts facts from conversations, saves them, uses them in future replies), broader business sectors (8 categories, 31 subtypes including Health→Clinic/Hospital/Pharmacy/Dental/Optical), country selector during signup (21 countries, auto-sets currency), and unique dashboards per business subtype (different widgets for clinics vs pharmacies vs restaurants vs clothing stores). Database cleared — ready for deploy.
+
+---
+Task ID: ares-v6
+Agent: Super Z (main)
+Task: Rebrand public site (reduce AI references, replace with professional terminology across the whole system), state Kelvin Ayinbisa is the founder, build WhatsApp QR code backend with NO third party, transform Meta WhatsApp integration into Meta Embedded Signup (hide all technical complexity behind ARES).
+
+Work Log:
+- REBRAND public site: hero "AI employee" -> "digital employee"; platform "Not a chatbot. A real AI employee." -> "digital employee"; how-it-works "Your AI starts working" -> "Your assistant starts working"; whatsapp-integration REWROTE (removed dual-gateway + 7-step pipeline, now "One click to connect. Zero technical setup." with 3-step Embedded Signup flow); integrations landing grid removed WAAPI.io; about REWROTE with dedicated Kelvin Ayinbisa founder card; footer "Founded by Kelvin Ayinbisa"; layout metadata updated; auth.tsx "digital employee is one signup away"
+- REBRAND dashboard: nav "Ask my AI" -> "Ask my assistant"; settings "Your AI assistant" -> "Your assistant"; ai-chat intro "digital employee"; conversations/automations/audit/overview/products all de-AI'd
+- META EMBEDDED SIGNUP backend (new): src/lib/meta-whatsapp.ts (buildEmbeddedSignupUrl, exchangeCodeForToken, getWabaId, getWabaPhoneNumber, registerWebhook, completeEmbeddedSignup); src/lib/fb-sdk.ts (loadFacebookSDK, launchEmbeddedSignup); /api/whatsapp/meta/embedded-signup (GET config); /api/whatsapp/meta/exchange (POST code -> token -> WABA -> phone -> store); /api/whatsapp/meta/callback (GET redirect URI, returns self-contained HTML success/error page)
+- QR CODE (no third party, rewritten): /api/whatsapp/qr generates QR encoding official Meta Embedded Signup OAuth URL (state=businessId); /api/whatsapp/status checks WHATSAPP_META integration
+- INTEGRATIONS UI (rewritten): WhatsAppConnectModal with "Connect WhatsApp" (FB SDK popup) + "Connect via QR" (polls status); removed WHATSAPP_WAAPI; /api/integrations marks WHATSAPP_META as embeddedSignup-only
+- .env.example: added META_APP_ID, META_APP_SECRET, META_CONFIG_ID, META_VERIFY_TOKEN
+
+Stage Summary:
+- A.R.E.S. v6: full rebrand (no "AI employee" anywhere, replaced with "digital employee"/"assistant"), prominent Kelvin Ayinbisa founder credit, complete Meta WhatsApp Embedded Signup with NO third party. Customer clicks "Connect WhatsApp" -> Meta popup -> approve -> ARES handles token/WABA/phone/webhook server-side. QR option encodes the same official OAuth URL. All technical complexity hidden. Lint clean. Schema postgresql for Vercel.
