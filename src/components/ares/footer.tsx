@@ -24,8 +24,7 @@ export function AresFooter() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7">
             <FooterCol title="Platform" links={[
               { label: "How it works", href: "#how" },
-              { label: "Integrations", href: "#integrations" },
-              { label: "About", href: "#about" },
+              { label: "WhatsApp", href: "#whatsapp" },
               { label: "Get started", href: "/auth" },
             ]} />
             <FooterCol title="Sectors" links={[

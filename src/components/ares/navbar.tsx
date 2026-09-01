@@ -9,8 +9,7 @@ import { AresLogo } from "./logo";
 const NAV_LINKS = [
   { label: "Platform", href: "#platform" },
   { label: "How it works", href: "#how" },
-  { label: "Integrations", href: "#integrations" },
-  { label: "About", href: "#about" },
+  { label: "WhatsApp", href: "#whatsapp" },
 ];
 
 export function AresNavbar() {
