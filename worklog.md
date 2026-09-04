@@ -363,3 +363,27 @@ Work Log:
 
 Stage Summary:
 - The persistent "Application error" is fixed. Every server component now has error handling, and global error boundaries catch any uncaught exceptions. The main page calls ensureDatabase() before querying and falls back to the landing page on DB errors. Pushed to Vercel.
+
+---
+Task ID: ares-v16
+Agent: Super Z (main)
+Task: Fix 'can't save personalization' bug + fix store page 'always loading' issue + full system sweep.
+
+Work Log:
+- BUG #1 FIXED: Settings page posted to /api/settings but that route didn't exist. Created src/app/api/settings/route.ts — POST endpoint that updates agentName + agentInstructions for the authenticated business, with validation (name required, max 50 chars; instructions max 5000 chars), audit log, and proper error handling.
+- BUG #2 FIXED: Store page showed "Store is warming up" forever because:
+  a) If db was null (DATABASE_URL not configured), db.business.findUnique threw an uncaught error. Added an explicit `if (!db)` check at the top that shows a "Store is being set up" page with a clear message about database configuration.
+  b) The error page had no retry button. Added a "Try again" link that reloads the page.
+  c) The store error boundary (error.tsx) also has a "Try again" button that calls reset().
+- FULL SYSTEM SWEEP:
+  - Verified all 18 API routes referenced by frontend components exist (chat, greeting, dashboard, signup, onboard, automations, conversations, integrations, orders, products, settings, store, whatsapp/*)
+  - Verified all 10 lib files imported by components/API routes exist (ai-client, ares-ai, auth, db, meta-whatsapp, fb-sdk, global-brain, sector-catalog, utils)
+  - Verified all 10 app-shell components exist (overview, products, orders, conversations, automations, integrations, ai-chat, settings, audit, sidebar)
+  - Verified products create/update/delete API calls use correct URLs (/api/products for POST, /api/products/[id] for PATCH/DELETE)
+  - Verified dashboard API returns business.slug (needed for store link card)
+  - Full project lint: zero errors
+  - Dev server compiles, home + auth pages return HTTP 200
+- Pushed to GitHub (a6513ca), Vercel deploying.
+
+Stage Summary:
+- Both bugs fixed (missing /api/settings route + store page db null check + retry button). Full system sweep verified all routes, imports, and components exist and resolve correctly. Lint clean. Pushed to Vercel.
