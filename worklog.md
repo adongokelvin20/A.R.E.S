@@ -304,3 +304,26 @@ Work Log:
 
 Stage Summary:
 - Store chat no longer shows "Connection issue" (bulletproof error handling + auto-retry). AI asks for customer names early and saves them as Customer records (remembered across sessions via sessionId). Conversations in the dashboard show as real customer<->agent chats with the agent named (not "AI" or "Assistant"). Pushed to Vercel.
+
+---
+Task ID: ares-v13
+Agent: Super Z (main)
+Task: Speed up store chat reply time + make Conversations tab read-only (owner views customer<->agent conversations, no reply).
+
+Work Log:
+- Sped up store chat replies with 4 optimizations:
+  1. Parallelized buildBusinessContext + performInternalLookup using Promise.allSettled (saves ~1-2s — they ran sequentially before)
+  2. Reduced AI max_tokens from 700 to 400 (faster generation, still enough for a good chat response)
+  3. Reduced buildBusinessContext data load: products 200->50, knowledge 80->40, orders 50->20, customers 100->30 (less data to serialize + smaller system prompt)
+  4. Reduced performInternalLookup product limit 200->50 + image lookup limit to 50 products
+- Made Conversations tab read-only:
+  - Removed the reply input bar + send button
+  - Removed replyText + sending state variables + sendReply function
+  - Added a read-only info bar at the bottom: "Read-only · This is a conversation between your customer and {agentName}"
+  - Updated empty-state message: "Choose a customer from the list to read their conversation with {agentName}. You can see what customers are asking and how your assistant is handling them."
+  - Removed unused imports (Send, Video)
+  - Added Lock icon import
+- Lint clean. Home page returns HTTP 200. Pushed to GitHub (f38dacf), Vercel deploying.
+
+Stage Summary:
+- Store chat now replies faster (parallelized DB queries, smaller context, fewer max_tokens). Conversations tab is now read-only — the owner reads customer<->agent conversations without replying. Pushed to Vercel.
