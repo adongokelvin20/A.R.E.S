@@ -23,6 +23,23 @@ function sym(cur: string) {
 export default async function StorePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
+  // If db is null (DATABASE_URL not configured), show a helpful error
+  if (!db) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-ares-mist px-4">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+            <AlertCircle className="h-7 w-7" />
+          </div>
+          <h1 className="text-xl font-semibold text-ares-navy">Store is being set up</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The database isn't connected yet. The business owner needs to configure the database URL. Please check back soon.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   // Ensure the database tables exist (handles first-visit on a fresh Vercel deployment)
   try {
     await ensureDatabase();
@@ -77,7 +94,7 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
       throw e;
     }
     console.error("[store page] database error:", e);
-    // Render a graceful error page instead of a 500 crash
+    // Render a graceful error page with a retry button instead of a 500 crash
     return (
       <main className="flex min-h-screen items-center justify-center bg-ares-mist px-4">
         <div className="max-w-md text-center">
@@ -86,8 +103,14 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
           </div>
           <h1 className="text-xl font-semibold text-ares-navy">Store is warming up</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            We're setting things up. Please refresh in a moment, or contact the business directly.
+            We&apos;re getting things ready. Please refresh in a moment, or contact the business directly.
           </p>
+          <a
+            href={`/store/${slug}`}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep"
+          >
+            Try again
+          </a>
         </div>
       </main>
     );
