@@ -15,10 +15,10 @@ export async function buildBusinessContext(businessId: string, customerPhone?: s
   const business = await db.business.findUnique({
     where: { id: businessId },
     include: {
-      products: { where: { status: "ACTIVE" }, take: 200, orderBy: { createdAt: "desc" } },
-      knowledge: { where: { status: "ACTIVE" }, take: 80 },
-      orders: { orderBy: { createdAt: "desc" }, take: 50 },
-      customers: { take: 100 },
+      products: { where: { status: "ACTIVE" }, take: 50, orderBy: { createdAt: "desc" } },
+      knowledge: { where: { status: "ACTIVE" }, take: 40 },
+      orders: { orderBy: { createdAt: "desc" }, take: 20 },
+      customers: { take: 30 },
     },
   });
 

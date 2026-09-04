@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Send, ArrowLeft, Phone, Video, MoreVertical, Check, CheckCheck, MessageSquare, RefreshCw } from "lucide-react";
+import { Search, ArrowLeft, Phone, MoreVertical, Check, CheckCheck, MessageSquare, RefreshCw, Lock } from "lucide-react";
 
 interface Group {
   key: string;
@@ -62,8 +62,6 @@ export function AresConversations({ data }: { data: any }) {
   const [loadingList, setLoadingList] = useState(false);
   const [loadingThread, setLoadingThread] = useState(false);
   const [search, setSearch] = useState("");
-  const [replyText, setReplyText] = useState("");
-  const [sending, setSending] = useState(false);
   const [mobileShowThread, setMobileShowThread] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const agentName = data?.business?.agentName ?? "Assistant";
@@ -124,46 +122,6 @@ export function AresConversations({ data }: { data: any }) {
       setThread([]);
     } finally {
       setLoadingThread(false);
-    }
-  }
-
-  // Owner sends a reply (stored as HUMAN role — the customer sees it in their store chat next time they open it)
-  async function sendReply() {
-    const text = replyText.trim();
-    if (!text || !activeConvo || sending) return;
-    setSending(true);
-    try {
-      // Optimistically add the message
-      const optimisticMsg: Message = {
-        id: "temp-" + Date.now(),
-        role: "HUMAN",
-        content: text,
-        createdAt: new Date().toISOString(),
-      };
-      setThread((t) => [...t, optimisticMsg]);
-      setReplyText("");
-
-      // Store the reply in the database via the chat API (using the owner's session)
-      // We use the existing /api/ares/chat endpoint but with a special flag
-      await fetch("/api/ares/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          conversationId: activeConvo.id,
-          history: thread.slice(-8).map((m) => ({ role: m.role === "CUSTOMER" ? "user" : "assistant", content: m.content })),
-          ownerReply: true,
-        }),
-      });
-
-      // Reload the thread to get the persisted version
-      const res = await fetch(`/api/conversations?id=${activeConvo.id}`);
-      const json = await res.json();
-      setThread(json.conversation?.messages ?? []);
-    } catch (e) {
-      console.error("Failed to send reply", e);
-    } finally {
-      setSending(false);
     }
   }
 
@@ -372,25 +330,10 @@ export function AresConversations({ data }: { data: any }) {
               )}
             </div>
 
-            {/* Input bar (WhatsApp style) */}
-            <div className="flex items-center gap-2 bg-[#F0F2F5] px-3 py-2.5">
-              <div className="flex flex-1 items-center rounded-full bg-white px-4 py-2">
-                <input
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
-                  placeholder="Type a reply..."
-                  className="flex-1 bg-transparent text-sm text-ares-navy placeholder:text-muted-foreground focus:outline-none"
-                />
-              </div>
-              <button
-                onClick={sendReply}
-                disabled={!replyText.trim() || sending}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105 disabled:opacity-40"
-                aria-label="Send"
-              >
-                {sending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </button>
+            {/* Read-only info bar — owner views conversations, doesn't reply */}
+            <div className="flex items-center justify-center gap-2 bg-[#F0F2F5] px-3 py-2.5 text-center text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              Read-only · This is a conversation between your customer and {agentName}
             </div>
           </>
         ) : (
@@ -402,7 +345,7 @@ export function AresConversations({ data }: { data: any }) {
               </div>
               <h3 className="mt-4 text-sm font-semibold text-[#075E54]">Select a conversation</h3>
               <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                Choose a customer from the list to see your conversation with them. You can reply directly and the customer sees it next time they open the chat.
+                Choose a customer from the list to read their conversation with {agentName}. You can see what customers are asking and how your assistant is handling them.
               </p>
             </div>
           </div>

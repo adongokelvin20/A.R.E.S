@@ -81,22 +81,27 @@ export async function POST(req: NextRequest) {
   }
   const businessId = business.id;
 
-  // Build the AI context (sector prompt, learnings, personality) — fail gracefully
+  // Build the AI context + do the internal product lookup IN PARALLEL (saves ~1-2s)
   let systemPrompt = `You are ${business.agentName || "the assistant"}, a real person who works at ${business.name}. You are a friendly, helpful employee. Be concise, warm, and natural. Use contractions. If the customer wants to order, ask for their name first, then pickup or delivery, then their phone number. Confirm the order before logging it.`;
   let ctx: any = { agentName: business.agentName || "Assistant", sector: "business", sectorLabel: "business", business };
-  try {
-    ctx = await buildBusinessContext(businessId);
+  let internalNotes: string | null = null;
+
+  const [ctxResult, notesResult] = await Promise.allSettled([
+    buildBusinessContext(businessId),
+    performInternalLookup(businessId, message),
+  ]);
+
+  if (ctxResult.status === "fulfilled" && ctxResult.value) {
+    ctx = ctxResult.value;
     systemPrompt = ctx.systemPrompt;
-  } catch (e) {
-    console.error("[store chat] buildBusinessContext failed:", e);
+  } else {
+    console.error("[store chat] buildBusinessContext failed:", ctxResult.status === "rejected" ? ctxResult.reason : "unknown");
   }
 
-  // Silent internal product lookup — fail gracefully
-  let internalNotes: string | null = null;
-  try {
-    internalNotes = await performInternalLookup(businessId, message);
-  } catch (e) {
-    console.error("[store chat] internal lookup failed:", e);
+  if (notesResult.status === "fulfilled") {
+    internalNotes = notesResult.value;
+  } else {
+    console.error("[store chat] internal lookup failed:", notesResult.status === "rejected" ? notesResult.reason : "unknown");
   }
 
   // Build the messages for the AI
@@ -104,20 +109,20 @@ export async function POST(req: NextRequest) {
     { role: "system", content: systemPrompt },
     ...(history || [])
       .filter((m) => m && m.role && m.content)
-      .slice(-8)
+      .slice(-6)
       .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
     ...(internalNotes ? [{ role: "system" as const, content: internalNotes }] : []),
     { role: "user", content: message },
   ];
 
-  // Call the AI — getZaiClient has a smart fallback so this should always return something
+  // Call the AI — reduced max_tokens for faster replies (400 is plenty for a chat response)
   let reply = "";
   try {
     const zai = await getZaiClient();
     const completion = await zai.chat.completions.create({
       messages,
       temperature: 0.85,
-      max_tokens: 700,
+      max_tokens: 400,
     });
     reply =
       (completion as any)?.choices?.[0]?.message?.content ??
@@ -243,10 +248,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Find product images mentioned in the reply
+    // Find product images mentioned in the reply — only query products with images, limit to 50 for speed
     const allProducts = await db.product.findMany({
       where: { businessId, status: "ACTIVE", imageUrl: { not: null } },
       select: { id: true, name: true, imageUrl: true, price: true, currency: true },
+      take: 50,
     });
     const mentionedImages: any[] = [];
     const replyLower = reply.toLowerCase();
@@ -378,7 +384,7 @@ function extractOrderFields(raw: string): any {
 }
 
 async function performInternalLookup(businessId: string, message: string): Promise<string | null> {
-  const products = await db.product.findMany({ where: { businessId, status: "ACTIVE" }, take: 200 });
+  const products = await db.product.findMany({ where: { businessId, status: "ACTIVE" }, take: 50 });
   if (products.length === 0) {
     return `INTERNAL (don't show the user): No products in the catalog yet. If they ask about products, say you're still getting stock listed and offer to take their details.`;
   }
