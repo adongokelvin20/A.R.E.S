@@ -43,20 +43,11 @@ export async function getZaiClient() {
   // 2. On Vercel: try Z.ai Open API (if API key is set)
   const openApiKey = process.env.ZAI_API_KEY;
   if (openApiKey) {
-    try {
-      clientInstance = createOpenApiClient(openApiKey);
-      // Test if it works
-      const testRes = await clientInstance.chat.completions.create({
-        messages: [{ role: "user", content: "Say OK" }],
-        max_tokens: 5,
-      });
-      if (testRes?.choices?.[0]?.message?.content) {
-        console.log("[A.R.E.S. AI] Using Z.ai Open API");
-        return clientInstance;
-      }
-    } catch (e: any) {
-      console.log("[A.R.E.S. AI] Open API failed:", e?.message?.slice(0, 100));
-    }
+    // Skip the test call — if the API fails, the actual chat call will throw and be caught.
+    // This saves ~1-2s on the first request after a cold start.
+    clientInstance = createOpenApiClient(openApiKey);
+    console.log("[A.R.E.S. AI] Using Z.ai Open API");
+    return clientInstance;
   }
 
   // 3. Fallback: smart responses

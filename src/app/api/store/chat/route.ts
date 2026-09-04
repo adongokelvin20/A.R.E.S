@@ -104,6 +104,30 @@ export async function POST(req: NextRequest) {
     console.error("[store chat] internal lookup failed:", notesResult.status === "rejected" ? notesResult.reason : "unknown");
   }
 
+  // ===== Customer recognition =====
+  // Look up the customer's name from previous conversations with the same sessionId.
+  // If they've chatted before, we greet them by name (returning customer).
+  let returningCustomerName: string | null = null;
+  if (sessionId) {
+    try {
+      const prevConvo = await db.conversation.findFirst({
+        where: { businessId, externalId: sessionId, channel: "WEB", customerName: { not: null } },
+        select: { customerName: true },
+        orderBy: { lastMessageAt: "desc" },
+      });
+      if (prevConvo?.customerName) {
+        returningCustomerName = prevConvo.customerName;
+      }
+    } catch (e) {
+      console.error("[store chat] customer recognition failed:", e);
+    }
+  }
+
+  // If we recognize the customer, add a note to the AI so it greets them by name
+  if (returningCustomerName) {
+    internalNotes = (internalNotes ? internalNotes + "\n\n" : "") + `INTERNAL (don't show the user directly): This is a RETURNING CUSTOMER. Their name is ${returningCustomerName}. Greet them by name naturally — "Hey ${returningCustomerName.split(" ")[0]}, good to see you again!" Don't ask for their name again; you already know it.`;
+  }
+
   // Build the messages for the AI
   const messages: ChatTurn[] = [
     { role: "system", content: systemPrompt },
@@ -138,7 +162,7 @@ export async function POST(req: NextRequest) {
     reply = `Hi! I'm ${ctx.agentName}. How can I help you today?`;
   }
 
-  // Extract LEARNED facts and save them
+  // Extract LEARNED facts (business-specific) and save them
   try {
     const learnedMatch = reply.match(/LEARNED:\s*(.+?)(?:\n|$)/i);
     if (learnedMatch && learnedMatch[1]) {
@@ -152,6 +176,18 @@ export async function POST(req: NextRequest) {
     }
   } catch (e) {
     console.error("[store chat] learning save failed:", e);
+  }
+
+  // Extract BRAIN_LEARNED patterns (global human-like patterns) and save to the global brain
+  try {
+    const brainMatch = reply.match(/BRAIN_LEARNED:\s*(.+?)(?:\n|$)/i);
+    if (brainMatch && brainMatch[1]) {
+      const { learnPattern } = await import("@/lib/global-brain");
+      await learnPattern(brainMatch[1].trim(), "conversation");
+    }
+    reply = reply.replace(/BRAIN_LEARNED:\s*.+?(?:\n|$)/i, "").trim();
+  } catch (e) {
+    console.error("[store chat] brain learning save failed:", e);
   }
 
   // Detect order confirmation and create the order
@@ -174,7 +210,7 @@ export async function POST(req: NextRequest) {
       reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}\s*$/i, "").trim();
       reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}/i, "").trim();
       if (orderCreated) {
-        reply += `\n\n(I've logged your order — #${orderCreated.id.slice(-6).toUpperCase()}. The owner will see it in their dashboard.)`;
+        reply += `\n\nGot it! I've logged your order — #${orderCreated.id.slice(-6).toUpperCase()}. We'll take it from here. 🎉`;
       }
     }
   } catch (e) {

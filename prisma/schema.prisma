@@ -356,3 +356,26 @@ model KnowledgeEntry {
 
   @@index([businessId, category])
 }
+
+// ============================================================
+// A.R.E.S. GLOBAL BRAIN — shared learnings across ALL businesses.
+// The brain evolves over time: every conversation teaches it
+// something about how to be more human-like. These are global
+// patterns (not business-specific data) injected into every
+// business's AI context so the entire system gets smarter together.
+// ============================================================
+
+model GlobalBrain {
+  id            String   @id @default(cuid())
+  pattern       String   // The learned pattern / behavior
+  category      String   @default("conversation") // conversation | empathy | sales | greeting | objection
+  source        String   @default("auto") // auto | curated
+  weight        Int      @default(1) // how many times this pattern was reinforced
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category, status])
+  @@index([status])
+}
+

@@ -77,6 +77,10 @@ export async function ensureDatabase() {
       `CREATE INDEX IF NOT EXISTS "Integration_businessId_idx" ON "Integration"("businessId")`,
       `CREATE TABLE IF NOT EXISTS "KnowledgeEntry" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "category" TEXT NOT NULL, "question" TEXT, "answer" TEXT NOT NULL, "tags" TEXT NOT NULL DEFAULT '[]', "status" TEXT NOT NULL DEFAULT 'ACTIVE', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "KnowledgeEntry_pkey" PRIMARY KEY ("id"))`,
       `CREATE INDEX IF NOT EXISTS "KnowledgeEntry_businessId_category_idx" ON "KnowledgeEntry"("businessId", "category")`,
+      // A.R.E.S. Global Brain — shared learnings across all businesses
+      `CREATE TABLE IF NOT EXISTS "GlobalBrain" ("id" TEXT NOT NULL, "pattern" TEXT NOT NULL, "category" TEXT NOT NULL DEFAULT 'conversation', "source" TEXT NOT NULL DEFAULT 'auto', "weight" INTEGER NOT NULL DEFAULT 1, "status" TEXT NOT NULL DEFAULT 'ACTIVE', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "GlobalBrain_pkey" PRIMARY KEY ("id"))`,
+      `CREATE INDEX IF NOT EXISTS "GlobalBrain_category_status_idx" ON "GlobalBrain"("category", "status")`,
+      `CREATE INDEX IF NOT EXISTS "GlobalBrain_status_idx" ON "GlobalBrain"("status")`,
     ]
 
     for (const sql of statements) {

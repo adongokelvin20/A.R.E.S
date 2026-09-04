@@ -181,7 +181,16 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
 
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {publicProducts.map((p) => (
-              <article key={p.id} className="overflow-hidden rounded-2xl border border-ares-line bg-white transition-shadow hover:shadow-md">
+              <article
+                key={p.id}
+                onClick={() => {
+                  // Dispatch a global event that StoreChat listens for to open the chat + send a message
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("ares-product-click", { detail: { productName: p.name } }));
+                  }
+                }}
+                className="cursor-pointer overflow-hidden rounded-2xl border border-ares-line bg-white transition-shadow hover:shadow-md"
+              >
                 <div className="aspect-square overflow-hidden bg-ares-mist">
                   {p.imageUrl ? (
                     <img src={p.imageUrl} alt={p.imageAlt || p.name} className="h-full w-full object-cover" />
@@ -201,6 +210,10 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
                     <span className={`text-[10px] font-medium ${p.inStock ? "text-emerald-600" : "text-muted-foreground"}`}>
                       {p.inStock ? "In stock" : "Out"}
                     </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-center gap-1 rounded-lg bg-[#25D366]/10 py-1.5 text-[10px] font-medium text-[#075E54]">
+                    <MessageCircle className="h-3 w-3" />
+                    Tap to ask about this
                   </div>
                 </div>
               </article>

@@ -10,6 +10,7 @@
 
 import { db } from "@/lib/db";
 import { findSubtype, type SectorSubtype } from "@/lib/sector-catalog";
+import { getBrainPatterns } from "@/lib/global-brain";
 
 export async function buildBusinessContext(businessId: string, customerPhone?: string) {
   const business = await db.business.findUnique({
@@ -117,9 +118,25 @@ ${learnings.map((l, i) => `${i + 1}. ${l}`).join("\n")}
 Use these learnings to give better, more informed answers. They represent real things that have come up in conversations with this business's customers.`
     : "";
 
+  // Global brain — shared human-like patterns learned across ALL A.R.E.S. businesses
+  let brainPatterns: string[] = [];
+  try {
+    brainPatterns = await getBrainPatterns();
+  } catch (e) {
+    console.error("[A.R.E.S. AI] brain patterns failed:", e);
+  }
+  const brainSection = brainPatterns.length > 0
+    ? `===== A.R.E.S. BRAIN — HOW TO BE HUMAN (learned from millions of conversations) =====
+${brainPatterns.map((p, i) => `${i + 1}. ${p}`).join("\n")}
+
+These are behavioral patterns the entire A.R.E.S. system has learned. Follow them naturally — they make you sound like a real person, not a chatbot.`
+    : "";
+
   const systemPrompt = `You are ${agentName}, a real person who works at ${business.name}. You are NOT an AI assistant, a chatbot, or a virtual assistant -- you are a human employee.
 
 ${sectorPrompt}
+
+${brainSection}
 
 ${personalitySection}
 
@@ -140,6 +157,7 @@ ${learningsSection}
 - Answer ALL questions if they ask multiple.
 - Never expose internal reasoning ("based on the catalog", "let me check"). Just answer.
 - Don't use emojis unless the customer uses them first.
+- NEVER mention the owner's dashboard, backend systems, or that an order "will appear" somewhere. Just say "Got it, I've logged your order" — no internal system references.
 
 ===== WHO YOU ARE =====
 Your name is "${agentName}". You work at ${business.name}. The owner is ${ownerName}.
@@ -185,8 +203,17 @@ If a customer tells you their name, use it in the conversation afterward. People
 
 ===== LEARNING (important) =====
 If the customer tells you something useful about the business that you didn't know -- a new product, a price change, a policy detail, a customer preference -- make a note of it. At the end of your reply, if you learned something worth remembering, add this marker (the system will save it; the customer never sees it):
-LEARNED: <one sentence describing what you learned>
-Only use this when you genuinely learned something new and factual. Don't use it for opinions or small talk.`;
+LEARNED: <one sentence describing what you learned about THIS business>
+Only use this when you genuinely learned something new and factual about this specific business. Don't use it for opinions or small talk.
+
+===== GLOBAL BRAIN LEARNING (helps all A.R.E.S. assistants) =====
+If you notice something about how to be MORE HUMAN-LIKE in conversation -- a phrasing that worked well, a way to handle a question that felt natural, a pattern that made the customer respond positively -- add this marker at the end of your reply (the system saves it to the shared brain; the customer never sees it):
+BRAIN_LEARNED: <one sentence describing a conversational pattern that made this exchange feel human>
+Examples of good brain learnings:
+- "Acknowledging frustration before offering a solution makes the customer feel heard"
+- "Mentioning a personal favorite when recommending a product builds trust"
+- "Asking one question at a time during ordering keeps the customer engaged"
+Only use BRAIN_LEARNED when you genuinely discovered something about human conversation. Don't use it for factual business details (use LEARNED for those).`;
 
   return { business, subtype, sectorLabel, agentName, systemPrompt };
 }

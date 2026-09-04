@@ -101,6 +101,18 @@ export async function POST(req: NextRequest) {
       reply = reply.replace(/LEARNED:\s*.+?(?:\n|$)/i, "").trim();
     }
 
+    // ===== Extract BRAIN_LEARNED patterns and save to the global brain =====
+    const brainMatch = reply.match(/BRAIN_LEARNED:\s*(.+?)(?:\n|$)/i);
+    if (brainMatch && brainMatch[1]) {
+      try {
+        const { learnPattern } = await import("@/lib/global-brain");
+        await learnPattern(brainMatch[1].trim(), "conversation");
+      } catch (e) {
+        console.error("[chat] failed to save brain learning", e);
+      }
+      reply = reply.replace(/BRAIN_LEARNED:\s*.+?(?:\n|$)/i, "").trim();
+    }
+
     // ===== Detect order confirmation and log the order =====
     let orderCreated = null;
     // Look for ORDER_CONFIRMED marker anywhere in the reply

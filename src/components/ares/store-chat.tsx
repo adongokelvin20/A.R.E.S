@@ -131,6 +131,21 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
     [input, loading, slug, sessionId, messages]
   );
 
+  // Listen for product clicks from the store page — opens the chat and sends an interest message
+  useEffect(() => {
+    function handleProductClick(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.productName) {
+        setOpen(true);
+        setTimeout(() => {
+          send(`I'm interested in the ${detail.productName}. Can you tell me more about it?`);
+        }, 300);
+      }
+    }
+    window.addEventListener("ares-product-click", handleProductClick as EventListener);
+    return () => window.removeEventListener("ares-product-click", handleProductClick as EventListener);
+  }, [send]);
+
   return (
     <>
       {/* Floating chat bubble (WhatsApp green) */}
