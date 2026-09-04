@@ -327,3 +327,20 @@ Work Log:
 
 Stage Summary:
 - Store chat now replies faster (parallelized DB queries, smaller context, fewer max_tokens). Conversations tab is now read-only — the owner reads customer<->agent conversations without replying. Pushed to Vercel.
+
+---
+Task ID: ares-v14
+Agent: Super Z (main)
+Task: Make store chat faster, build global learning brain, customer recognition, push product images, remove dashboard mentions, clickable products.
+
+Work Log:
+- Sped up store chat: removed the AI client test call on Vercel (saves ~1-2s on cold start), reduced history to 6 messages, reduced max_tokens to 400
+- Built A.R.E.S. Global Brain: new GlobalBrain table + src/lib/global-brain.ts with 24 curated human-like patterns (conversation, empathy, sales, greeting, objection). Patterns are injected into every business's AI context. The AI emits BRAIN_LEARNED: markers when it discovers new human-like patterns, which are saved to the global brain with weight reinforcement. Both store chat and dashboard chat extract BRAIN_LEARNED markers. The entire system gets smarter together.
+- Customer recognition: store chat API now looks up the customer's name from previous conversations with the same sessionId. If they've chatted before, injects a note to the AI: "This is a RETURNING CUSTOMER. Their name is X. Greet them by name." Returning customers are greeted by name automatically.
+- Removed "owner will see it in their dashboard" from order confirmation messages. Now says "Got it! I've logged your order — #XXXXXX. We'll take it from here." Added system prompt rule: "NEVER mention the owner's dashboard, backend systems, or that an order 'will appear' somewhere."
+- Clickable products: product cards on the store page now have a "Tap to ask about this" indicator. Clicking a product dispatches a global event that the StoreChat component listens for — it opens the chat and sends "I'm interested in the {product name}. Can you tell me more about it?" automatically.
+- Product images: the store chat API already pushes product images in replies when the AI mentions a product (up to 3 images). This was verified and kept.
+- Lint clean. Home page returns HTTP 200. Pushed to GitHub (a3b2ab0), Vercel deploying.
+
+Stage Summary:
+- Store chat is faster (no test call, smaller context). Global brain learns human-like patterns across ALL businesses and injects them into every AI context. Returning customers are greeted by name. Product cards are clickable and open the chat with an interest message. No more dashboard mentions to customers. Pushed to Vercel.
