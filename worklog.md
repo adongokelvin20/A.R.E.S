@@ -248,3 +248,27 @@ Work Log:
 
 Stage Summary:
 - Public store page live at /store/[slug]. Customers browse products + chat with the business AI (same AI as WhatsApp). Conversations + orders land in owner dashboard. 50+ concurrent customers supported (Vercel serverless scales per request). Store link card in dashboard Overview with copy button. Built on 739b8ff AI version.
+
+---
+Task ID: ares-v10
+Agent: Super Z (main)
+Task: Fix Vercel "server-side exception" error on store page + make Conversations section look like WhatsApp for both owner dashboard and customer store chat.
+
+Work Log:
+- Fixed store page Vercel error: root cause was the store page + store API routes didn't call ensureDatabase() before querying, so on a fresh Vercel deployment the tables didn't exist yet on first visit. Added ensureDatabase() to /store/[slug] page, /api/store/[slug] route, /api/store/chat route, and /api/conversations route. Added try/catch around the business lookup that calls notFound() on DB error.
+- Redesigned owner's Conversations tab to WhatsApp-style two-pane layout:
+  - Left pane: green WhatsApp header (#075E54), search bar, chat list with colored avatars (initials), last message preview, timestamps
+  - Right pane: green chat header with customer name + online status, WhatsApp chat wallpaper (#E5DDD5 with SVG pattern), message bubbles (green for outgoing #DCF8C6, white for incoming), date separators, double-tick read receipts, input bar with rounded send button (#25D366)
+  - Mobile-responsive: shows chat list or thread depending on selection
+- Redesigned customer's store chat to match WhatsApp:
+  - Green header (#075E54) with assistant avatar + online status
+  - WhatsApp chat wallpaper background
+  - Message bubbles matching WhatsApp colors (green outgoing, white incoming)
+  - Double-tick receipts on outgoing messages
+  - Rounded input bar with green send button
+  - Product image attachments in replies with price
+  - Quick product suggestion chips
+- Lint clean. Pushed to GitHub (3fdc2e6), Vercel deploying.
+
+Stage Summary:
+- Store page error fixed (ensureDatabase on all public DB-touching routes). Both the owner's Conversations tab and the customer's store chat now look like WhatsApp with the signature green theme, chat wallpaper, and message bubbles. Pushed to Vercel.
