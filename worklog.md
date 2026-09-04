@@ -272,3 +272,18 @@ Work Log:
 
 Stage Summary:
 - Store page error fixed (ensureDatabase on all public DB-touching routes). Both the owner's Conversations tab and the customer's store chat now look like WhatsApp with the signature green theme, chat wallpaper, and message bubbles. Pushed to Vercel.
+
+---
+Task ID: ares-v11
+Agent: Super Z (main)
+Task: Fix persistent Vercel "server-side exception" error on store page, fix Google dangerous flag, fix store link copy button overflow, make everything work like a well-oiled machine.
+
+Work Log:
+- Fixed store page Vercel crash: wrapped ENTIRE page DB logic (business lookup + products query) in a single try/catch. The previous fix only wrapped the business lookup but the products query at line 54 could still throw an unhandled exception. Now any DB error renders a graceful "Store is warming up" page instead of a 500 crash. Also re-threw notFound() digest errors so Next.js 404 still works correctly.
+- Fixed Google dangerous flag: root cause was tool-results/ directory (internal agent artifacts containing conversation data) being tracked in git and deployed to Vercel. Removed tool-results/ from git tracking (git rm --cached) and added "tool-results/" to .gitignore so it's never committed or deployed again.
+- Fixed StoreLinkCard overflow: the URL + Copy + Open buttons were all in one flex row, causing overflow on mobile. Redesigned to stack vertically on mobile (flex-col) and go horizontal on desktop (sm:flex-row). URL uses min-w-0 + flex-1 + truncate so it wraps properly. Buttons are in a shrink-0 container so they never get cut off.
+- Added maxDuration to ALL API routes in vercel.json: store chat (60s), dashboard chat (60s), greeting (30s), products (30s), orders (30s), conversations (30s), integrations (30s), automations (30s), auth (30s), store info (30s), WhatsApp routes (30s). Prevents serverless timeouts across the entire system.
+- Lint clean. Home + auth pages return HTTP 200. Pushed to GitHub (40536d5), Vercel deploying.
+
+Stage Summary:
+- Store page no longer crashes (full try/catch + graceful fallback). Google dangerous flag fixed (tool-results removed from git + ignored). Store link card is now responsive (no overflow). All API routes have proper timeouts. Pushed to Vercel.
