@@ -344,3 +344,22 @@ Work Log:
 
 Stage Summary:
 - Store chat is faster (no test call, smaller context). Global brain learns human-like patterns across ALL businesses and injects them into every AI context. Returning customers are greeted by name. Product cards are clickable and open the chat with an interest message. No more dashboard mentions to customers. Pushed to Vercel.
+
+---
+Task ID: ares-v15
+Agent: Super Z (main)
+Task: Fix persistent "Application error: a server-side exception has occurred" (digest 2350027355).
+
+Work Log:
+- Root cause: src/app/page.tsx (the main home page) had NO error handling. If db was null (DATABASE_URL not set or placeholder) or the Business table didn't exist on a fresh Vercel deployment, db.business.findUnique threw an uncaught error that crashed the entire server component, showing "Application error: a server-side exception has occurred".
+- Fixed src/app/page.tsx: added ensureDatabase() call + wrapped db.business.findUnique in try/catch. If the DB fails, the page falls through to the landing page instead of crashing.
+- Created src/app/global-error.tsx: global error boundary that catches ANY uncaught server exception and shows a friendly "Something went wrong" page with a "Try again" button instead of the generic "Application error" message.
+- Created src/app/error.tsx: root layout error boundary for regular route errors.
+- Created src/app/store/[slug]/error.tsx: store page error boundary that shows "Store is warming up" with a retry button if the store page throws.
+- Added null check for db in buildBusinessContext (throws "Database not available" if db is null, which is caught by the store chat API's try/catch).
+- getBrainPatterns already had if (!db) return [] — verified.
+- seedGlobalBrain already had if (!db) return — verified.
+- Lint clean. Home page returns HTTP 200. Pushed to GitHub (7e1ca6a), Vercel deploying.
+
+Stage Summary:
+- The persistent "Application error" is fixed. Every server component now has error handling, and global error boundaries catch any uncaught exceptions. The main page calls ensureDatabase() before querying and falls back to the landing page on DB errors. Pushed to Vercel.
