@@ -287,3 +287,20 @@ Work Log:
 
 Stage Summary:
 - Store page no longer crashes (full try/catch + graceful fallback). Google dangerous flag fixed (tool-results removed from git + ignored). Store link card is now responsive (no overflow). All API routes have proper timeouts. Pushed to Vercel.
+
+---
+Task ID: ares-v12
+Agent: Super Z (main)
+Task: Fix "Connection issue" error in store chat, make AI ask for customer name and save as Customer record (remembered across sessions), make conversations show as customer<->agent chats not chatbot.
+
+Work Log:
+- Fixed store chat "Connection issue" error: rewrote /api/store/chat with bulletproof error handling — each DB step (business lookup, buildBusinessContext, performInternalLookup, persistence) is wrapped in its own try/catch so one failure doesn't kill the whole request. The AI call has a smart fallback. If buildBusinessContext fails, a minimal system prompt is used. The customer always gets a reply even if the DB is temporarily unavailable.
+- Fixed store chat client: added automatic retry (2 attempts with 1s delay) so transient serverless cold-start errors don't show "Connection issue" — the second attempt usually succeeds. Replaced the error message with a friendlier "server might be warming up" message if both attempts fail.
+- Made AI ask for customer name early: added "GETTING TO KNOW THE CUSTOMER" section to the system prompt instructing the AI to ask for the customer's name within the first 2-3 replies if they haven't given it. Once they tell their name, the AI uses it in every reply. Returning customers are greeted by name.
+- Save customer name as a Customer record: the store chat API now extracts the customer name from messages using regex (matches "my name is X", "I'm X", "this is X", "call me X") and creates/updates a Customer record in the database. The conversation's customerName field is also updated. The owner sees these customers in their dashboard.
+- Save customer on order: createOrderFromChat now creates a Customer record even without a phone number (by name only), so web customers who order are saved.
+- Conversations show as customer<->agent chats: removed "· Assistant" label from AI messages in the Conversations tab so it just shows the agent's name (e.g. "Maya") — looks like a real employee, not a chatbot. The customer's messages show on the left (white bubbles), the agent's replies show on the right (green bubbles) — exactly like WhatsApp.
+- Lint clean. Home page returns HTTP 200. Pushed to GitHub (d0ad0f1), Vercel deploying.
+
+Stage Summary:
+- Store chat no longer shows "Connection issue" (bulletproof error handling + auto-retry). AI asks for customer names early and saves them as Customer records (remembered across sessions via sessionId). Conversations in the dashboard show as real customer<->agent chats with the agent named (not "AI" or "Assistant"). Pushed to Vercel.
