@@ -14,7 +14,7 @@
  * customer's name + phone when they want to order (existing behavior).
  */
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 import { buildBusinessContext } from "@/lib/ares-ai";
 import { getZaiClient } from "@/lib/ai-client";
 
@@ -29,6 +29,7 @@ interface ChatTurn {
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureDatabase();
     const body = await req.json();
     const { slug, message, sessionId, history = [], customerName, customerPhone } = body as {
       slug?: string;

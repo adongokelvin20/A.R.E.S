@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, Send, Loader2, ShoppingBag, X } from "lucide-react";
+import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical } from "lucide-react";
 
 interface Product {
   id: string;
@@ -27,6 +27,7 @@ interface Msg {
   role: "user" | "assistant";
   content: string;
   images?: any[];
+  createdAt: string;
 }
 
 function genId() {
@@ -41,6 +42,10 @@ function getOrCreateSessionId() {
     localStorage.setItem("ares-store-session", id);
   }
   return id;
+}
+
+function timeShort(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
 const CURRENCY_SYMBOL: Record<string, string> = {
@@ -58,17 +63,18 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
   const [sessionId] = useState(getOrCreateSessionId);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Initial greeting from the assistant
+  // Initial greeting
   useEffect(() => {
     setMessages([
       {
         role: "assistant",
-        content: `Hi! I'm ${agentName}, your assistant at ${businessName}. How can I help you today?`,
+        content: `Hi! I'm ${agentName}, your assistant at ${businessName}. How can I help you today? 😊`,
+        createdAt: new Date().toISOString(),
       },
     ]);
   }, [agentName, businessName]);
 
-  // Auto-scroll to bottom on new message
+  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -79,7 +85,7 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
     async (text?: string) => {
       const msg = (text ?? input).trim();
       if (!msg || loading) return;
-      const userMsg: Msg = { role: "user", content: msg };
+      const userMsg: Msg = { role: "user", content: msg, createdAt: new Date().toISOString() };
       setMessages((m) => [...m, userMsg]);
       setInput("");
       setLoading(true);
@@ -96,12 +102,12 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
         });
         const j = await res.json();
         if (j.reply) {
-          setMessages((m) => [...m, { role: "assistant", content: j.reply, images: j.images ?? [] }]);
+          setMessages((m) => [...m, { role: "assistant", content: j.reply, images: j.images ?? [], createdAt: new Date().toISOString() }]);
         } else {
-          setMessages((m) => [...m, { role: "assistant", content: "Sorry, I couldn't process that. Could you try again?" }]);
+          setMessages((m) => [...m, { role: "assistant", content: "Sorry, I couldn't process that. Could you try again?", createdAt: new Date().toISOString() }]);
         }
-      } catch (e) {
-        setMessages((m) => [...m, { role: "assistant", content: "Connection issue — please try again in a moment." }]);
+      } catch {
+        setMessages((m) => [...m, { role: "assistant", content: "Connection issue — please try again in a moment.", createdAt: new Date().toISOString() }]);
       } finally {
         setLoading(false);
       }
@@ -111,7 +117,7 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
 
   return (
     <>
-      {/* Floating chat bubble (when closed) */}
+      {/* Floating chat bubble (WhatsApp green) */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -127,80 +133,106 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
         </button>
       )}
 
-      {/* Chat panel */}
+      {/* Chat panel — WhatsApp style */}
       {open && (
-        <div className="fixed inset-x-0 bottom-0 z-50 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-96">
-          <div className="flex h-[80vh] flex-col overflow-hidden rounded-t-3xl border border-ares-line bg-white shadow-2xl sm:h-[600px] sm:rounded-3xl">
-            {/* Header */}
-            <div className="flex items-center justify-between bg-gradient-to-br from-ares-navy to-ares-sea-deep p-4 text-white">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15">
-                  <MessageCircle className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold">{agentName}</div>
-                  <div className="flex items-center gap-1 text-[11px] text-white/70">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    Online · {businessName}
-                  </div>
+        <div className="fixed inset-0 z-50 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-96">
+          <div className="flex h-full flex-col overflow-hidden bg-white shadow-2xl sm:h-[600px] sm:rounded-2xl">
+            {/* Header — WhatsApp green */}
+            <div className="flex items-center gap-3 bg-[#075E54] px-4 py-2.5 text-white">
+              <button
+                onClick={() => setOpen(false)}
+                className="rounded-lg p-1.5 text-white/80 hover:bg-white/10 sm:hidden"
+                aria-label="Close"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-semibold">
+                {agentName.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{agentName}</div>
+                <div className="flex items-center gap-1 text-[11px] text-white/70">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  online · {businessName}
                 </div>
               </div>
-              <button onClick={() => setOpen(false)} className="rounded-lg p-1.5 text-white/70 hover:bg-white/10" aria-label="Close chat">
+              <button className="rounded-lg p-1.5 text-white/80 hover:bg-white/10" aria-label="Call">
+                <Phone className="h-4 w-4" />
+              </button>
+              <button onClick={() => setOpen(false)} className="hidden rounded-lg p-1.5 text-white/80 hover:bg-white/10 sm:block" aria-label="Close">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Messages */}
-            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-ares-mist/30 p-4">
-              {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${
-                      m.role === "user"
-                        ? "bg-ares-navy text-white"
-                        : "bg-white text-ares-navy border border-ares-line"
-                    }`}
-                  >
-                    <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
-                    {m.images && m.images.length > 0 && (
-                      <div className="mt-2 grid grid-cols-2 gap-1.5">
-                        {m.images.map((img: any, idx: number) => (
-                          <div key={idx} className="overflow-hidden rounded-lg border border-ares-line">
-                            <img src={img.imageUrl} alt={img.name} className="h-20 w-full object-cover" />
-                            <div className="bg-white px-1.5 py-1 text-[10px]">
-                              <div className="font-medium text-ares-navy">{img.name}</div>
-                              <div className="text-muted-foreground">{sym(img.currency)}{img.price.toFixed(2)}</div>
-                            </div>
+            {/* Messages area — WhatsApp chat wallpaper */}
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto px-3 py-4"
+              style={{ backgroundColor: "#E5DDD5", backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d4cabf' fill-opacity='0.15'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10S0 14.5 0 20s4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/svg%3E\")" }}
+            >
+              <div className="mx-auto max-w-md space-y-1.5">
+                {messages.map((m, i) => {
+                  const isUser = m.role === "user";
+                  return (
+                    <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`relative max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm ${
+                          isUser ? "bg-[#DCF8C6] text-[#075E54]" : "bg-white text-[#303030]"
+                        }`}
+                      >
+                        {!isUser && (
+                          <div className="mb-0.5 text-[10px] font-semibold text-[#075E54]">
+                            {agentName}
                           </div>
-                        ))}
+                        )}
+                        <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                        {/* Product images */}
+                        {m.images && m.images.length > 0 && (
+                          <div className="mt-2 grid grid-cols-2 gap-1">
+                            {m.images.map((img: any, idx: number) => (
+                              <div key={idx} className="overflow-hidden rounded">
+                                <img src={img.imageUrl} alt={img.name} className="h-20 w-full object-cover" />
+                                <div className="bg-white px-1.5 py-1 text-[10px]">
+                                  <div className="font-medium text-[#075E54]">{img.name}</div>
+                                  <div className="text-[#075E54]/60">{sym(img.currency)}{img.price.toFixed(2)}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {/* Timestamp + ticks */}
+                        <div className="mt-0.5 flex items-center justify-end gap-1 text-[9px] text-[#075E54]/60">
+                          {timeShort(m.createdAt)}
+                          {isUser && <CheckCheck className="h-3 w-3" />}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="rounded-2xl bg-white px-4 py-3 border border-ares-line">
-                    <div className="flex gap-1">
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-ares-sea/40" style={{ animationDelay: "0ms" }} />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-ares-sea/40" style={{ animationDelay: "150ms" }} />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-ares-sea/40" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  );
+                })}
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="rounded-lg bg-white px-4 py-3 shadow-sm">
+                      <div className="flex gap-1">
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#075E54]/40" style={{ animationDelay: "0ms" }} />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#075E54]/40" style={{ animationDelay: "150ms" }} />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#075E54]/40" style={{ animationDelay: "300ms" }} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Quick product suggestions */}
+            {/* Quick product suggestions (only at start) */}
             {messages.length <= 1 && products.length > 0 && (
-              <div className="border-t border-ares-line bg-white px-3 py-2">
+              <div className="border-t border-[#E5DDD5] bg-white px-3 py-2">
                 <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Popular</div>
                 <div className="flex gap-1.5 overflow-x-auto pb-1">
                   {products.slice(0, 4).map((p) => (
                     <button
                       key={p.id}
                       onClick={() => send(`Tell me about ${p.name}`)}
-                      className="shrink-0 rounded-full border border-ares-line bg-ares-mist/40 px-3 py-1 text-[11px] text-ares-navy hover:bg-ares-mist"
+                      className="shrink-0 rounded-full border border-[#25D366]/30 bg-[#DCF8C6]/30 px-3 py-1 text-[11px] text-[#075E54] hover:bg-[#DCF8C6]/50"
                     >
                       {p.name}
                     </button>
@@ -209,34 +241,25 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
               </div>
             )}
 
-            {/* Input */}
-            <div className="border-t border-ares-line bg-white p-3">
-              <div className="flex items-end gap-2">
-                <textarea
+            {/* Input bar — WhatsApp style */}
+            <div className="flex items-center gap-2 bg-[#F0F2F5] px-3 py-2.5">
+              <div className="flex flex-1 items-center rounded-full bg-white px-4 py-2">
+                <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      send();
-                    }
-                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                   placeholder="Type a message..."
-                  rows={1}
-                  className="max-h-24 flex-1 resize-none rounded-xl border border-ares-line bg-white px-3 py-2.5 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
+                  className="flex-1 bg-transparent text-sm text-[#075E54] placeholder:text-muted-foreground focus:outline-none"
                 />
-                <button
-                  onClick={() => send()}
-                  disabled={loading || !input.trim()}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ares-navy text-white transition-colors hover:bg-ares-sea-deep disabled:opacity-40"
-                  aria-label="Send"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </button>
               </div>
-              <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
-                Powered by A.R.E.S. · {businessName}
-              </p>
+              <button
+                onClick={() => send()}
+                disabled={loading || !input.trim()}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105 disabled:opacity-40"
+                aria-label="Send"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </button>
             </div>
           </div>
         </div>

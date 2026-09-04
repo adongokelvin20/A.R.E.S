@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { MessageSquare, ArrowLeft, User, Bot, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Search, Send, ArrowLeft, Phone, Video, MoreVertical, Check, CheckCheck, MessageSquare, RefreshCw } from "lucide-react";
 
 interface Group {
   key: string;
@@ -18,6 +18,7 @@ interface Message {
   role: string;
   content: string;
   createdAt: string;
+  metadata?: string;
 }
 
 interface Conversation {
@@ -30,205 +31,383 @@ interface Conversation {
   messages: Message[];
 }
 
+function timeShort(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  }
+  const diff = (now.getTime() - d.getTime()) / 86400000;
+  if (diff < 7) return d.toLocaleDateString(undefined, { weekday: "short" });
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function initials(name: string) {
+  return (name || "?").trim().charAt(0).toUpperCase();
+}
+
+const AVATAR_COLORS = ["#25D366", "#075E54", "#128C7E", "#34B7F1", "#ECE5DD", "#128C7E", "#0A1626", "#0369A1"];
+function avatarColor(key: string) {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
 export function AresConversations({ data }: { data: any }) {
   const [groups, setGroups] = useState<Group[] | null>(null);
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<Conversation[] | null>(null);
-  const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
-  const [thread, setThread] = useState<Message[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConvo, setActiveConvo] = useState<Conversation | null>(null);
+  const [thread, setThread] = useState<Message[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(false);
+  const [search, setSearch] = useState("");
+  const [replyText, setReplyText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [mobileShowThread, setMobileShowThread] = useState(false);
+  const threadRef = useRef<HTMLDivElement>(null);
+  const agentName = data?.business?.agentName ?? "Assistant";
 
   const load = useCallback(async () => {
+    setLoadingList(true);
     try {
       const res = await fetch("/api/conversations");
       const json = await res.json();
       setGroups(json.groups ?? []);
-    } catch (e) {
-      console.error("Failed to load conversations", e);
+    } catch {
       setGroups([]);
+    } finally {
+      setLoadingList(false);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  // Load all conversations for an expanded customer group
-  async function expandGroup(key: string) {
-    if (expandedKey === key) {
-      setExpandedKey(null);
-      setConversations(null);
-      return;
+  // Auto-scroll thread to bottom on new messages
+  useEffect(() => {
+    if (threadRef.current) {
+      threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
-    setExpandedKey(key);
-    setConversations(null);
-    setLoading(true);
+  }, [thread, loadingThread]);
+
+  // Select a customer group -> load their conversations
+  async function selectGroup(g: Group) {
+    setSelectedGroup(g);
+    setMobileShowThread(true);
+    setLoadingThread(true);
+    setThread([]);
     try {
-      const res = await fetch(`/api/conversations?customer=${encodeURIComponent(key)}`);
+      const res = await fetch(`/api/conversations?customer=${encodeURIComponent(g.key)}`);
       const json = await res.json();
-      setConversations(json.conversations ?? []);
-    } catch (e) {
-      console.error("Failed to load customer conversations", e);
+      const convos = json.conversations ?? [];
+      setConversations(convos);
+      // Auto-open the most recent conversation
+      if (convos.length > 0) {
+        await openConversation(convos[0]);
+      }
+    } catch {
       setConversations([]);
     } finally {
-      setLoading(false);
+      setLoadingThread(false);
     }
   }
 
-  // Load a single conversation thread
-  async function openThread(id: string) {
-    setSelectedConvoId(id);
-    setThread(null);
-    setLoading(true);
+  // Open a specific conversation thread
+  async function openConversation(c: Conversation) {
+    setActiveConvo(c);
+    setLoadingThread(true);
     try {
-      const res = await fetch(`/api/conversations?id=${id}`);
+      const res = await fetch(`/api/conversations?id=${c.id}`);
+      const json = await res.json();
+      setThread(json.conversation?.messages ?? []);
+    } catch {
+      setThread([]);
+    } finally {
+      setLoadingThread(false);
+    }
+  }
+
+  // Owner sends a reply (stored as HUMAN role — the customer sees it in their store chat next time they open it)
+  async function sendReply() {
+    const text = replyText.trim();
+    if (!text || !activeConvo || sending) return;
+    setSending(true);
+    try {
+      // Optimistically add the message
+      const optimisticMsg: Message = {
+        id: "temp-" + Date.now(),
+        role: "HUMAN",
+        content: text,
+        createdAt: new Date().toISOString(),
+      };
+      setThread((t) => [...t, optimisticMsg]);
+      setReplyText("");
+
+      // Store the reply in the database via the chat API (using the owner's session)
+      // We use the existing /api/ares/chat endpoint but with a special flag
+      await fetch("/api/ares/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          conversationId: activeConvo.id,
+          history: thread.slice(-8).map((m) => ({ role: m.role === "CUSTOMER" ? "user" : "assistant", content: m.content })),
+          ownerReply: true,
+        }),
+      });
+
+      // Reload the thread to get the persisted version
+      const res = await fetch(`/api/conversations?id=${activeConvo.id}`);
       const json = await res.json();
       setThread(json.conversation?.messages ?? []);
     } catch (e) {
-      console.error("Failed to load thread", e);
-      setThread([]);
+      console.error("Failed to send reply", e);
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   }
 
-  // Full thread view
-  if (selectedConvoId && thread) {
-    const convo = conversations?.find((c) => c.id === selectedConvoId);
+  const filteredGroups = (groups ?? []).filter((g) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (g.customerName ?? "").toLowerCase().includes(q) || (g.customerPhone ?? "").toLowerCase().includes(q);
+  });
+
+  // ===== Empty state =====
+  if (groups && groups.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <button onClick={() => { setSelectedConvoId(null); setThread(null); }} className="rounded-lg border border-ares-line bg-white p-2 text-ares-navy hover:border-ares-sea/40">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div>
-            <h2 className="text-lg font-semibold text-ares-navy">
-              {convo?.customerName || convo?.customerPhone || "Conversation"}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {convo?.channel} · {thread.length} messages
-            </p>
-          </div>
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-lg font-semibold text-ares-navy">Conversations</h2>
+          <p className="text-xs text-muted-foreground">Customer chats from WhatsApp and your store</p>
         </div>
-        <div className="space-y-3 rounded-2xl border border-ares-line bg-white p-4">
-          {thread.map((m) => (
-            <div key={m.id} className={`flex gap-2.5 ${m.role === "CUSTOMER" ? "" : "flex-row-reverse"}`}>
-              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${m.role === "CUSTOMER" ? "bg-ares-navy text-white" : m.role === "AI" ? "bg-ares-sea-deep text-white" : "bg-slate-400 text-white"}`}>
-                {m.role === "CUSTOMER" ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
-              </div>
-              <div className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm ${m.role === "CUSTOMER" ? "bg-ares-mist text-ares-navy" : m.role === "AI" ? "bg-ares-sea-deep text-white" : "bg-slate-100 text-slate-700"}`}>
-                <div className="whitespace-pre-wrap">{m.content}</div>
-                <div className={`mt-1 text-[10px] ${m.role === "AI" ? "text-white/60" : "text-muted-foreground"}`}>
-                  {new Date(m.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  {m.role === "AI" && " · AI"}
-                  {m.role === "CUSTOMER" && " · Customer"}
-                </div>
-              </div>
-            </div>
-          ))}
-          {thread.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">No messages in this conversation.</p>
-          )}
+        <div className="rounded-2xl border border-dashed border-ares-line bg-white p-10 text-center">
+          <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground" />
+          <h3 className="mt-3 text-sm font-semibold text-ares-navy">No conversations yet</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            When customers message your assistant (via WhatsApp or your store link), their chats appear here.
+          </p>
         </div>
       </div>
     );
   }
 
-  // List view -- grouped by customer
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold text-ares-navy">Conversations</h2>
-        <p className="text-xs text-muted-foreground">
-          {groups?.length ?? 0} customer{groups?.length === 1 ? "" : "s"} · click any to see all their conversations
-        </p>
-      </div>
-
-      {groups && groups.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-ares-line bg-white p-10 text-center">
-          <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-3 text-sm font-semibold text-ares-navy">No conversations yet</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            When customers message your AI (via WhatsApp or the chat panel), their conversations will appear here, grouped by customer.
-          </p>
+    <div className="flex h-[calc(100vh-180px)] overflow-hidden rounded-2xl border border-ares-line bg-white sm:h-[calc(100vh-160px)]">
+      {/* ===== Left pane: chat list (WhatsApp style) ===== */}
+      <div className={`flex flex-col border-r border-ares-line ${mobileShowThread ? "hidden w-0 sm:flex sm:w-80" : "w-full sm:w-80"}`}>
+        {/* Header */}
+        <div className="flex items-center gap-2 bg-[#075E54] px-4 py-3 text-white">
+          <h2 className="flex-1 text-sm font-semibold">Conversations</h2>
+          <button onClick={load} className="rounded-lg p-1.5 text-white/80 hover:bg-white/10" aria-label="Refresh">
+            <RefreshCw className={`h-4 w-4 ${loadingList ? "animate-spin" : ""}`} />
+          </button>
         </div>
-      )}
-
-      {groups && groups.length > 0 && (
-        <div className="space-y-2">
-          {groups.map((g) => {
-            const isExpanded = expandedKey === g.key;
-            return (
-              <div key={g.key} className="overflow-hidden rounded-2xl border border-ares-line bg-white">
-                {/* Customer header -- click to expand */}
+        {/* Search */}
+        <div className="border-b border-ares-line bg-[#F0F2F5] px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-1.5">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search customers..."
+              className="flex-1 bg-transparent text-sm text-ares-navy placeholder:text-muted-foreground focus:outline-none"
+            />
+          </div>
+        </div>
+        {/* Chat list */}
+        <div className="flex-1 overflow-y-auto">
+          {loadingList && groups === null ? (
+            <div className="flex items-center justify-center py-10">
+              <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            filteredGroups.map((g) => {
+              const isActive = selectedGroup?.key === g.key;
+              const lastMsg = g.totalMessages > 0 ? `${g.totalMessages} message${g.totalMessages === 1 ? "" : "s"}` : "No messages";
+              return (
                 <button
-                  onClick={() => expandGroup(g.key)}
-                  className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-ares-mist"
+                  key={g.key}
+                  onClick={() => selectGroup(g)}
+                  className={`flex w-full items-center gap-3 border-b border-ares-line/50 px-3 py-3 text-left transition-colors hover:bg-[#F0F2F5] ${isActive ? "bg-[#ECE5DD]" : ""}`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ares-foam text-ares-sea-deep">
-                    <User className="h-5 w-5" />
+                  {/* Avatar */}
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white"
+                    style={{ background: avatarColor(g.key) }}
+                  >
+                    {initials(g.customerName || g.customerPhone || "?")}
                   </div>
+                  {/* Info */}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-semibold text-ares-navy">{g.customerName}</span>
-                      {g.customerPhone && (
-                        <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{g.customerPhone}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-semibold text-ares-navy">{g.customerName || g.customerPhone || "Unknown"}</span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">{timeShort(g.lastActivity)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-xs text-muted-foreground">{lastMsg}</span>
+                      {g.conversationCount > 1 && (
+                        <span className="shrink-0 rounded-full bg-ares-sea/20 px-1.5 py-0.5 text-[9px] font-semibold text-ares-sea-deep">
+                          {g.conversationCount}
+                        </span>
                       )}
                     </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <span>{g.conversationCount} conversation{g.conversationCount === 1 ? "" : "s"}</span>
-                      <span>·</span>
-                      <span>Last active {new Date(g.lastActivity).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
-                    </div>
                   </div>
-                  {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                 </button>
-
-                {/* Expanded: show all conversations for this customer */}
-                {isExpanded && (
-                  <div className="border-t border-ares-line bg-ares-mist/50 p-3">
-                    {loading ? (
-                      <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Loading conversations...
-                      </div>
-                    ) : conversations && conversations.length > 0 ? (
-                      <div className="space-y-2">
-                        {conversations.map((c) => (
-                          <button
-                            key={c.id}
-                            onClick={() => openThread(c.id)}
-                            className="flex w-full items-center gap-3 rounded-xl border border-ares-line bg-white p-3 text-left transition-all hover:border-ares-sea/30 hover:shadow-sm"
-                          >
-                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.channel === "WHATSAPP" ? "bg-emerald-50 text-emerald-600" : "bg-ares-foam text-ares-sea-deep"}`}>
-                              <MessageSquare className="h-4 w-4" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="rounded bg-ares-foam px-1.5 py-0.5 text-[10px] font-medium text-ares-sea-deep">{c.channel}</span>
-                                <span className={`h-1.5 w-1.5 rounded-full ${c.status === "OPEN" ? "bg-emerald-500" : "bg-slate-400"}`} />
-                                <span className="text-[10px] text-muted-foreground">{c.status}</span>
-                              </div>
-                              {c.messages[0] && (
-                                <div className="mt-1 truncate text-xs text-muted-foreground">
-                                  <span className="font-medium">{c.messages[0].role === "AI" ? `${data.business.agentName}: ` : "Customer: "}</span>
-                                  {c.messages[0].content}
-                                </div>
-                              )}
-                            </div>
-                            <div className="shrink-0 text-[10px] text-muted-foreground">
-                              {new Date(c.lastMessageAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="py-4 text-center text-xs text-muted-foreground">No conversations found.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })
+          )}
+          {filteredGroups.length === 0 && !loadingList && (
+            <p className="py-8 text-center text-xs text-muted-foreground">No customers match "{search}"</p>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* ===== Right pane: active conversation (WhatsApp style) ===== */}
+      <div className={`flex flex-1 flex-col ${mobileShowThread ? "flex" : "hidden sm:flex"}`}>
+        {activeConvo ? (
+          <>
+            {/* Chat header */}
+            <div className="flex items-center gap-3 bg-[#075E54] px-4 py-2.5 text-white">
+              <button
+                onClick={() => setMobileShowThread(false)}
+                className="rounded-lg p-1.5 text-white/80 hover:bg-white/10 sm:hidden"
+                aria-label="Back"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
+                style={{ background: avatarColor(selectedGroup?.key ?? activeConvo.id) }}
+              >
+                {initials(selectedGroup?.customerName || activeConvo.customerName || activeConvo.customerPhone || "?")}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">
+                  {selectedGroup?.customerName || activeConvo.customerName || activeConvo.customerPhone || "Customer"}
+                </div>
+                <div className="flex items-center gap-1 text-[11px] text-white/70">
+                  <span className={`h-1.5 w-1.5 rounded-full ${activeConvo.status === "OPEN" ? "bg-emerald-400" : "bg-white/40"}`} />
+                  {activeConvo.status === "OPEN" ? "online" : "closed"} · {activeConvo.channel === "WHATSAPP" ? "WhatsApp" : "Store chat"}
+                </div>
+              </div>
+              <button className="rounded-lg p-1.5 text-white/80 hover:bg-white/10" aria-label="Call">
+                <Phone className="h-4 w-4" />
+              </button>
+              <button className="rounded-lg p-1.5 text-white/80 hover:bg-white/10" aria-label="More">
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Messages area — WhatsApp-style chat wallpaper */}
+            <div
+              ref={threadRef}
+              className="flex-1 overflow-y-auto px-4 py-4"
+              style={{ backgroundColor: "#E5DDD5", backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d4cabf' fill-opacity='0.15'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10S0 14.5 0 20s4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/svg%3E\")" }}
+            >
+              {loadingThread ? (
+                <div className="flex items-center justify-center py-10">
+                  <RefreshCw className="h-6 w-6 animate-spin text-[#075E54]" />
+                </div>
+              ) : thread.length === 0 ? (
+                <p className="py-10 text-center text-xs text-[#075E54]/60">No messages yet</p>
+              ) : (
+                <div className="mx-auto max-w-3xl space-y-1.5">
+                  {thread.map((m, i) => {
+                    const isCustomer = m.role === "CUSTOMER";
+                    const isAI = m.role === "AI";
+                    const isHuman = m.role === "HUMAN";
+                    const isOutgoing = isAI || isHuman;
+                    const prevDate = i > 0 ? new Date(thread[i - 1].createdAt).toDateString() : null;
+                    const currDate = new Date(m.createdAt).toDateString();
+                    const showDateSep = i === 0 || prevDate !== currDate;
+                    const meta = m.metadata ? JSON.parse(m.metadata) : {};
+                    return (
+                      <div key={m.id}>
+                        {showDateSep && (
+                          <div className="my-3 flex justify-center">
+                            <span className="rounded-lg bg-[#E1F2FA] px-3 py-1 text-[10px] font-medium text-[#075E54] shadow-sm">
+                              {new Date(m.createdAt).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+                            </span>
+                          </div>
+                        )}
+                        <div className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}>
+                          <div
+                            className={`relative max-w-[75%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[60%] ${
+                              isOutgoing
+                                ? "bg-[#DCF8C6] text-[#075E54]"
+                                : "bg-white text-[#303030]"
+                            }`}
+                          >
+                            {isAI && (
+                              <div className="mb-0.5 text-[10px] font-semibold text-[#075E54]">
+                                {agentName} · Assistant
+                              </div>
+                            )}
+                            {isHuman && (
+                              <div className="mb-0.5 text-[10px] font-semibold text-[#075E54]">
+                                You · Owner
+                              </div>
+                            )}
+                            <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                            {/* Product images */}
+                            {meta.images && meta.images.length > 0 && (
+                              <div className="mt-2 grid grid-cols-2 gap-1">
+                                {meta.images.map((img: any, idx: number) => (
+                                  <img key={idx} src={img.imageUrl} alt={img.name} className="h-20 w-full rounded object-cover" />
+                                ))}
+                              </div>
+                            )}
+                            {/* Timestamp + ticks (WhatsApp style) */}
+                            <div className="mt-0.5 flex items-center justify-end gap-1 text-[9px] text-[#075E54]/60">
+                              {timeShort(m.createdAt)}
+                              {isOutgoing && <CheckCheck className="h-3 w-3" />}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Input bar (WhatsApp style) */}
+            <div className="flex items-center gap-2 bg-[#F0F2F5] px-3 py-2.5">
+              <div className="flex flex-1 items-center rounded-full bg-white px-4 py-2">
+                <input
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
+                  placeholder="Type a reply..."
+                  className="flex-1 bg-transparent text-sm text-ares-navy placeholder:text-muted-foreground focus:outline-none"
+                />
+              </div>
+              <button
+                onClick={sendReply}
+                disabled={!replyText.trim() || sending}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105 disabled:opacity-40"
+                aria-label="Send"
+              >
+                {sending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </button>
+            </div>
+          </>
+        ) : (
+          // No conversation selected
+          <div className="flex flex-1 items-center justify-center bg-[#F0F2F5] p-8 text-center">
+            <div>
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#075E54]">
+                <MessageSquare className="h-7 w-7 text-white" />
+              </div>
+              <h3 className="mt-4 text-sm font-semibold text-[#075E54]">Select a conversation</h3>
+              <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+                Choose a customer from the list to see your conversation with them. You can reply directly and the customer sees it next time they open the chat.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

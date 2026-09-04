@@ -6,7 +6,7 @@
  * handles WhatsApp). Conversations land in the owner's dashboard.
  */
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 import { StoreChat } from "@/components/ares/store-chat";
 import { AresLogo } from "@/components/ares/logo";
 import { MessageCircle, Package } from "lucide-react";
@@ -22,20 +22,30 @@ function sym(cur: string) {
 
 export default async function StorePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const business = await db.business.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      currency: true,
-      agentName: true,
-      phone: true,
-      email: true,
-      sectorSubtype: true,
-    },
-  });
+
+  // Ensure the database tables exist (handles first-visit on a fresh Vercel deployment)
+  await ensureDatabase();
+
+  let business;
+  try {
+    business = await db.business.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        currency: true,
+        agentName: true,
+        phone: true,
+        email: true,
+        sectorSubtype: true,
+      },
+    });
+  } catch (e) {
+    console.error("[store page] database error:", e);
+    notFound();
+  }
 
   if (!business) {
     notFound();

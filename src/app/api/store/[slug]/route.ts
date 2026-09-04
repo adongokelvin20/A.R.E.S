@@ -6,12 +6,13 @@
  * Only exposes fields that are safe for the public (no credentials, no internals).
  */
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  await ensureDatabase();
   const { slug } = await params;
   const business = await db.business.findUnique({
     where: { slug },
