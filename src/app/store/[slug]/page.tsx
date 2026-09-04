@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { db, ensureDatabase } from "@/lib/db";
 import { StoreChat } from "@/components/ares/store-chat";
 import { AresLogo } from "@/components/ares/logo";
-import { MessageCircle, Package } from "lucide-react";
+import { MessageCircle, Package, AlertCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +24,17 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
   const { slug } = await params;
 
   // Ensure the database tables exist (handles first-visit on a fresh Vercel deployment)
-  await ensureDatabase();
+  try {
+    await ensureDatabase();
+  } catch (e) {
+    console.error("[store page] ensureDatabase failed:", e);
+  }
 
-  let business;
+  // Fetch the business + products in one try/catch so any DB error renders a
+  // graceful "store not available" page instead of crashing with a 500.
+  let business: any = null;
+  let products: any[] = [];
+
   try {
     business = await db.business.findUnique({
       where: { slug },
@@ -42,31 +50,48 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
         sectorSubtype: true,
       },
     });
-  } catch (e) {
+
+    if (!business) {
+      notFound();
+    }
+
+    products = await db.product.findMany({
+      where: { businessId: business.id, status: "ACTIVE" },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        currency: true,
+        category: true,
+        imageUrl: true,
+        imageAlt: true,
+        stock: true,
+        attributes: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (e: any) {
+    // If it's a notFound() call, re-throw it (Next.js handles that)
+    if (e && typeof e === "object" && "digest" in e) {
+      throw e;
+    }
     console.error("[store page] database error:", e);
-    notFound();
+    // Render a graceful error page instead of a 500 crash
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-ares-mist px-4">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+            <AlertCircle className="h-7 w-7" />
+          </div>
+          <h1 className="text-xl font-semibold text-ares-navy">Store is warming up</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We're setting things up. Please refresh in a moment, or contact the business directly.
+          </p>
+        </div>
+      </main>
+    );
   }
-
-  if (!business) {
-    notFound();
-  }
-
-  const products = await db.product.findMany({
-    where: { businessId: business.id, status: "ACTIVE" },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      price: true,
-      currency: true,
-      category: true,
-      imageUrl: true,
-      imageAlt: true,
-      stock: true,
-      attributes: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
 
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))] as string[];
   const publicProducts = products.map((p) => ({
@@ -114,13 +139,10 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
             </p>
           )}
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => {}} /* placeholder — the chat bubble is always visible bottom-right */
-              className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-sm"
-            >
+            <div className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-sm">
               <MessageCircle className="h-4 w-4" />
               Chat with {business.agentName || "us"}
-            </button>
+            </div>
             {products.length > 0 && (
               <a href="#products" className="inline-flex items-center gap-2 rounded-xl border border-ares-line bg-white px-5 py-3 text-sm font-semibold text-ares-navy hover:bg-ares-mist">
                 <Package className="h-4 w-4" />

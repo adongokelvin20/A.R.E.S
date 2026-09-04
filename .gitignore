@@ -62,3 +62,6 @@ server.log
 /skills/
 .z-ai-config
 scripts/test-ai.ts
+
+# Tool results (internal agent artifacts, never commit)
+tool-results/

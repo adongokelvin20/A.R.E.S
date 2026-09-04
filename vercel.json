@@ -9,7 +9,58 @@
     "src/app/api/ares/greeting/route.ts": {
       "maxDuration": 30
     },
+    "src/app/api/ares/dashboard/route.ts": {
+      "maxDuration": 30
+    },
     "src/app/api/products/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/products/[id]/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/orders/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/orders/[id]/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/conversations/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/integrations/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/automations/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/automations/[id]/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/auth/signup/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/auth/onboard/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/store/[slug]/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/store/chat/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/whatsapp/qr/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/whatsapp/status/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/whatsapp/meta/exchange/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/whatsapp/meta/callback/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/ares/whatsapp/webhook/route.ts": {
       "maxDuration": 30
     }
   }
