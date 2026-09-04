@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, ShoppingBag, Users, Package, ArrowRight, Sparkles, AlertTriangle, BarChart3, PieChart, Activity, Brain, Loader2, Clock, MapPin } from "lucide-react";
+import { TrendingUp, TrendingDown, ShoppingBag, Users, Package, ArrowRight, Sparkles, AlertTriangle, BarChart3, PieChart, Activity, Brain, Loader2, Clock, MapPin, Store, Copy, Check, ExternalLink } from "lucide-react";
 import { useId } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export function AresOverview({
   data,
@@ -89,6 +90,9 @@ export function AresOverview({
           </div>
         </div>
       )}
+
+      {/* Store link card — the owner's public store URL where customers can chat */}
+      <StoreLinkCard slug={data.business.slug} businessName={data.business.name} />
 
       {/* KPIs */}
       {widgets.includes("kpis") && (
@@ -517,6 +521,78 @@ function OrderStatusPie({ data }: { data: any }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ============ Store link card ============ */
+function StoreLinkCard({ slug, businessName }: { slug: string; businessName: string }) {
+  const [copied, setCopied] = useState(false);
+  // Compute the store URL on the client only (window is unavailable during SSR).
+  // This is the standard "client-only value" pattern.
+  const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMounted(true); }, []);
+  const storeUrl = mounted && slug && typeof window !== "undefined" ? `${window.location.origin}/store/${slug}` : "";
+
+  async function copyLink() {
+    if (!storeUrl) return;
+    try {
+      await navigator.clipboard.writeText(storeUrl);
+      setCopied(true);
+      toast({ title: "Store link copied", description: "Share it with your customers." });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = storeUrl;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      toast({ title: "Store link copied", description: "Share it with your customers." });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  if (!storeUrl) return null;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-ares-sea/20 bg-white p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <Store className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-semibold text-ares-navy">Your online store</div>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              Customers visit this link to browse your products and chat with {businessName}&apos;s assistant — no WhatsApp needed. Share it anywhere.
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <code className="flex-1 truncate rounded-lg border border-ares-line bg-ares-mist/50 px-3 py-2 text-[11px] text-ares-navy">
+                {storeUrl}
+              </code>
+              <button
+                onClick={copyLink}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-ares-navy px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-ares-sea-deep"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+              <a
+                href={storeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-ares-line bg-white px-3 py-2 text-xs font-semibold text-ares-navy hover:bg-ares-mist"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Open
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
