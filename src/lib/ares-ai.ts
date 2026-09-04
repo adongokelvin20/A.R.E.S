@@ -13,6 +13,7 @@ import { findSubtype, type SectorSubtype } from "@/lib/sector-catalog";
 import { getBrainPatterns } from "@/lib/global-brain";
 
 export async function buildBusinessContext(businessId: string, customerPhone?: string) {
+  if (!db) throw new Error("Database not available");
   const business = await db.business.findUnique({
     where: { id: businessId },
     include: {
