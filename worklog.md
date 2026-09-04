@@ -230,3 +230,21 @@ Work Log:
 
 Stage Summary:
 - Public page cleaned. WhatsApp onboarding simplified to one-click + QR. QR flow complete. Pushed to Vercel.
+
+---
+Task ID: ares-v9
+Agent: Super Z (main)
+Task: Build public store page where customers chat with the business AI (like WhatsApp but on web), AI takes orders + casual conversations, owner sees store chats in dashboard Conversations tab, store linked to owner dashboard. Built on the 739b8ff (initial z.ai API) version.
+
+Work Log:
+- Built /api/store/[slug] GET endpoint: public, no auth, returns business name + products for the store page
+- Built /api/store/chat POST endpoint: public, resolves business by slug, runs the SAME AI core (buildBusinessContext + getZaiClient + internal product lookup + LEARNED extraction + ORDER_CONFIRMED order creation), stores conversation with channel=WEB, sessionId links messages across reloads
+- Built /store/[slug] page: server component renders business banner + product grid (with categories, prices, stock badges) + floating chat bubble
+- Built store-chat client component: floating WhatsApp-style chat bubble, expands to chat panel, localStorage sessionId for conversation persistence, quick product suggestions, product image attachments in replies, typing indicator
+- Added StoreLinkCard to dashboard Overview: shows the owner's public store URL (e.g. ares-two-eta.vercel.app/store/sarahs-boutique) with Copy button + Open link
+- Conversations tab already shows both WHATSAPP and WEB channel conversations grouped by customer — store chats appear automatically alongside WhatsApp chats
+- AI takes orders (ORDER_CONFIRMED marker -> creates real order in DB with channel=WEB), has casual conversations (same sector-bound personality), learns from conversations (LEARNED marker)
+- Lint clean. Pushed to GitHub (4202cbf), Vercel deploying.
+
+Stage Summary:
+- Public store page live at /store/[slug]. Customers browse products + chat with the business AI (same AI as WhatsApp). Conversations + orders land in owner dashboard. 50+ concurrent customers supported (Vercel serverless scales per request). Store link card in dashboard Overview with copy button. Built on 739b8ff AI version.
