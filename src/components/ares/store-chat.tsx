@@ -56,23 +56,19 @@ function sym(cur: string) {
 }
 
 export function StoreChat({ slug, businessName, agentName, products }: StoreChatProps) {
-  const [messages, setMessages] = useState<Msg[]>([]);
+  // Initial greeting — lazy initializer so we don't setState in an effect
+  const [messages, setMessages] = useState<Msg[]>(() => [
+    {
+      role: "assistant",
+      content: `Hi! I'm ${agentName}, your assistant at ${businessName}. How can I help you today? 😊`,
+      createdAt: new Date().toISOString(),
+    },
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [sessionId] = useState(getOrCreateSessionId);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Initial greeting
-  useEffect(() => {
-    setMessages([
-      {
-        role: "assistant",
-        content: `Hi! I'm ${agentName}, your assistant at ${businessName}. How can I help you today? 😊`,
-        createdAt: new Date().toISOString(),
-      },
-    ]);
-  }, [agentName, businessName]);
 
   // Auto-scroll
   useEffect(() => {
@@ -89,28 +85,48 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
       setMessages((m) => [...m, userMsg]);
       setInput("");
       setLoading(true);
-      try {
-        const res = await fetch("/api/store/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slug,
-            message: msg,
-            sessionId,
-            history: messages.slice(-8).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
-          }),
-        });
-        const j = await res.json();
-        if (j.reply) {
-          setMessages((m) => [...m, { role: "assistant", content: j.reply, images: j.images ?? [], createdAt: new Date().toISOString() }]);
-        } else {
-          setMessages((m) => [...m, { role: "assistant", content: "Sorry, I couldn't process that. Could you try again?", createdAt: new Date().toISOString() }]);
+
+      // Try the request up to 2 times — if the first fails, retry once
+      let lastError = "";
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetch("/api/store/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              slug,
+              message: msg,
+              sessionId,
+              history: messages.slice(-8).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+            }),
+          });
+          const j = await res.json();
+          if (j.reply) {
+            setMessages((m) => [...m, { role: "assistant", content: j.reply, images: j.images ?? [], createdAt: new Date().toISOString() }]);
+            setLoading(false);
+            return;
+          } else if (j.error) {
+            lastError = j.error;
+          } else {
+            lastError = "No reply received";
+          }
+        } catch (e) {
+          lastError = "Network error";
         }
-      } catch {
-        setMessages((m) => [...m, { role: "assistant", content: "Connection issue — please try again in a moment.", createdAt: new Date().toISOString() }]);
-      } finally {
-        setLoading(false);
+        // Wait 1s before retrying
+        if (attempt === 0) await new Promise((r) => setTimeout(r, 1000));
       }
+
+      // Both attempts failed — show a helpful message
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          content: `I'm having trouble responding right now — our server might be warming up. Please try sending your message again in a few seconds.`,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      setLoading(false);
     },
     [input, loading, slug, sessionId, messages]
   );

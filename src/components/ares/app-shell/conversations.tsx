@@ -341,7 +341,7 @@ export function AresConversations({ data }: { data: any }) {
                           >
                             {isAI && (
                               <div className="mb-0.5 text-[10px] font-semibold text-[#075E54]">
-                                {agentName} · Assistant
+                                {agentName}
                               </div>
                             )}
                             {isHuman && (

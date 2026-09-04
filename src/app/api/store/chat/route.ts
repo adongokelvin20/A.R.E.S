@@ -10,8 +10,13 @@
  * and appear in the owner's dashboard Conversations tab.
  *
  * The sessionId is a browser-generated UUID (localStorage) so the
- * conversation persists across page reloads. The AI still asks for the
- * customer's name + phone when they want to order (existing behavior).
+ * conversation persists across page reloads. The AI asks for the
+ * customer's name early so they're saved as a Customer record and
+ * remembered when they return.
+ *
+ * Robust error handling: each DB step is wrapped in its own try/catch
+ * so a single failure doesn't kill the entire request. The AI call has
+ * a smart fallback so customers always get a reply.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db, ensureDatabase } from "@/lib/db";
@@ -20,7 +25,7 @@ import { getZaiClient } from "@/lib/ai-client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 interface ChatTurn {
   role: "user" | "assistant" | "system";
@@ -28,107 +33,154 @@ interface ChatTurn {
 }
 
 export async function POST(req: NextRequest) {
+  // Ensure DB tables exist
   try {
     await ensureDatabase();
-    const body = await req.json();
-    const { slug, message, sessionId, history = [], customerName, customerPhone } = body as {
-      slug?: string;
-      message?: string;
-      sessionId?: string;
-      history?: ChatTurn[];
-      customerName?: string;
-      customerPhone?: string;
-    };
+  } catch (e) {
+    console.error("[store chat] ensureDatabase failed:", e);
+  }
 
-    if (!slug || !message || typeof message !== "string") {
-      return NextResponse.json({ error: "slug and message are required" }, { status: 400 });
-    }
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
-    // Resolve the business by slug (public, no auth)
-    const business = await db.business.findUnique({
+  const { slug, message, sessionId, history = [], customerName, customerPhone } = body as {
+    slug?: string;
+    message?: string;
+    sessionId?: string;
+    history?: ChatTurn[];
+    customerName?: string;
+    customerPhone?: string;
+  };
+
+  if (!slug || !message || typeof message !== "string") {
+    return NextResponse.json({ error: "slug and message are required" }, { status: 400 });
+  }
+
+  // Resolve the business by slug
+  let business: any = null;
+  try {
+    business = await db.business.findUnique({
       where: { slug },
       select: { id: true, name: true, currency: true, agentName: true },
     });
-    if (!business) {
-      return NextResponse.json({ error: "Store not found" }, { status: 404 });
-    }
-    const businessId = business.id;
+  } catch (e) {
+    console.error("[store chat] business lookup failed:", e);
+    return NextResponse.json({
+      reply: "I'm having trouble connecting right now. Please try again in a moment.",
+      conversationId: null,
+      orderCreated: null,
+      images: [],
+    });
+  }
+  if (!business) {
+    return NextResponse.json({ error: "Store not found" }, { status: 404 });
+  }
+  const businessId = business.id;
 
-    // Build the same AI context the dashboard uses (sector prompt, learnings, personality)
-    const ctx = await buildBusinessContext(businessId);
+  // Build the AI context (sector prompt, learnings, personality) — fail gracefully
+  let systemPrompt = `You are ${business.agentName || "the assistant"}, a real person who works at ${business.name}. You are a friendly, helpful employee. Be concise, warm, and natural. Use contractions. If the customer wants to order, ask for their name first, then pickup or delivery, then their phone number. Confirm the order before logging it.`;
+  let ctx: any = { agentName: business.agentName || "Assistant", sector: "business", sectorLabel: "business", business };
+  try {
+    ctx = await buildBusinessContext(businessId);
+    systemPrompt = ctx.systemPrompt;
+  } catch (e) {
+    console.error("[store chat] buildBusinessContext failed:", e);
+  }
 
-    // Silent internal product lookup (same as dashboard chat)
-    const internalNotes = await performInternalLookup(businessId, message);
+  // Silent internal product lookup — fail gracefully
+  let internalNotes: string | null = null;
+  try {
+    internalNotes = await performInternalLookup(businessId, message);
+  } catch (e) {
+    console.error("[store chat] internal lookup failed:", e);
+  }
 
-    const messages: ChatTurn[] = [
-      { role: "system", content: ctx.systemPrompt },
-      ...(history || [])
-        .filter((m) => m && m.role && m.content)
-        .slice(-8)
-        .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
-      ...(internalNotes ? [{ role: "system" as const, content: internalNotes }] : []),
-      { role: "user", content: message },
-    ];
+  // Build the messages for the AI
+  const messages: ChatTurn[] = [
+    { role: "system", content: systemPrompt },
+    ...(history || [])
+      .filter((m) => m && m.role && m.content)
+      .slice(-8)
+      .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
+    ...(internalNotes ? [{ role: "system" as const, content: internalNotes }] : []),
+    { role: "user", content: message },
+  ];
 
+  // Call the AI — getZaiClient has a smart fallback so this should always return something
+  let reply = "";
+  try {
     const zai = await getZaiClient();
     const completion = await zai.chat.completions.create({
       messages,
       temperature: 0.85,
       max_tokens: 700,
     });
-
-    let reply =
+    reply =
       (completion as any)?.choices?.[0]?.message?.content ??
       (completion as any)?.content ??
-      null;
+      (completion as any)?.choices?.[0]?.text ??
+      "";
+  } catch (e: any) {
+    console.error("[store chat] AI call failed:", e?.message ?? e);
+    reply = `Hi! I'm ${ctx.agentName}. I'm having a bit of trouble right now, but I'd love to help you. What can I do for you?`;
+  }
 
-    if (!reply) {
-      reply = "I'm having a bit of trouble right now — mind repeating that?";
-    }
+  if (!reply || !reply.trim()) {
+    reply = `Hi! I'm ${ctx.agentName}. How can I help you today?`;
+  }
 
-    // Extract LEARNED facts and save them
+  // Extract LEARNED facts and save them
+  try {
     const learnedMatch = reply.match(/LEARNED:\s*(.+?)(?:\n|$)/i);
     if (learnedMatch && learnedMatch[1]) {
-      try {
-        const biz = await db.business.findUnique({ where: { id: businessId }, select: { agentLearnings: true } });
-        const learnings: string[] = JSON.parse(biz?.agentLearnings || "[]");
-        if (!learnings.includes(learnedMatch[1].trim()) && learnings.length < 100) {
-          learnings.push(learnedMatch[1].trim());
-          await db.business.update({ where: { id: businessId }, data: { agentLearnings: JSON.stringify(learnings) } });
-        }
-      } catch {}
+      const biz = await db.business.findUnique({ where: { id: businessId }, select: { agentLearnings: true } });
+      const learnings: string[] = JSON.parse(biz?.agentLearnings || "[]");
+      if (!learnings.includes(learnedMatch[1].trim()) && learnings.length < 100) {
+        learnings.push(learnedMatch[1].trim());
+        await db.business.update({ where: { id: businessId }, data: { agentLearnings: JSON.stringify(learnings) } });
+      }
       reply = reply.replace(/LEARNED:\s*.+?(?:\n|$)/i, "").trim();
     }
+  } catch (e) {
+    console.error("[store chat] learning save failed:", e);
+  }
 
-    // Detect order confirmation and create the order
-    let orderCreated = null;
+  // Detect order confirmation and create the order
+  let orderCreated: any = null;
+  try {
     const orderMatch = reply.match(/ORDER_CONFIRMED:?\s*(\{[\s\S]*\})/i);
     if (orderMatch) {
+      let rawJson = orderMatch[1].trim();
+      let lastBrace = rawJson.lastIndexOf("}");
+      if (lastBrace > 0 && lastBrace < rawJson.length - 1) rawJson = rawJson.slice(0, lastBrace + 1);
+      let orderData;
       try {
-        let rawJson = orderMatch[1].trim();
-        let lastBrace = rawJson.lastIndexOf("}");
-        if (lastBrace > 0 && lastBrace < rawJson.length - 1) rawJson = rawJson.slice(0, lastBrace + 1);
-        let orderData;
-        try {
-          orderData = JSON.parse(rawJson);
-        } catch {
-          orderData = extractOrderFields(rawJson);
-        }
-        if (orderData && orderData.items && orderData.items.length > 0) {
-          orderCreated = await createOrderFromChat(businessId, customerName || "Store customer", orderData, business.currency);
-        }
-        reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}\s*$/i, "").trim();
-        reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}/i, "").trim();
-        if (orderCreated) {
-          reply += `\n\n(I've logged your order — #${orderCreated.id.slice(-6).toUpperCase()}. The owner will see it in their dashboard.)`;
-        }
-      } catch (e) {
-        reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}/i, "").trim();
+        orderData = JSON.parse(rawJson);
+      } catch {
+        orderData = extractOrderFields(rawJson);
+      }
+      if (orderData && orderData.items && orderData.items.length > 0) {
+        orderCreated = await createOrderFromChat(businessId, customerName || "Store customer", orderData, business.currency);
+      }
+      reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}\s*$/i, "").trim();
+      reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}/i, "").trim();
+      if (orderCreated) {
+        reply += `\n\n(I've logged your order — #${orderCreated.id.slice(-6).toUpperCase()}. The owner will see it in their dashboard.)`;
       }
     }
+  } catch (e) {
+    console.error("[store chat] order creation failed:", e);
+    reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}/i, "").trim();
+  }
 
-    // Persist the conversation — channel=WEB, sessionId links messages across reloads
-    let conversation = null;
+  // ===== Persist the conversation =====
+  let conversationId: string | null = null;
+  try {
+    let conversation: any = null;
     if (sessionId) {
       conversation = await db.conversation.findFirst({
         where: { businessId, externalId: sessionId, channel: "WEB", status: "OPEN" },
@@ -145,16 +197,51 @@ export async function POST(req: NextRequest) {
           status: "OPEN",
         },
       });
-    } else if ((customerName || customerPhone) && !conversation.customerName && !conversation.customerPhone) {
+    } else if ((customerName || customerPhone) && (!conversation.customerName || !conversation.customerPhone)) {
       conversation = await db.conversation.update({
         where: { id: conversation.id },
-        data: { customerName: customerName || null, customerPhone: customerPhone || null },
+        data: {
+          customerName: customerName || conversation.customerName || null,
+          customerPhone: customerPhone || conversation.customerPhone || null,
+        },
       });
     }
+    conversationId = conversation.id;
 
+    // Save the customer message
     await db.message.create({
       data: { conversationId: conversation.id, role: "CUSTOMER", content: message },
     });
+
+    // Extract customer name from the message if the customer introduces themselves
+    // e.g. "Hi I'm Akosua" or "My name is John" — save it to the conversation + Customer record
+    const nameMatch = message.match(/(?:my name is|i'm|i am|this is|it's|call me)\s+([a-z][a-z\s'-]{1,30})/i);
+    if (nameMatch && nameMatch[1]) {
+      const extractedName = nameMatch[1].trim().split(/\s+/).slice(0, 2).join(" ");
+      // Update the conversation with the name
+      if (!conversation.customerName) {
+        await db.conversation.update({
+          where: { id: conversation.id },
+          data: { customerName: extractedName },
+        });
+      }
+      // Create/update a Customer record so the owner sees them in the dashboard
+      let customer = await db.customer.findFirst({ where: { businessId, name: { equals: extractedName } } });
+      if (!customer && customerPhone) {
+        customer = await db.customer.findFirst({ where: { businessId, phone: customerPhone } });
+      }
+      if (!customer) {
+        customer = await db.customer.create({
+          data: {
+            businessId,
+            name: extractedName,
+            phone: customerPhone || null,
+            whatsappId: customerPhone || null,
+            status: "LEAD",
+          },
+        });
+      }
+    }
 
     // Find product images mentioned in the reply
     const allProducts = await db.product.findMany({
@@ -170,6 +257,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Save the AI reply
     await db.message.create({
       data: {
         conversationId: conversation.id,
@@ -184,16 +272,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       reply,
       agentName: ctx.agentName,
-      conversationId: conversation.id,
+      conversationId,
       orderCreated: orderCreated ? { id: orderCreated.id, total: orderCreated.total } : null,
       images: mentionedImages,
     });
-  } catch (err: any) {
-    console.error("[store chat] error:", err?.message ?? err);
+  } catch (e: any) {
+    console.error("[store chat] persistence failed:", e?.message ?? e);
+    // Still return the reply even if persistence failed — the customer still gets an answer
     return NextResponse.json({
-      reply: "Sorry, I'm having trouble connecting right now. Give me a moment and try again.",
-      conversationId: null,
-      orderCreated: null,
+      reply,
+      agentName: ctx.agentName,
+      conversationId,
+      orderCreated: orderCreated ? { id: orderCreated.id, total: orderCreated.total } : null,
       images: [],
     });
   }
@@ -227,6 +317,14 @@ async function createOrderFromChat(businessId: string, customerName: string, dat
     let customer = await db.customer.findFirst({ where: { businessId, phone } });
     if (!customer) {
       customer = await db.customer.create({ data: { businessId, name: resolvedName, phone, whatsappId: phone, status: "ACTIVE" } });
+    }
+    customerId = customer.id;
+    await db.customer.update({ where: { id: customerId }, data: { lifetimeValue: { increment: total } } });
+  } else if (resolvedName && resolvedName !== "Store customer") {
+    // Save by name even without phone
+    let customer = await db.customer.findFirst({ where: { businessId, name: { equals: resolvedName } } });
+    if (!customer) {
+      customer = await db.customer.create({ data: { businessId, name: resolvedName, status: "ACTIVE" } });
     }
     customerId = customer.id;
     await db.customer.update({ where: { id: customerId }, data: { lifetimeValue: { increment: total } } });
