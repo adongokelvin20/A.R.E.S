@@ -90,11 +90,13 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
     });
   } catch (e: any) {
     // If it's a notFound() call, re-throw it (Next.js handles that)
-    if (e && typeof e === "object" && "digest" in e) {
+    // notFound() errors have a digest that starts with "NEXT_NOT_FOUND"
+    if (e && typeof e === "object" && "digest" in e && typeof e.digest === "string" && e.digest.startsWith("NEXT_NOT_FOUND")) {
       throw e;
     }
-    console.error("[store page] database error:", e);
-    // Render a graceful error page with a retry button instead of a 500 crash
+    const errMsg = e?.message ?? String(e);
+    console.error("[store page] database error:", errMsg, e?.code);
+    // Render a graceful error page with a retry button + the error message (for debugging)
     return (
       <main className="flex min-h-screen items-center justify-center bg-ares-mist px-4">
         <div className="max-w-md text-center">
@@ -104,6 +106,10 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
           <h1 className="text-xl font-semibold text-ares-navy">Store is warming up</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             We&apos;re getting things ready. Please refresh in a moment, or contact the business directly.
+          </p>
+          {/* Show the error message to help diagnose — safe to remove later */}
+          <p className="mt-3 rounded-lg bg-amber-50/50 px-3 py-2 text-[10px] font-mono text-amber-700 break-all">
+            {errMsg.slice(0, 200)}
           </p>
           <a
             href={`/store/${slug}`}
