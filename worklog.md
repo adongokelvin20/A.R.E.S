@@ -387,3 +387,20 @@ Work Log:
 
 Stage Summary:
 - Both bugs fixed (missing /api/settings route + store page db null check + retry button). Full system sweep verified all routes, imports, and components exist and resolve correctly. Lint clean. Pushed to Vercel.
+
+---
+Task ID: ares-v17
+Agent: Super Z (main)
+Task: Fix persistent "Store is warming up" error on the store link.
+
+Work Log:
+- Investigated: the store API (/api/store/[slug]) works correctly (returns 404 for non-existent slugs), and the store page works for non-existent slugs (shows 404). So the DB IS connected and queries work.
+- The issue must be with the user's actual store link. Added diagnostics to show the actual DB error message on the "Store is warming up" page so we can see exactly what's failing.
+- Fixed the notFound() catch: the previous check `if ("digest" in e)` was too broad — it re-threw ALL errors with a digest property. Now only re-throws Next.js notFound() errors (digest starts with "NEXT_NOT_FOUND").
+- Created not-found.tsx for the store route so notFound() shows a nice "Store not found" page.
+- Removed ensureDatabase() from the store page — the tables should already exist (the owner signed up, which created them). ensureDatabase() runs raw SQL that can fail silently.
+- Added error handling to the store API route (was missing try/catch).
+- Pushed to GitHub (4c4cb6f). The store page now shows the actual error message in a small amber box for diagnosis.
+
+Stage Summary:
+- Store page now shows the actual DB error message (for diagnosis) instead of a generic "warming up" message. Fixed the notFound() catch to only re-throw Next.js 404 errors. Removed ensureDatabase() from the store page. Waiting for the user to open their store link to see the actual error message.
