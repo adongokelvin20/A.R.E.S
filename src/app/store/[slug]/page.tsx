@@ -6,7 +6,7 @@
  * handles WhatsApp). Conversations land in the owner's dashboard.
  */
 import { notFound } from "next/navigation";
-import { db, ensureDatabase } from "@/lib/db";
+import { db } from "@/lib/db";
 import { StoreChat } from "@/components/ares/store-chat";
 import { AresLogo } from "@/components/ares/logo";
 import { MessageCircle, Package, AlertCircle } from "lucide-react";
@@ -33,19 +33,17 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
           </div>
           <h1 className="text-xl font-semibold text-ares-navy">Store is being set up</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            The database isn't connected yet. The business owner needs to configure the database URL. Please check back soon.
+            The database isn&apos;t connected yet. The business owner needs to configure the database URL. Please check back soon.
           </p>
         </div>
       </main>
     );
   }
 
-  // Ensure the database tables exist (handles first-visit on a fresh Vercel deployment)
-  try {
-    await ensureDatabase();
-  } catch (e) {
-    console.error("[store page] ensureDatabase failed:", e);
-  }
+  // NOTE: We don't call ensureDatabase() here because:
+  // 1. The tables should already exist (the owner signed up, which created them)
+  // 2. ensureDatabase() runs raw SQL that can fail silently on some DB setups
+  // 3. If the tables don't exist, the findUnique will throw and we show the error page
 
   // Fetch the business + products in one try/catch so any DB error renders a
   // graceful "store not available" page instead of crashing with a 500.
