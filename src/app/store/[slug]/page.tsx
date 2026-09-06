@@ -17,6 +17,7 @@ import { AresLogo } from "@/components/ares/logo";
 import { MessageCircle, Package, AlertCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const CURRENCY_SYMBOL: Record<string, string> = {
   GHS: "GH₵", NGN: "₦", KES: "KSh", USD: "$", GBP: "£", ZAR: "R", EUR: "€",
