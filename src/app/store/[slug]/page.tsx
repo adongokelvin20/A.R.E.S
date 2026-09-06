@@ -11,7 +11,7 @@
  * silently — now we skip it (tables exist if the owner signed up).
  */
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 import { StoreChat } from "@/components/ares/store-chat";
 import { AresLogo } from "@/components/ares/logo";
 import { MessageCircle, Package, AlertCircle } from "lucide-react";
@@ -45,8 +45,16 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
     );
   }
 
+  // Warm up the DB connection — this is what the API route does and it works.
+  // ensureDatabase() does a db.user.findFirst() which establishes the Prisma
+  // connection. Without this, the business.findUnique can fail on cold starts.
+  try {
+    await ensureDatabase();
+  } catch (e) {
+    console.error("[store page] ensureDatabase failed:", e);
+  }
+
   // Query the DB directly — same as the store API route.
-  // No ensureDatabase() — the tables exist if the owner signed up.
   let business: any = null;
   let products: any[] = [];
 
