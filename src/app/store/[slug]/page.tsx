@@ -4,9 +4,12 @@
  * No auth required. Customers visit this URL to browse the business's
  * products and chat with the business's AI assistant (same AI that
  * handles WhatsApp). Conversations land in the owner's dashboard.
+ *
+ * This page fetches from /api/store/[slug] (which has proper DB error
+ * handling) instead of querying the DB directly. This avoids server
+ * component DB connection issues on Vercel serverless functions.
  */
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
 import { StoreChat } from "@/components/ares/store-chat";
 import { AresLogo } from "@/components/ares/logo";
 import { MessageCircle, Package, AlertCircle } from "lucide-react";
@@ -23,78 +26,34 @@ function sym(cur: string) {
 export default async function StorePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  // If db is null (DATABASE_URL not configured), show a helpful error
-  if (!db) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-ares-mist px-4">
-        <div className="max-w-md text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
-            <AlertCircle className="h-7 w-7" />
-          </div>
-          <h1 className="text-xl font-semibold text-ares-navy">Store is being set up</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            The database isn&apos;t connected yet. The business owner needs to configure the database URL. Please check back soon.
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  // NOTE: We don't call ensureDatabase() here because:
-  // 1. The tables should already exist (the owner signed up, which created them)
-  // 2. ensureDatabase() runs raw SQL that can fail silently on some DB setups
-  // 3. If the tables don't exist, the findUnique will throw and we show the error page
-
-  // Fetch the business + products in one try/catch so any DB error renders a
-  // graceful "store not available" page instead of crashing with a 500.
+  // Fetch store data from the API route (which handles DB errors properly)
   let business: any = null;
   let products: any[] = [];
 
   try {
-    business = await db.business.findUnique({
-      where: { slug },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        currency: true,
-        agentName: true,
-        phone: true,
-        email: true,
-        sectorSubtype: true,
-      },
-    });
+    // Build the API URL — use the request URL origin so it works on any domain
+    const origin = process.env.NEXTAUTH_URL || "https://ares-two-eta.vercel.app";
+    const apiUrl = `${origin}/api/store/${slug}`;
+    const res = await fetch(apiUrl, { cache: "no-store" });
 
-    if (!business) {
+    if (res.status === 404) {
       notFound();
     }
 
-    products = await db.product.findMany({
-      where: { businessId: business.id, status: "ACTIVE" },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        price: true,
-        currency: true,
-        category: true,
-        imageUrl: true,
-        imageAlt: true,
-        stock: true,
-        attributes: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    if (!res.ok) {
+      throw new Error(`API returned ${res.status}`);
+    }
+
+    const data = await res.json();
+    business = data.business;
+    products = data.products ?? [];
   } catch (e: any) {
-    // If it's a notFound() call, re-throw it (Next.js handles that)
-    // notFound() errors have a digest that starts with "NEXT_NOT_FOUND"
+    // If it's a notFound() call, re-throw it
     if (e && typeof e === "object" && "digest" in e && typeof e.digest === "string" && e.digest.startsWith("NEXT_NOT_FOUND")) {
       throw e;
     }
     const errMsg = e?.message ?? String(e);
-    console.error("[store page] database error:", errMsg, e?.code);
-    // Render a graceful error page with a retry button + the error message (for debugging)
+    console.error("[store page] fetch failed:", errMsg);
     return (
       <main className="flex min-h-screen items-center justify-center bg-ares-mist px-4">
         <div className="max-w-md text-center">
@@ -103,16 +62,9 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
           </div>
           <h1 className="text-xl font-semibold text-ares-navy">Store is warming up</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            We&apos;re getting things ready. Please refresh in a moment, or contact the business directly.
+            We&apos;re getting things ready. Please refresh in a moment.
           </p>
-          {/* Show the error message to help diagnose — safe to remove later */}
-          <p className="mt-3 rounded-lg bg-amber-50/50 px-3 py-2 text-[10px] font-mono text-amber-700 break-all">
-            {errMsg.slice(0, 200)}
-          </p>
-          <a
-            href={`/store/${slug}`}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep"
-          >
+          <a href={`/store/${slug}`} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep">
             Try again
           </a>
         </div>
@@ -120,19 +72,11 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
     );
   }
 
+  if (!business) {
+    notFound();
+  }
+
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))] as string[];
-  const publicProducts = products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    description: p.description,
-    price: p.price,
-    currency: p.currency,
-    category: p.category,
-    imageUrl: p.imageUrl,
-    imageAlt: p.imageAlt,
-    inStock: p.stock > 0,
-    attributes: JSON.parse(p.attributes || "{}"),
-  }));
 
   return (
     <main className="min-h-screen bg-white">
@@ -181,19 +125,19 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
       </section>
 
       {/* Products */}
-      {publicProducts.length === 0 ? (
+      {products.length === 0 ? (
         <section className="mx-auto max-w-5xl px-4 py-16 text-center">
           <Package className="mx-auto h-12 w-12 text-muted-foreground/40" />
           <h2 className="mt-4 text-lg font-semibold text-ares-navy">Products coming soon</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            We're still setting up our catalog. In the meantime, chat with {business.agentName || "us"} — we'd love to help you find what you need.
+            We&apos;re still setting up our catalog. In the meantime, chat with {business.agentName || "us"} — we&apos;d love to help you find what you need.
           </p>
         </section>
       ) : (
         <section id="products" className="mx-auto max-w-5xl px-4 py-12">
           <h2 className="text-xl font-semibold text-ares-navy">Our products</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {publicProducts.length} item{publicProducts.length !== 1 ? "s" : ""} · Chat with {business.agentName || "us"} to order
+            {products.length} item{products.length !== 1 ? "s" : ""} · Chat with {business.agentName || "us"} to order
           </p>
 
           {categories.length > 1 && (
@@ -207,11 +151,10 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
           )}
 
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {publicProducts.map((p) => (
+            {products.map((p) => (
               <article
                 key={p.id}
                 onClick={() => {
-                  // Dispatch a global event that StoreChat listens for to open the chat + send a message
                   if (typeof window !== "undefined") {
                     window.dispatchEvent(new CustomEvent("ares-product-click", { detail: { productName: p.name } }));
                   }
@@ -264,7 +207,7 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
         slug={business.slug}
         businessName={business.name}
         agentName={business.agentName || business.name}
-        products={publicProducts}
+        products={products}
       />
     </main>
   );

@@ -229,7 +229,6 @@ export async function generateOwnerGreeting(businessId: string): Promise<string>
     include: {
       products: { where: { status: "ACTIVE" }, take: 50 },
       orders: { orderBy: { createdAt: "desc" }, take: 50 },
-      conversations: { where: { status: "OPEN" }, take: 10 },
     },
   });
   if (!business) return "Welcome back.";
@@ -250,13 +249,11 @@ export async function generateOwnerGreeting(businessId: string): Promise<string>
   const todayRevenue = todayOrders.filter((o) => o.status !== "CANCELLED").reduce((s, o) => s + o.total, 0);
   const pendingOrders = business.orders.filter((o) => o.status === "PENDING" || o.status === "CONFIRMED").length;
   const lowStock = business.products.filter((p) => p.stock <= p.lowStockThreshold).length;
-  const openConvos = business.conversations.length;
 
   const facts: string[] = [];
   if (todayRevenue > 0) facts.push(`GH₵${todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} in sales today across ${todayOrders.length} order${todayOrders.length === 1 ? "" : "s"}`);
   if (pendingOrders > 0) facts.push(`${pendingOrders} order${pendingOrders === 1 ? "" : "s"} need your attention`);
   if (lowStock > 0) facts.push(`${lowStock} product${lowStock === 1 ? "" : "s"} are running low`);
-  if (openConvos > 0) facts.push(`${openConvos} customer conversation${openConvos === 1 ? "" : "s"} open`);
 
   // Try to generate via AI for warmth + variety, with fallback to template
   try {
