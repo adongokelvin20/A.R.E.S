@@ -19,6 +19,7 @@ export function StorePageClient({ slug }: { slug: string }) {
   const [business, setBusiness] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     let mounted = true;
     setLoading(true);
