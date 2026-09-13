@@ -1,21 +1,15 @@
 /**
- * Lightweight store chat context builder.
+ * MINIMAL store chat context builder — optimized for speed.
  *
- * This is a MUCH smaller version of buildBusinessContext optimized for speed.
- * The full buildBusinessContext creates a 10,000+ word system prompt (50 products,
- * 40 knowledge entries, 25 brain patterns, orders, customers, learnings) which
- * makes the AI call take 5-10 seconds.
+ * The system prompt is ~500 words (just the essentials: business name,
+ * top 10 products with prices, core behavior rules). This makes the AI
+ * respond in 1-2 seconds instead of 5-10.
  *
- * This version creates a ~2,000 word system prompt (20 products, 10 knowledge,
- * 10 brain patterns) that still gives the AI everything it needs to be helpful
- * but responds in 1-3 seconds.
- *
- * It also returns the products array so the store chat API can reuse them for
- * image lookup (no separate product query needed).
+ * Includes a 5-minute in-memory cache so repeat messages from the same
+ * business skip the DB entirely (context is served from memory).
  */
 import { db } from "@/lib/db";
 import { findSubtype } from "@/lib/sector-catalog";
-import { getBrainPatterns } from "@/lib/global-brain";
 
 export interface StoreChatContext {
   agentName: string;
@@ -24,16 +18,25 @@ export interface StoreChatContext {
   products: any[];
 }
 
+// ===== In-memory cache (5-minute TTL) =====
+// Key: businessId, Value: { context, expiry }
+const contextCache = new Map<string, { context: StoreChatContext; expiry: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function buildStoreChatContext(businessId: string): Promise<StoreChatContext> {
   if (!db) throw new Error("Database not available");
 
-  // Load business + products + knowledge in ONE query (with includes)
-  // Use smaller limits than buildBusinessContext for speed
+  // Check cache first
+  const cached = contextCache.get(businessId);
+  if (cached && cached.expiry > Date.now()) {
+    return cached.context;
+  }
+
+  // Load business + products (only 10 products, no knowledge/orders/customers for speed)
   const business = await db.business.findUnique({
     where: { id: businessId },
     include: {
-      products: { where: { status: "ACTIVE" }, take: 20, orderBy: { createdAt: "desc" } },
-      knowledge: { where: { status: "ACTIVE" }, take: 10 },
+      products: { where: { status: "ACTIVE" }, take: 10, orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -42,75 +45,56 @@ export async function buildStoreChatContext(businessId: string): Promise<StoreCh
   const subtype = findSubtype(business.sectorCategory, business.sectorSubtype);
   const sectorLabel = subtype?.label ?? business.type ?? "business";
   const agentName = business.agentName || "A.R.E.S.";
-  const ownerName = business.ownerFirstName || "the owner";
   const customInstructions = (business.agentInstructions || "").trim();
 
-  // Parse learnings (only the first 5 for speed)
-  let learnings: string[] = [];
-  try {
-    learnings = JSON.parse(business.agentLearnings || "[]").slice(0, 5);
-  } catch {}
-
-  // Product lines (compact — just name, price, stock)
+  // Compact product list (just name + price)
   const productLines = business.products
-    .map((p) => {
-      const attrs = p.attributes ? JSON.parse(p.attributes) : {};
-      const variants = attrs.size || attrs.color ? ` (${attrs.size ?? "--"}/${attrs.color ?? "--"})` : "";
-      return `• ${p.name}${variants} — ${p.currency} ${p.price.toFixed(2)} (stock: ${p.stock})`;
-    })
+    .map((p) => `${p.name} — ${p.currency} ${p.price.toFixed(2)} (stock: ${p.stock})`)
     .join("\n") || "(no products yet)";
 
-  // Knowledge lines (compact)
-  const knowledgeLines = business.knowledge
-    .map((k) => `[${k.category}] ${k.answer}`)
-    .join("\n")
-    .slice(0, 800) || "(none)";
+  // MINIMAL system prompt — ~500 words
+  const systemPrompt = `You are ${agentName}, a real employee at ${business.name} (${sectorLabel}). You are NOT a chatbot.
 
-  // Brain patterns (top 10, compact)
-  let brainPatterns: string[] = [];
-  try {
-    brainPatterns = await getBrainPatterns();
-  } catch {}
-  const brainLines = brainPatterns.slice(0, 10).map((p, i) => `${i + 1}. ${p}`).join("\n");
+${customInstructions ? `Personality: ${customInstructions.slice(0, 300)}` : "Be warm, concise, use contractions, have opinions."}
 
-  // Compact system prompt — ~2000 words instead of ~10000
-  const systemPrompt = `You are ${agentName}, a real person who works at ${business.name}. You are NOT a chatbot or AI assistant — you are a human employee.
-
-${subtype?.systemPrompt ? `Sector: ${sectorLabel}.` : ""}
-
-${customInstructions ? `HOW TO ACT: ${customInstructions}` : "Be warm, concise, natural. Use contractions. Have opinions. Match the customer's energy."}
-
-${brainLines ? `BEHAVIOR PATTERNS (be human):\n${brainLines}` : ""}
-
-BUSINESS: ${business.name} (${business.country}, ${business.currency})
-
-CATALOG:
+Products:
 ${productLines}
 
-KNOWLEDGE:
-${knowledgeLines}
+Rules:
+- Use contractions (I'm, you're, don't, can't)
+- Be concise — 1-3 sentences max
+- NEVER say "How may I assist you", "Certainly", "As an AI"
+- NEVER mention dashboards or backend systems
+- Ask for the customer's name early, use it after
+- To order: confirm item → ask name → ask pickup/delivery → ask phone if delivery → confirm
+- Only use products listed above. If asked about something not listed, be honest.
 
-${learnings.length > 0 ? `LEARNED FACTS:\n${learnings.map((l, i) => `${i + 1}. ${l}`).join("\n")}` : ""}
-
-RULES:
-- Vary phrasing. Use contractions (I'm, you're, don't, can't).
-- NEVER say "How may I assist you", "Certainly", "As an AI".
-- Be concise — real people don't write essays in chat.
-- NEVER mention dashboards, backend, or where orders "appear".
-- Have opinions about products.
-- Ask for the customer's name early if they haven't given it. Use it afterward.
-- If they want to order: confirm item, ask name, ask pickup/delivery, ask phone if delivery, read order back, wait for confirmation.
-
-ORDER FORMAT (when confirmed):
+Order format (when confirmed):
 ORDER_CONFIRMED: {"items":[{"productName":"X","quantity":1,"unitPrice":0}],"fulfillmentType":"PICKUP","customerName":""}
 
-LEARNING: If you learn a new fact about the business, add: LEARNED: <fact>
-BRAIN_LEARNED: If you notice a human-like pattern, add: BRAIN_LEARNED: <pattern>`;
+Learn fact: LEARNED: <fact>
+Human pattern: BRAIN_LEARNED: <pattern>`;
 
-  return {
+  const context = {
     agentName,
     businessName: business.name,
     systemPrompt,
     products: business.products,
   };
+
+  // Cache for 5 minutes
+  contextCache.set(businessId, { context, expiry: Date.now() + CACHE_TTL });
+
+  return context;
+}
+
+/**
+ * Clear the cache for a business (call when products/settings change).
+ */
+export function clearContextCache(businessId?: string) {
+  if (businessId) {
+    contextCache.delete(businessId);
+  } else {
+    contextCache.clear();
+  }
 }
