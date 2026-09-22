@@ -81,6 +81,13 @@ export async function ensureDatabase() {
       `CREATE TABLE IF NOT EXISTS "GlobalBrain" ("id" TEXT NOT NULL, "pattern" TEXT NOT NULL, "category" TEXT NOT NULL DEFAULT 'conversation', "source" TEXT NOT NULL DEFAULT 'auto', "weight" INTEGER NOT NULL DEFAULT 1, "status" TEXT NOT NULL DEFAULT 'ACTIVE', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "GlobalBrain_pkey" PRIMARY KEY ("id"))`,
       `CREATE INDEX IF NOT EXISTS "GlobalBrain_category_status_idx" ON "GlobalBrain"("category", "status")`,
       `CREATE INDEX IF NOT EXISTS "GlobalBrain_status_idx" ON "GlobalBrain"("status")`,
+      // Weekly Archive
+      `CREATE TABLE IF NOT EXISTS "WeeklyArchive" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "weekStart" TIMESTAMP(3) NOT NULL, "weekEnd" TIMESTAMP(3) NOT NULL, "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0, "orderCount" INTEGER NOT NULL DEFAULT 0, "customerCount" INTEGER NOT NULL DEFAULT 0, "newCustomers" INTEGER NOT NULL DEFAULT 0, "topProducts" TEXT NOT NULL DEFAULT '[]', "channelBreakdown" TEXT NOT NULL DEFAULT '{}', "statusBreakdown" TEXT NOT NULL DEFAULT '{}', "summary" TEXT NOT NULL DEFAULT '', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "WeeklyArchive_pkey" PRIMARY KEY ("id"))`,
+      `CREATE INDEX IF NOT EXISTS "WeeklyArchive_businessId_weekStart_idx" ON "WeeklyArchive"("businessId", "weekStart")`,
+      // Subscription
+      `CREATE TABLE IF NOT EXISTS "Subscription" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'TRIAL', "plan" TEXT NOT NULL DEFAULT 'TRIAL', "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "trialEndsAt" TIMESTAMP(3), "currentPeriodEnd" TIMESTAMP(3), "amountPaid" DOUBLE PRECISION NOT NULL DEFAULT 0, "currency" TEXT NOT NULL DEFAULT 'GHS', "promoCode" TEXT, "paystackRef" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id"))`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "Subscription_businessId_key" ON "Subscription"("businessId")`,
+      `CREATE INDEX IF NOT EXISTS "Subscription_businessId_status_idx" ON "Subscription"("businessId", "status")`,
     ]
 
     for (const sql of statements) {

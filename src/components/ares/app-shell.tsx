@@ -14,6 +14,7 @@ import { AresSettings } from "./app-shell/settings";
 import { AresAudit } from "./app-shell/audit";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "next-auth/react";
+import { PricingModal } from "./pricing-modal";
 
 interface AppShellProps {
   businessId: string;
@@ -59,6 +60,21 @@ export function AresAppShell({
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [showPricing, setShowPricing] = useState(false);
+
+  // Check subscription status on mount
+  useEffect(() => {
+    fetch("/api/subscription/status")
+      .then((r) => r.json())
+      .then((sub) => {
+        setSubscription(sub);
+        if (!sub.hasAccess && sub.status !== "TRIAL") {
+          setShowPricing(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -155,6 +171,35 @@ export function AresAppShell({
           )}
         </main>
       </div>
+
+      {/* Trial banner */}
+      {subscription?.status === "TRIAL" && subscription.daysLeft <= 3 && subscription.daysLeft > 0 && (
+        <div className="fixed bottom-4 right-4 z-40 rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-lg">
+          <div className="text-xs font-semibold text-amber-800">
+            Free trial ends in {subscription.daysLeft} day{subscription.daysLeft === 1 ? "" : "s"}
+          </div>
+          <button
+            onClick={() => setShowPricing(true)}
+            className="mt-1.5 text-[11px] font-medium text-amber-700 underline"
+          >
+            Choose a plan →
+          </button>
+        </div>
+      )}
+
+      {/* Pricing modal (when trial expired or user clicks upgrade) */}
+      {showPricing && (
+        <PricingModal
+          onClose={() => {
+            // Only allow closing if they have access
+            if (subscription?.hasAccess) setShowPricing(false);
+          }}
+          onSubscribed={() => {
+            setShowPricing(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

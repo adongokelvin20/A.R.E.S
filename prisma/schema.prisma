@@ -59,6 +59,8 @@ model Business {
   alerts        Alert[]
   insights      Insight[]
   knowledge     KnowledgeEntry[]
+  weeklyArchives WeeklyArchive[]
+  subscription  Subscription?
 }
 
 // ============================================================
@@ -377,5 +379,58 @@ model GlobalBrain {
 
   @@index([category, status])
   @@index([status])
+}
+
+// ============================================================
+// WEEKLY ARCHIVE — saves each week's dashboard data so the owner
+// can review past weeks. The dashboard resets weekly but all data
+// (orders, revenue, customers, conversations) is preserved forever.
+// The archive is a snapshot of KPIs for quick review.
+// ============================================================
+
+model WeeklyArchive {
+  id            String   @id @default(cuid())
+  businessId    String
+  weekStart     DateTime
+  weekEnd       DateTime
+  revenue       Float    @default(0)
+  orderCount    Int      @default(0)
+  customerCount Int      @default(0)
+  newCustomers  Int      @default(0)
+  topProducts   String   @default("[]") // JSON array of {name, quantity, revenue}
+  channelBreakdown String @default("{}") // JSON: {WHATSAPP: 5, WEB: 3}
+  statusBreakdown String @default("{}") // JSON: {PENDING: 2, CONFIRMED: 5}
+  summary       String   @default("") // AI-generated weekly summary
+  createdAt     DateTime @default(now())
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, weekStart])
+}
+
+// ============================================================
+// SUBSCRIPTION — tracks each business's subscription status.
+// 1-week free trial, then GHC1300/year or ~GHC115/month.
+// Promo code "Kelvin" = GHC600/year.
+// ============================================================
+
+model Subscription {
+  id            String   @id @default(cuid())
+  businessId    String   @unique
+  status        String   @default("TRIAL") // TRIAL | ACTIVE | EXPIRED | CANCELLED
+  plan          String   @default("TRIAL") // TRIAL | ANNUAL | MONTHLY
+  startedAt     DateTime @default(now())
+  trialEndsAt   DateTime?
+  currentPeriodEnd DateTime? // when the current paid period ends
+  amountPaid    Float    @default(0)
+  currency      String   @default("GHS")
+  promoCode     String?
+  paystackRef   String?  // Paystack transaction reference
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, status])
 }
 
