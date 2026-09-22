@@ -607,3 +607,28 @@ Work Log:
 
 Stage Summary:
 - The error page now shows the actual error message for diagnosis. The home page is fully wrapped in try/catch. Need the user to reload and tell us the error message shown in the small box so we can fix the exact issue.
+
+---
+Task ID: ares-v27
+Agent: Super Z (main)
+Task: Fix "Sparkles is not defined" error + fix weekly archiving not showing for 14-day-old account.
+
+Work Log:
+- FIXED "Sparkles is not defined": the landing page pricing.tsx used `icon: Sparkles` on line 21 but I had removed the Sparkles import when removing the promo banner. Added `Sparkles` back to the imports from lucide-react.
+- FIXED weekly archiving not showing: the old `checkAndArchiveWeek` function only archived the IMMEDIATELY PREVIOUS week. If the dashboard wasn't loaded during that week, it was skipped forever. Rewrote to backfill ALL missed weeks:
+  - Gets the business creation date
+  - Loops from the creation week to the current week
+  - Archives any week that hasn't been archived yet (up to 52 weeks)
+  - So a 14-day-old account will get both week 1 and week 2 archived on the next dashboard load
+- Created Archives page (src/components/ares/app-shell/archives.tsx):
+  - Shows all weekly archives with revenue, orders, new customers KPIs
+  - Top products for each week
+  - Channel breakdown
+  - Summary text
+- Added "Archives" nav item to the sidebar (with a calendar icon)
+- Added "archives" to the View type + NAV array
+- Added Calendar icon to the sidebar ICONS map
+- Lint clean. Pushed to GitHub (11d7486).
+
+Stage Summary:
+- "Sparkles is not defined" fixed (missing import). Weekly archiving now backfills ALL missed weeks since business creation (so 14-day accounts get both weeks archived). New Archives page in the dashboard shows weekly history. Pushed to Vercel.
