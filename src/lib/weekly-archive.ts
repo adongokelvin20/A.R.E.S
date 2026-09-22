@@ -23,29 +23,60 @@ function getWeekStart(date: Date = new Date()): Date {
 }
 
 /**
- * Check if we need to archive the previous week.
- * Called when the dashboard loads. If there's no archive for the previous
- * week, create one with that week's data.
+ * Check and archive ALL missed weeks since the business was created.
+ * Called when the dashboard loads. Loops through every week from the
+ * business creation date to the current week, and archives any that
+ * haven't been archived yet.
  */
 export async function checkAndArchiveWeek(businessId: string) {
   if (!db) return;
   try {
-    const now = new Date();
-    const thisWeekStart = getWeekStart(now);
-    const lastWeekStart = new Date(thisWeekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const lastWeekEnd = new Date(thisWeekStart.getTime() - 1);
-
-    // Check if we already have an archive for last week
-    const existing = await db.weeklyArchive.findFirst({
-      where: { businessId, weekStart: lastWeekStart },
+    // Get the business creation date
+    const business = await db.business.findUnique({
+      where: { id: businessId },
+      select: { createdAt: true },
     });
-    if (existing) return; // already archived
+    if (!business) return;
 
-    // Gather last week's data
+    // Get all existing archives for this business
+    const existing = await db.weeklyArchive.findMany({
+      where: { businessId },
+      select: { weekStart: true },
+    });
+    const existingSet = new Set(existing.map((a) => a.weekStart.getTime()));
+
+    // Loop from the business creation week to last week
+    const thisWeekStart = getWeekStart(new Date());
+    const creationWeekStart = getWeekStart(business.createdAt);
+
+    // Limit to last 52 weeks to avoid infinite loops
+    let weekStart = creationWeekStart;
+    let count = 0;
+    while (weekStart < thisWeekStart && count < 52) {
+      if (!existingSet.has(weekStart.getTime())) {
+        // This week hasn't been archived — archive it
+        const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
+        await archiveWeek(businessId, weekStart, weekEnd);
+      }
+      // Move to next week
+      weekStart = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+      count++;
+    }
+  } catch (e) {
+    console.error("[weekly archive] failed:", e);
+  }
+}
+
+/**
+ * Archive a single week's data.
+ */
+async function archiveWeek(businessId: string, weekStart: Date, weekEnd: Date) {
+  try {
+    // Gather this week's orders
     const orders = await db.order.findMany({
       where: {
         businessId,
-        createdAt: { gte: lastWeekStart, lte: lastWeekEnd },
+        createdAt: { gte: weekStart, lte: weekEnd },
       },
       include: { items: true },
     });
@@ -54,11 +85,10 @@ export async function checkAndArchiveWeek(businessId: string) {
     const revenue = validOrders.reduce((s, o) => s + o.total, 0);
     const orderCount = orders.length;
 
-    // Customers (new customers that week)
-    const customers = await db.customer.findMany({
-      where: { businessId, createdAt: { gte: lastWeekStart, lte: lastWeekEnd } },
+    // New customers that week
+    const newCustomers = await db.customer.count({
+      where: { businessId, createdAt: { gte: weekStart, lte: weekEnd } },
     });
-    const newCustomers = customers.length;
 
     const totalCustomers = await db.customer.count({ where: { businessId } });
 
@@ -92,8 +122,8 @@ export async function checkAndArchiveWeek(businessId: string) {
     await db.weeklyArchive.create({
       data: {
         businessId,
-        weekStart: lastWeekStart,
-        weekEnd: lastWeekEnd,
+        weekStart,
+        weekEnd,
         revenue,
         orderCount,
         customerCount: totalCustomers,
@@ -101,12 +131,12 @@ export async function checkAndArchiveWeek(businessId: string) {
         topProducts: JSON.stringify(topProducts),
         channelBreakdown: JSON.stringify(channelMap),
         statusBreakdown: JSON.stringify(statusMap),
-        summary: `Week of ${lastWeekStart.toLocaleDateString("en", { month: "short", day: "numeric" })} — ${lastWeekEnd.toLocaleDateString("en", { month: "short", day: "numeric" })}: ${orderCount} orders, GHC ${revenue.toFixed(2)} revenue, ${newCustomers} new customers.`,
+        summary: `Week of ${weekStart.toLocaleDateString("en", { month: "short", day: "numeric" })} — ${weekEnd.toLocaleDateString("en", { month: "short", day: "numeric" })}: ${orderCount} order${orderCount === 1 ? "" : "s"}, GHC ${revenue.toFixed(2)} revenue, ${newCustomers} new customer${newCustomers === 1 ? "" : "s"}.`,
       },
     });
-    console.log(`[weekly archive] Archived week of ${lastWeekStart.toDateString()} for business ${businessId}`);
+    console.log(`[weekly archive] Archived week of ${weekStart.toDateString()} for business ${businessId}`);
   } catch (e) {
-    console.error("[weekly archive] failed:", e);
+    console.error(`[weekly archive] failed for week ${weekStart}:`, e);
   }
 }
 

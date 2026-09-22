@@ -13,6 +13,7 @@ import { AresAiChatPanel } from "./app-shell/ai-chat";
 import { AresSettings } from "./app-shell/settings";
 import { AresAudit } from "./app-shell/audit";
 import { AresPricing as AresDashboardPricing } from "./app-shell/pricing";
+import { AresArchives } from "./app-shell/archives";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "next-auth/react";
 import { PricingModal } from "./pricing-modal";
@@ -34,9 +35,10 @@ type View =
   | "ai"
   | "automations"
   | "integrations"
+  | "pricing"
+  | "archives"
   | "audit"
-  | "settings"
-  | "pricing";
+  | "settings";
 
 const NAV: NavItem[] = [
   { id: "overview", label: "Overview", icon: "layout" },
@@ -47,6 +49,7 @@ const NAV: NavItem[] = [
   { id: "automations", label: "Automations", icon: "workflow" },
   { id: "integrations", label: "Integrations", icon: "plug" },
   { id: "pricing", label: "Plans", icon: "crown" },
+  { id: "archives", label: "Archives", icon: "calendar" },
   { id: "audit", label: "Audit log", icon: "scroll" },
   { id: "settings", label: "Settings", icon: "settings" },
 ];
@@ -178,6 +181,7 @@ export function AresAppShell({
               {view === "automations" && <AresAutomations data={data} />}
               {view === "integrations" && <AresIntegrations data={data} onChanged={load} />}
               {view === "pricing" && <AresDashboardPricing data={data} onChanged={load} />}
+              {view === "archives" && <AresArchives />}
               {view === "audit" && <AresAudit data={data} />}
               {view === "settings" && <AresSettings data={data} onChanged={load} />}
             </>

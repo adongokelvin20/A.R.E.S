@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Crown, Calendar } from "lucide-react";
+import { Check, Crown, Calendar, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const PLANS = [
