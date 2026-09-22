@@ -66,17 +66,26 @@ export function AresAppShell({
   const [subscription, setSubscription] = useState<any>(null);
   const [showPricing, setShowPricing] = useState(false);
 
-  // Check subscription status on mount
+  // Check subscription status on mount — fail gracefully so the dashboard never crashes
   useEffect(() => {
     fetch("/api/subscription/status")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("status " + r.status);
+        return r.json();
+      })
       .then((sub) => {
-        setSubscription(sub);
-        if (!sub.hasAccess && sub.status !== "TRIAL") {
-          setShowPricing(true);
+        if (sub && typeof sub === "object") {
+          setSubscription(sub);
+          // Only show pricing if access is explicitly denied (not on errors)
+          if (sub.hasAccess === false && sub.status === "EXPIRED") {
+            setShowPricing(true);
+          }
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // If the subscription check fails, give the user access (don't lock them out)
+        setSubscription({ hasAccess: true, status: "TRIAL", daysLeft: 7 });
+      });
   }, []);
 
   const load = useCallback(async () => {

@@ -214,10 +214,12 @@ export async function getOrCreateSubscription(businessId: string, db: any) {
 
 /**
  * Check if a business has access (trial active or paid).
+ * If sub is null (DB error), return true so users aren't locked out during errors.
  */
 export function hasAccess(sub: any): boolean {
-  if (!sub) return false;
+  if (!sub) return true; // error case — don't lock users out
   if (sub.status === "ACTIVE") return true;
   if (sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date()) return true;
+  if (sub.status === "TRIAL" && !sub.trialEndsAt) return true; // trial with no end date = still active
   return false;
 }

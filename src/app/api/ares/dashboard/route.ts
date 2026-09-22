@@ -19,8 +19,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 import { findSubtype, findCategory, getCombinedProductFields } from "@/lib/sector-catalog";
+import { checkAndArchiveWeek } from "@/lib/weekly-archive";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +33,21 @@ export async function GET(req: NextRequest) {
   }
   const businessId = session.user.businessId;
 
-  const business = await db.business.findUnique({ where: { id: businessId } });
+  // Ensure DB tables exist
+  try { await ensureDatabase(); } catch {}
+
+  // Check if we need to archive the previous week (runs on dashboard load)
+  try { await checkAndArchiveWeek(businessId); } catch (e) {
+    console.error("[dashboard] weekly archive check failed:", e);
+  }
+
+  let business;
+  try {
+    business = await db.business.findUnique({ where: { id: businessId } });
+  } catch (e) {
+    console.error("[dashboard] business lookup failed:", e);
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
   if (!business) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // Resolve sector subtype from catalog (determines which widgets to show)

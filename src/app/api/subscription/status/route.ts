@@ -2,6 +2,8 @@
  * GET /api/subscription/status
  *
  * Returns the current subscription status for the authenticated business.
+ * Handles errors gracefully — if the table doesn't exist or any DB error,
+ * returns a default trial status so the dashboard never crashes.
  */
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -18,10 +20,30 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await ensureDatabase();
+  try {
+    await ensureDatabase();
+  } catch (e) {
+    console.error("[subscription/status] ensureDatabase failed:", e);
+  }
+
   const businessId = session.user.businessId;
 
-  const sub = await getOrCreateSubscription(businessId, db);
+  let sub: any = null;
+  try {
+    sub = await getOrCreateSubscription(businessId, db);
+  } catch (e) {
+    console.error("[subscription/status] getOrCreateSubscription failed:", e);
+    // Return a default trial status so the dashboard doesn't crash
+    return NextResponse.json({
+      status: "TRIAL",
+      plan: "TRIAL",
+      trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      currentPeriodEnd: null,
+      hasAccess: true, // give access during errors so the user isn't locked out
+      daysLeft: 7,
+      pricing: PRICING,
+    });
+  }
 
   return NextResponse.json({
     status: sub?.status ?? "TRIAL",
