@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { label: "Platform", href: "#platform" },
   { label: "How it works", href: "#how" },
   { label: "WhatsApp", href: "#whatsapp" },
+  { label: "Pricing", href: "#pricing" },
 ];
 
 export function AresNavbar() {

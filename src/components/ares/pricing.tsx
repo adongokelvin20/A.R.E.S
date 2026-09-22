@@ -1,143 +1,136 @@
 "use client";
 
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Crown, Calendar } from "lucide-react";
+import Link from "next/link";
 
 const PLANS = [
   {
-    name: "Starter",
-    price: "Free",
-    cadence: "14-day trial",
-    desc: "For a single-location business getting started with AI.",
+    name: "Free Trial",
+    price: "GHC 0",
+    period: "7 days",
+    description: "Try everything free for a week. No card needed.",
     features: [
-      "1 AI employee",
-      "Up to 500 AI messages / mo",
-      "WhatsApp (Meta or WAAPI)",
-      "Up to 3 modules active",
-      "1 user seat",
-      "Community support",
+      "Full AI assistant for 7 days",
+      "Unlimited customer chats",
+      "Store link + WhatsApp",
+      "All features unlocked",
     ],
-    cta: "Start trial",
-    accent: false,
+    cta: "Start free trial",
+    href: "/auth",
+    highlight: false,
+    icon: Sparkles,
   },
   {
-    name: "Pro",
-    price: "GH₵ 450",
-    cadence: "/ month",
-    desc: "For growing businesses that need real automation.",
+    name: "Annual",
+    price: "GHC 1,300",
+    period: "per year",
+    description: "Best value — save 2 months vs monthly. Promo code Kelvin gets you GHC 600/year.",
     features: [
-      "1 AI employee",
-      "Up to 10,000 AI messages / mo",
-      "WhatsApp + Web + SMS channels",
-      "Unlimited modules",
-      "5 user seats",
-      "Automation engine",
-      "Knowledge base (RAG)",
-      "Email support",
-    ],
-    cta: "Deploy A.R.E.S.",
-    accent: true,
-  },
-  {
-    name: "Business",
-    price: "GH₵ 1,200",
-    cadence: "/ month",
-    desc: "For multi-location businesses with serious volume.",
-    features: [
-      "3 AI employees",
-      "Up to 50,000 AI messages / mo",
-      "All channels",
-      "Unlimited modules + seats",
-      "Proactive monitoring + alerts",
-      "Action center + approvals",
+      "Everything in trial, forever",
+      "Weekly performance archives",
+      "Global brain — gets smarter over time",
       "Priority support",
-      "Custom integrations",
+      "Save GHC 860 vs monthly",
     ],
-    cta: "Talk to sales",
-    accent: false,
+    cta: "Get annual",
+    href: "/auth",
+    highlight: true,
+    icon: Crown,
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    cadence: "annual",
-    desc: "For groups, franchises, and regulated industries.",
+    name: "Monthly",
+    price: "GHC 115",
+    period: "per month",
+    description: "Flexible month-to-month. Cancel anytime.",
     features: [
-      "Unlimited AI employees",
-      "Custom message volume",
-      "SSO + advanced RBAC",
-      "Dedicated infrastructure",
-      "On-prem / private cloud option",
-      "Custom SLAs",
-      "Dedicated success manager",
-      "Compliance + audit support",
+      "Everything in annual",
+      "Month-to-month flexibility",
+      "Cancel anytime",
+      "Weekly archives",
     ],
-    cta: "Contact us",
-    accent: false,
+    cta: "Get monthly",
+    href: "/auth",
+    highlight: false,
+    icon: Calendar,
   },
 ];
 
 export function AresPricing() {
   return (
-    <section id="pricing" className="relative py-24">
-      <div className="absolute inset-0 ares-grid-bg opacity-30" />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-ares-sea/20 bg-ares-foam px-3 py-1 text-xs font-medium text-ares-sea-deep">
-            Pricing &amp; entitlements
+    <section id="pricing" className="relative py-24 bg-ares-mist">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-ares-sea/20 bg-white px-3 py-1 text-xs font-medium text-ares-sea-deep">
+            Pricing
           </div>
-          <h2 className="text-balance text-3xl font-semibold tracking-tight text-ares-navy sm:text-4xl md:text-5xl">
-            Pay for what your business{" "}
-            <span className="ares-text-gradient">actually uses</span>
+          <h2 className="text-balance text-3xl font-semibold tracking-tight text-ares-navy sm:text-4xl ares-serif">
+            Simple, honest pricing.
           </h2>
-          <p className="mt-5 text-balance text-base text-muted-foreground sm:text-lg">
-            A centralized entitlement system — no hardcoded limits sprinkled across the app. Upgrade
-            or downgrade instantly; A.R.E.S. reconfigures available tools and channels per plan.
+          <p className="mt-4 text-base text-muted-foreground">
+            Start free for 7 days. Then choose a plan that works for you. Use promo code <span className="font-semibold text-ares-sea-deep">Kelvin</span> for the annual plan at <span className="font-semibold text-ares-sea-deep">GHC 600/year</span> — that&apos;s GHC 860 off.
           </p>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((p) => (
+        <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {PLANS.map((plan) => (
             <div
-              key={p.name}
-              className={`relative overflow-hidden rounded-2xl border p-6 ${
-                p.accent
-                  ? "border-ares-sea/40 bg-white shadow-[0_24px_60px_-30px_rgba(14,165,199,0.45)]"
+              key={plan.name}
+              className={`relative overflow-hidden rounded-3xl border-2 p-6 ${
+                plan.highlight
+                  ? "border-ares-sea bg-white shadow-[0_8px_32px_-8px_rgba(2,132,166,0.2)]"
                   : "border-ares-line bg-white"
               }`}
             >
-              {p.accent && (
-                <>
-                  <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-ares-sea to-ares-sea-deep" />
-                  <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-ares-sea-deep px-2 py-0.5 text-[10px] font-semibold text-white">
-                    <Sparkles className="h-2.5 w-2.5" />
-                    Popular
-                  </div>
-                </>
+              {plan.highlight && (
+                <div className="absolute right-4 top-4 rounded-full bg-ares-sea px-2.5 py-1 text-[10px] font-semibold text-white">
+                  BEST VALUE
+                </div>
               )}
-              <div className="text-sm font-semibold text-ares-navy">{p.name}</div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="font-mono text-3xl font-bold text-ares-navy">{p.price}</span>
-                <span className="text-xs text-muted-foreground">{p.cadence}</span>
+              <div className="flex items-center gap-2">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${plan.highlight ? "bg-ares-foam text-ares-sea-deep" : "bg-ares-mist text-ares-navy"}`}>
+                  <plan.icon className="h-5 w-5" />
+                </div>
+                <div className="text-sm font-semibold text-ares-navy">{plan.name}</div>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">{p.desc}</p>
+
+              <div className="mt-5">
+                <span className="font-mono text-3xl font-bold text-ares-navy">{plan.price}</span>
+                <span className="ml-1.5 text-sm text-muted-foreground">{plan.period}</span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{plan.description}</p>
+
               <ul className="mt-5 space-y-2">
-                {p.features.map((f) => (
+                {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-ares-navy">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ares-sea-deep" />
-                    <span>{f}</span>
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                    {f}
                   </li>
                 ))}
               </ul>
-              <button
-                className={`mt-6 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-                  p.accent
+
+              <Link
+                href={plan.href}
+                className={`mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                  plan.highlight
                     ? "bg-ares-navy text-white hover:bg-ares-sea-deep"
-                    : "border border-ares-line bg-white text-ares-navy hover:border-ares-sea/40"
+                    : "border border-ares-line bg-white text-ares-navy hover:bg-ares-mist"
                 }`}
               >
-                {p.cta}
-              </button>
+                {plan.cta} →
+              </Link>
             </div>
           ))}
+        </div>
+
+        {/* Promo banner */}
+        <div className="mt-8 overflow-hidden rounded-2xl border border-ares-sea/20 bg-gradient-to-br from-ares-navy to-ares-sea-deep p-6 text-center text-white">
+          <div className="flex items-center justify-center gap-2">
+            <Sparkles className="h-5 w-5 text-amber-400" />
+            <span className="text-sm font-semibold">Promo: Use code KELVIN</span>
+          </div>
+          <p className="mt-2 text-xs text-white/70">
+            Get the annual plan for <span className="font-semibold text-white">GHC 600/year</span> instead of GHC 1,300. That&apos;s GHC 860 off — forever.
+          </p>
         </div>
       </div>
     </section>

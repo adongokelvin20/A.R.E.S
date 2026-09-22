@@ -16,7 +16,7 @@ const STEPS = [
   {
     num: "03",
     title: "Your assistant starts working",
-    desc: "Customers message you on WhatsApp. Your assistant answers, recommends products, takes orders with delivery details, and remembers every customer.",
+    desc: "Customers message you on WhatsApp or your store link. Your assistant answers, recommends products, takes orders with delivery details, and remembers every customer.",
   },
 ];
 
@@ -52,20 +52,23 @@ export function AresHowItWorks() {
           <ShowcaseImage src="/images/ai-1.jpg" alt="Orders" label="Orders" />
         </div>
 
-        {/* Video showcase row */}
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Video showcase row — landscape 16:9, lazy-loaded */}
+        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
           <VideoCard
             src="/videos/feature-1.mp4"
+            poster="/images/kevtech.jpg"
             title="Customer conversations"
-            caption="Your assistant handles WhatsApp chats naturally — answers questions, recommends products, takes orders."
+            caption="Your assistant handles chats naturally — answers questions, recommends products, takes orders."
           />
           <VideoCard
             src="/videos/feature-2.mp4"
+            poster="/images/kevtecc.jpg"
             title="Orders and fulfillment"
             caption="Every order the assistant takes lands in your dashboard with pickup or delivery details, ready to review."
           />
           <VideoCard
             src="/videos/feature-3.mp4"
+            poster="/images/dfe.jpg"
             title="Always-on monitoring"
             caption="Stock alerts, customer follow-ups, and daily briefings — your assistant watches your business around the clock."
           />
@@ -92,9 +95,10 @@ function ShowcaseImage({ src, alt, label }: { src: string; alt: string; label: s
   );
 }
 
-function VideoCard({ src, title, caption }: { src: string; title: string; caption: string }) {
+function VideoCard({ src, poster, title, caption }: { src: string; poster: string; title: string; caption: string }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [inView, setInView] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const v = ref.current;
@@ -116,14 +120,20 @@ function VideoCard({ src, title, caption }: { src: string; title: string; captio
 
   return (
     <div className="group overflow-hidden rounded-2xl border border-ares-line bg-ares-navy">
-      <div className="relative aspect-[9/16] overflow-hidden">
+      <div className="relative aspect-video overflow-hidden">
+        {/* Poster image shown until video loads */}
+        {!loaded && (
+          <img src={poster} alt={title} className="absolute inset-0 h-full w-full object-cover" />
+        )}
         <video
           ref={ref}
           muted
           loop
           playsInline
+          poster={poster}
           className="h-full w-full object-cover"
           preload={inView ? "auto" : "none"}
+          onLoadedData={() => setLoaded(true)}
         >
           <source src={src} type="video/mp4" />
         </video>

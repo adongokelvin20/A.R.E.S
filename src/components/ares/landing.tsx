@@ -6,6 +6,7 @@ import { AresPlatform } from "./platform";
 import { AresHowItWorks } from "./how-it-works";
 import { AresBusinessTypes } from "./business-types";
 import { AresWhatsApp } from "./whatsapp-integration";
+import { AresPricing } from "./pricing";
 import { AresFooter } from "./footer";
 
 export function AresLanding() {
@@ -17,6 +18,7 @@ export function AresLanding() {
       <AresHowItWorks />
       <AresBusinessTypes />
       <AresWhatsApp />
+      <AresPricing />
       <AresFooter />
     </main>
   );
