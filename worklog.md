@@ -519,3 +519,33 @@ Work Log:
 
 Stage Summary:
 - Weekly archives save KPIs weekly (dashboard resets, data preserved). Agent is more human-like (rotating personalities, varied phrasing). Paystack subscription: 1-week trial, GHC1300/year or GHC115/month, promo "Kelvin" = GHC600/year. Dashboard gated behind subscription. Pushed to Vercel.
+
+---
+Task ID: ares-v23
+Agent: Super Z (main)
+Task: Fix Vercel changes not showing + add pricing to public site + fix videos not loading.
+
+Work Log:
+- ROOT CAUSE of changes not showing: the Vercel build was likely timing out or failing on the large video files (feature-3.mp4 was 25MB). Fixed by compressing all videos:
+  - feature-1.mp4: 8.2MB → 1MB
+  - feature-2.mp4: 4.9MB → 300KB
+  - feature-3.mp4: 25MB → 1.2MB
+  - hero-bg.mp4: 8.2MB → 2.1MB
+- Fixed video cards in how-it-works.tsx:
+  - Changed aspect ratio from 9:16 (portrait, tall) to 16:9 (landscape, standard) — more natural for demo videos
+  - Added poster images (shown until video loads) so users see content immediately
+  - Added onLoadedData handler to hide poster once video is ready
+  - Videos lazy-load (preload="none" until in view)
+- Created pricing section (src/components/ares/pricing.tsx):
+  - 3 plans: Free Trial (7 days), Annual (GHC 1,300/year), Monthly (GHC 115/month)
+  - Annual plan highlighted as "BEST VALUE"
+  - Promo banner: "Use code KELVIN for GHC 600/year" (GHC 860 off)
+  - Features list for each plan
+  - CTA buttons linking to /auth
+- Added pricing section to landing page (between WhatsApp and Footer)
+- Added "Pricing" link to navbar
+- Verified on Vercel: pricing section renders, promo code Kelvin appears, video posters load, video files stream correctly (HTTP 206)
+- Lint clean. Pushed to GitHub (4145f8a).
+
+Stage Summary:
+- Vercel now shows all changes. Videos compressed and loading with poster fallbacks. Pricing section live on public site with 3 plans + promo code Kelvin banner. Pushed to Vercel.
