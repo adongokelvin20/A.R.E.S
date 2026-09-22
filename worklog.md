@@ -486,3 +486,36 @@ Work Log:
 
 Stage Summary:
 - Charts render properly (aspect ratio fixed). Order flow now enforces: name + delivery location/time/phone (for delivery) or name + pickup time (for pickup) before confirming. Context cache cleared on settings/product changes. Pushed to Vercel.
+
+---
+Task ID: ares-v22
+Agent: Super Z (main)
+Task: Weekly dashboard archives + more human-like agent + Paystack subscription (trial/annual/monthly/promo Kelvin).
+
+Work Log:
+- WEEKLY ARCHIVE SYSTEM:
+  - Added WeeklyArchive model to schema (weekStart, weekEnd, revenue, orderCount, customerCount, newCustomers, topProducts, channelBreakdown, statusBreakdown, summary)
+  - Created src/lib/weekly-archive.ts: checkAndArchiveWeek() runs on dashboard load, archives the previous week's KPIs if not already archived. getWeeklyArchives() returns all past weeks. getThisWeekData() returns current week's KPIs.
+  - Created /api/weekly-archives endpoint: returns all archives + triggers weekly check
+  - All data (orders, customers, conversations) is preserved forever — the archive is just a KPI snapshot for quick review. The dashboard shows "this week" data.
+
+- MORE HUMAN-LIKE AGENT:
+  - Added 5 personality variants that rotate randomly (warm, playful, casual, efficient, enthusiastic)
+  - Added rules: "Vary your sentence structure. Don't start two messages the same way. React to what the customer says — if they're excited, match it. Have opinions about products."
+  - Added more banned phrases ("I'm here to help", "Feel free to ask")
+
+- PAYSTACK SUBSCRIPTION:
+  - Added Subscription model to schema (status, plan, trialEndsAt, currentPeriodEnd, amountPaid, promoCode, paystackRef)
+  - Created src/lib/paystack.ts: PRICING config (TRIAL=7 days, ANNUAL=GHC1300, MONTHLY=GHC115, PROMO "Kelvin"=GHC600/year), initializeTransaction, verifyTransaction, validatePromoCode, getOrCreateSubscription, hasAccess
+  - Created /api/subscription/initiate: starts Paystack transaction, returns authorization URL
+  - Created /api/subscription/verify: GET (Paystack callback redirect) + POST (verifies payment, activates subscription)
+  - Created /api/subscription/status: returns current subscription status + days left in trial
+  - Created PricingModal component: plan toggle (Annual/Monthly), promo code input (Kelvin = GHC600), features list, Paystack redirect
+  - Added subscription gating to app-shell: shows pricing modal if trial expired, shows trial banner when ≤3 days left
+  - Money goes to merchant MoMo 0206646970 (configured in Paystack dashboard)
+  - Added PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY, PAYSTACK_MERCHANT_EMAIL to .env.example
+
+- Lint clean. Pushed to GitHub (2545c88), Vercel deploying.
+
+Stage Summary:
+- Weekly archives save KPIs weekly (dashboard resets, data preserved). Agent is more human-like (rotating personalities, varied phrasing). Paystack subscription: 1-week trial, GHC1300/year or GHC115/month, promo "Kelvin" = GHC600/year. Dashboard gated behind subscription. Pushed to Vercel.
