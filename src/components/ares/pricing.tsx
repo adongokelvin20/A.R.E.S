@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Sparkles, Crown, Calendar } from "lucide-react";
+import { Check, Crown, Calendar } from "lucide-react";
 import Link from "next/link";
 
 const PLANS = [
@@ -67,7 +67,7 @@ export function AresPricing() {
             Simple, honest pricing.
           </h2>
           <p className="mt-4 text-base text-muted-foreground">
-            Start free for 7 days. Then choose a plan that works for you. Use promo code <span className="font-semibold text-ares-sea-deep">Kelvin</span> for the annual plan at <span className="font-semibold text-ares-sea-deep">GHC 600/year</span> — that&apos;s GHC 860 off.
+            Start free for 7 days. Then choose a plan that works for you. No credit card needed to start.
           </p>
         </div>
 
@@ -120,17 +120,6 @@ export function AresPricing() {
               </Link>
             </div>
           ))}
-        </div>
-
-        {/* Promo banner */}
-        <div className="mt-8 overflow-hidden rounded-2xl border border-ares-sea/20 bg-gradient-to-br from-ares-navy to-ares-sea-deep p-6 text-center text-white">
-          <div className="flex items-center justify-center gap-2">
-            <Sparkles className="h-5 w-5 text-amber-400" />
-            <span className="text-sm font-semibold">Promo: Use code KELVIN</span>
-          </div>
-          <p className="mt-2 text-xs text-white/70">
-            Get the annual plan for <span className="font-semibold text-white">GHC 600/year</span> instead of GHC 1,300. That&apos;s GHC 860 off — forever.
-          </p>
         </div>
       </div>
     </section>

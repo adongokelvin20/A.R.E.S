@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     let amount: number;
     let finalPlan = plan;
     let promoApplied = false;
+    let isFreePromo = false;
 
     if (promoCode) {
       const promo = validatePromoCode(promoCode);
@@ -43,6 +44,48 @@ export async function POST(req: NextRequest) {
         amount = promo.amount;
         finalPlan = promo.plan;
         promoApplied = true;
+        isFreePromo = promo.free;
+
+        // If it's the free promo, activate immediately without Paystack
+        if (isFreePromo) {
+          const sub = await getOrCreateSubscription(businessId, db);
+          const periodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+          if (sub) {
+            await db.subscription.update({
+              where: { id: sub.id },
+              data: {
+                status: "ACTIVE",
+                plan: "ANNUAL",
+                currentPeriodEnd: periodEnd,
+                amountPaid: 0,
+                promoCode: promoCode,
+                paystackRef: `FREE-PROMO-${Date.now()}`,
+              },
+            });
+          }
+
+          try {
+            await db.auditLog.create({
+              data: {
+                businessId,
+                actorType: "USER",
+                actorName: session.user.name ?? "Owner",
+                action: "SUBSCRIPTION_ACTIVATED",
+                tool: "subscription.promo",
+                result: "SUCCESS",
+                riskLevel: "HIGH",
+                details: JSON.stringify({ plan: "ANNUAL", promo: promoCode, free: true }),
+              },
+            });
+          } catch {}
+
+          return NextResponse.json({
+            ok: true,
+            free: true,
+            plan: "ANNUAL",
+            currentPeriodEnd: periodEnd.toISOString(),
+          });
+        }
       } else {
         return NextResponse.json({ error: "Invalid promo code" }, { status: 400 });
       }

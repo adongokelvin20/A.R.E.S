@@ -26,6 +26,13 @@ export const PRICING = {
     label: "GHC 600/year (promo)",
     plan: "ANNUAL",
   },
+  // Secret promo — gives the system for free. Not shown publicly.
+  FREE_PROMO: {
+    code: "kratos",
+    amount: 0,
+    label: "Free (promo)",
+    plan: "ANNUAL",
+  },
 };
 
 export interface PaystackConfig {
@@ -132,18 +139,33 @@ export async function verifyTransaction(reference: string): Promise<{
 /**
  * Validate a promo code and return the adjusted amount.
  */
-export function validatePromoCode(code: string): { valid: boolean; amount: number; plan: string; label: string } {
-  if (!code) return { valid: false, amount: 0, plan: "", label: "" };
+export function validatePromoCode(code: string): { valid: boolean; amount: number; plan: string; label: string; free: boolean } {
+  if (!code) return { valid: false, amount: 0, plan: "", label: "", free: false };
   const normalized = code.trim().toLowerCase();
+
+  // Free promo — gives the system for free (secret)
+  if (normalized === PRICING.FREE_PROMO.code.toLowerCase()) {
+    return {
+      valid: true,
+      amount: 0,
+      plan: PRICING.FREE_PROMO.plan,
+      label: PRICING.FREE_PROMO.label,
+      free: true,
+    };
+  }
+
+  // Kelvin promo — GHC 600/year
   if (normalized === PRICING.PROMO.code.toLowerCase()) {
     return {
       valid: true,
       amount: PRICING.PROMO.annualAmount,
       plan: PRICING.PROMO.plan,
       label: PRICING.PROMO.label,
+      free: false,
     };
   }
-  return { valid: false, amount: 0, plan: "", label: "" };
+
+  return { valid: false, amount: 0, plan: "", label: "", free: false };
 }
 
 /**

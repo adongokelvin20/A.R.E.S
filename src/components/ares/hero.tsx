@@ -52,7 +52,7 @@ export function AresHero() {
           {/* CTAs */}
           <div className="ares-fade-up mt-9 flex flex-col items-start gap-3 sm:flex-row" style={{ animationDelay: "320ms" }}>
             <Link href="/auth" className="group inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-ares-navy shadow-[0_8px_32px_-8px_rgba(255,255,255,0.4)] transition-all hover:bg-white/90">
-              Start free
+              Start free trial
               <span className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
             <a href="#how" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10">
