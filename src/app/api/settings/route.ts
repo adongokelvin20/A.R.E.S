@@ -57,6 +57,12 @@ export async function POST(req: NextRequest) {
       select: { id: true, agentName: true, agentInstructions: true },
     });
 
+    // Clear the store chat context cache so the new settings take effect immediately
+    try {
+      const { clearContextCache } = await import("@/lib/store-chat-context");
+      clearContextCache(businessId);
+    } catch {}
+
     // Audit log
     try {
       await db.auditLog.create({

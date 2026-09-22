@@ -123,6 +123,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Clear the store chat context cache so the new product shows up in the AI's context
+    try {
+      const { clearContextCache } = await import("@/lib/store-chat-context");
+      clearContextCache(businessId);
+    } catch {}
+
     await db.auditLog.create({
       data: {
         businessId,

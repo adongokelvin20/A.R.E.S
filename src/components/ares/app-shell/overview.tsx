@@ -218,7 +218,7 @@ function RevenueChart({ data }: { data: any }) {
         </span>
       </div>
       <div className="mt-3">
-        <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" preserveAspectRatio="none">
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#0284A6" stopOpacity="0.25" />
