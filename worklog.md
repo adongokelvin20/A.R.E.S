@@ -549,3 +549,28 @@ Work Log:
 
 Stage Summary:
 - Vercel now shows all changes. Videos compressed and loading with poster fallbacks. Pricing section live on public site with 3 plans + promo code Kelvin banner. Pushed to Vercel.
+
+---
+Task ID: ares-v24
+Agent: Super Z (main)
+Task: Change 'Start free' to 'Start free trial', add pricing to dashboard, remove public promo banner, add kratos free promo, fix plan buttons.
+
+Work Log:
+- Changed hero CTA from "Start free" to "Start free trial"
+- Removed the promo banner from the public pricing section (was showing "Use code KELVIN" — now secret)
+- Removed the Kelvin mention from the public pricing description
+- Added "kratos" promo code = FREE annual subscription (secret, not shown publicly). When entered in the dashboard pricing page, it activates the annual plan immediately without payment.
+- Updated validatePromoCode to handle both promos: "kelvin" = GHC 600/year, "kratos" = free
+- Updated /api/subscription/initiate to handle the free promo: if "kratos" is used, activates the subscription immediately (no Paystack redirect) and returns {ok: true, free: true}
+- Created dashboard pricing page (src/components/ares/app-shell/pricing.tsx):
+  - Shows current subscription status (trial days left, active plan)
+  - Annual + Monthly plan cards with features
+  - Promo code input (accepts both "kelvin" and "kratos" — but only you know them)
+  - Pay button: redirects to Paystack for paid plans, activates immediately for "kratos"
+  - "Plans" nav item added to the sidebar with a crown icon
+- Added "pricing" to the View type + NAV array in app-shell.tsx
+- Added Crown icon to the sidebar ICONS map
+- Lint clean. Pushed to GitHub (f731b66).
+
+Stage Summary:
+- Hero says "Start free trial". Public pricing has no promo banner (secret). Dashboard has a "Plans" page with working payment + promo codes. "kratos" = free, "kelvin" = GHC 600/year. Both are secret — only you know them. Pushed to Vercel.
