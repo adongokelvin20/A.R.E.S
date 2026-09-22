@@ -592,3 +592,18 @@ Work Log:
 
 Stage Summary:
 - "Unexpected error" fixed — all subscription and weekly-archive code has graceful error handling. Users are never locked out during DB errors. Weekly archiving runs automatically on dashboard load. Pushed to Vercel.
+
+---
+Task ID: ares-v26
+Agent: Super Z (main)
+Task: Fix persistent "We hit an unexpected issue. Try refreshing the page" error.
+
+Work Log:
+- Wrapped the ENTIRE home page (src/app/page.tsx) in a try/catch. If anything throws (auth, DB, session, etc.), it falls back to the landing page instead of showing the error boundary.
+- Updated the error boundary (src/app/error.tsx) to show the ACTUAL error message in a small monospace box. This will tell us exactly what's failing so we can fix it precisely.
+- Added a "Log out" button to the error page so users can escape if they're stuck.
+- Verified: build succeeds, all API routes return 401 (correct — no auth without session). The home page loads (12KB of content). The issue is specifically when a logged-in user loads the dashboard.
+- Lint clean. Pushed to GitHub (3d643dc).
+
+Stage Summary:
+- The error page now shows the actual error message for diagnosis. The home page is fully wrapped in try/catch. Need the user to reload and tell us the error message shown in the small box so we can fix the exact issue.
