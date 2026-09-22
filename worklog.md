@@ -461,3 +461,28 @@ Work Log:
 
 Stage Summary:
 - Store chat now responds in 1-2 seconds (was 5-10s). Minimal 500-word prompt, 5-minute context cache, fire-and-forget DB writes. Customers get instant replies. Pushed to Vercel.
+
+---
+Task ID: ares-v21
+Agent: Super Z (main)
+Task: Fix chart rendering + enforce proper order flow (name, location, time for delivery; name + pickup time for pickup).
+
+Work Log:
+- Fixed revenue chart rendering: changed SVG preserveAspectRatio from "none" (which distorted the chart) to "xMidYMid meet" (preserves aspect ratio). Charts now render proportionally.
+- Updated store chat system prompt with strict order flow:
+  1. Confirm item (name, size/color, quantity)
+  2. Ask for NAME
+  3. Ask pickup or delivery
+  4. IF DELIVERY: ask for LOCATION, TIME, and PHONE NUMBER (all three required)
+  5. IF PICKUP: ask when they'll come to the shop
+  6. Read full order back
+  7. Wait for confirmation
+  8. ONLY then emit ORDER_CONFIRMED
+  Added rule: "NEVER confirm an order without getting: name + (delivery: location, time, phone) OR (pickup: when they'll come)."
+- Updated the full buildBusinessContext (dashboard chat + WhatsApp) with the same strict order flow for consistency.
+- Updated ORDER_CONFIRMED JSON format to include deliveryLocation, deliveryTime, deliveryPhone fields.
+- Added context cache clearing when: settings change (POST /api/settings), products added (POST /api/products). This ensures the AI always uses the latest product list and personality.
+- Lint clean. Pushed to GitHub (261e0e7), Vercel deploying.
+
+Stage Summary:
+- Charts render properly (aspect ratio fixed). Order flow now enforces: name + delivery location/time/phone (for delivery) or name + pickup time (for pickup) before confirming. Context cache cleared on settings/product changes. Pushed to Vercel.
