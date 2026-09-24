@@ -704,3 +704,38 @@ FINAL SYSTEMS CHECK:
 - Global brain: ✓ (shared learning across all businesses)
 - Customer recognition: ✓ (returning customers greeted by name)
 - Capacity: unlimited businesses (Vercel serverless + PostgreSQL scale to thousands)
+
+---
+Task ID: ares-v31
+Agent: Super Z (main)
+Task: Fix kratos promo badge not showing + revenue only counts closed orders + explain subscription lock.
+
+Work Log:
+- Fixed kratos promo badge: the promoCode was being saved with the original case (e.g., "Kratos" or "KRATOS"), but the pricing page checks promoCode?.toLowerCase() === "kratos". Now the initiate API saves the promoCode in lowercase for consistent badge display.
+- Fixed revenue calculation: changed from "not CANCELLED" to "FULFILLED only" in:
+  - Dashboard API: todayRevenue, yesterdayRevenue, 14-day series
+  - Weekly archive: archiveWeek() and getThisWeekData()
+  Now revenue only counts when an order is marked as FULFILLED (closed). Pending, confirmed, and cancelled orders don't count as revenue.
+- Lint clean. Pushed to GitHub (e012d60).
+
+Stage Summary:
+- Kratos badge now shows correctly (promoCode saved in lowercase). Revenue only counts closed (FULFILLED) orders. Pushed to Vercel.
+
+SUBSCRIPTION LOCK EXPLANATION (simple language):
+1. When someone signs up, they get a 7-day free trial (status=TRIAL, trialEndsAt=7 days from now)
+2. Every time they load the dashboard, the system checks:
+   - Is the trial over? (trialEndsAt < now) → if yes, status becomes EXPIRED
+   - Is the paid period over? (currentPeriodEnd < now) → if yes, status becomes EXPIRED
+3. The dashboard checks hasAccess(sub):
+   - TRIAL + trialEndsAt > now → has access
+   - ACTIVE + currentPeriodEnd > now → has access
+   - EXPIRED → NO access
+4. If hasAccess is false and status is EXPIRED, the pricing modal appears and CANNOT be closed
+5. The user is locked out until they:
+   - Use kratos again (free for 1 year)
+   - Use kelvin (GHC 600/year)
+   - Pay via Paystack (GHC 1300/year or GHC 115/month)
+6. Once they pay/activate, status becomes ACTIVE with a new currentPeriodEnd
+7. The cycle repeats — when that period ends, it expires again and locks
+
+The check happens automatically on every dashboard load. No manual intervention needed.
