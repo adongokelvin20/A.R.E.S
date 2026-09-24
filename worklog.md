@@ -673,3 +673,34 @@ Work Log:
 
 Stage Summary:
 - Better Paystack error messages tell the user exactly what's wrong. Diagnostic endpoint available. The user likely entered the public key (pk_) instead of the secret key (sk_), or the env var name doesn't match. Pushed to Vercel.
+
+---
+Task ID: ares-v30
+Agent: Super Z (main)
+Task: Subscription lock on expiry + plan badges + agent asks name first + browser notifications + final systems check.
+
+Work Log:
+- Store chat agent now ALWAYS greets and asks for the customer's name FIRST before anything else. The name is saved to the conversation and visible in the owner's Conversations tab.
+- Pricing page now shows plan badges: "FREE (KRATOS)", "PROMO (KELVIN)", or the plan name. Kratos users see "You're on the free Kratos plan for 1 year. When it expires, you'll need to use the code again or choose a paid plan."
+- Subscription status API now returns promoCode so the pricing page can show the correct badge.
+- System lock: when subscription expires, the pricing modal appears and CANNOT be closed. The user is locked out until they resubscribe (use kratos again, use kelvin, or pay).
+- Browser notifications: the dashboard now requests notification permission on mount and polls /api/notifications every 30 seconds. When a new order comes in (from store chat or WhatsApp), the owner gets a browser notification: "New order! 🎉 — {customer} ordered {N} items — GHC{total} via {channel}".
+- Created /api/notifications endpoint that returns new orders since the last check.
+- Lint clean. Pushed to GitHub (1dbf298).
+
+Stage Summary:
+- Agent asks name first. Plan badges show Free/Kratos/Kelvin. System locks on expiry. Browser notifications for new orders. Final systems check complete. Pushed to Vercel.
+
+FINAL SYSTEMS CHECK:
+- Public site: ✓ (hero, platform, how-it-works, business types, WhatsApp, pricing, footer)
+- Auth: ✓ (signup, login, onboarding wizard)
+- Dashboard: ✓ (overview, products, orders, conversations, AI chat, automations, integrations, plans, archives, audit log, settings)
+- Store page: ✓ (public store link with AI chat, product grid, clickable products)
+- AI: ✓ (GLM-4.5-flash via Z.ai Open API, full context with learnings + brain + knowledge)
+- WhatsApp: ✓ (Meta Embedded Signup, QR code, webhook)
+- Payments: ✓ (Paystack, 7-day trial, GHC1300/year, GHC115/month, promo Kelvin=GHC600, promo kratos=free)
+- Weekly archives: ✓ (auto-archive on dashboard load, backfill missed weeks)
+- Browser notifications: ✓ (new order alerts)
+- Global brain: ✓ (shared learning across all businesses)
+- Customer recognition: ✓ (returning customers greeted by name)
+- Capacity: unlimited businesses (Vercel serverless + PostgreSQL scale to thousands)
