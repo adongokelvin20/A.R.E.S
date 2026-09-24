@@ -91,6 +91,49 @@ export function AresAppShell({
       });
   }, []);
 
+  // ===== Browser notifications for new orders =====
+  // Request permission on mount, then poll for new orders every 30 seconds
+  useEffect(() => {
+    // Request notification permission
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+    }
+
+    let lastCheck = new Date(Date.now() - 5 * 60 * 1000); // start 5 min ago
+    let seenOrderIds = new Set<string>();
+
+    const checkNewOrders = async () => {
+      try {
+        const res = await fetch(`/api/notifications?since=${lastCheck.toISOString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        lastCheck = new Date(data.checkedAt);
+
+        for (const order of data.orders ?? []) {
+          if (!seenOrderIds.has(order.id)) {
+            seenOrderIds.add(order.id);
+            // Show browser notification
+            if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+              const symbol = order.currency === "GHS" ? "GH₵" : order.currency;
+              new Notification("New order! 🎉", {
+                body: `${order.customerName} ordered ${order.itemCount} item${order.itemCount === 1 ? "" : "s"} — ${symbol}${order.total.toFixed(2)} via ${order.channel === "WHATSAPP" ? "WhatsApp" : "Store"}`,
+                icon: "/icon.svg",
+                tag: order.id,
+              });
+            }
+          }
+        }
+      } catch {}
+    };
+
+    // Check immediately, then every 30 seconds
+    checkNewOrders();
+    const interval = setInterval(checkNewOrders, 30 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {

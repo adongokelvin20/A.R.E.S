@@ -102,14 +102,24 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
             <Check className="h-4 w-4 text-emerald-600" />
             <span className="text-sm font-semibold text-emerald-800">Subscription active</span>
             <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-              {subStatus.plan}
+              {subStatus?.promoCode?.toLowerCase() === "kratos" ? "FREE (KRATOS)" : subStatus?.promoCode?.toLowerCase() === "kelvin" ? "PROMO (KELVIN)" : subStatus?.plan}
             </span>
           </div>
           <p className="mt-1 text-xs text-emerald-700">
-            {subStatus.currentPeriodEnd
+            {subStatus?.currentPeriodEnd
               ? `Active until ${new Date(subStatus.currentPeriodEnd).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`
               : "Active"}
           </p>
+          {subStatus?.promoCode?.toLowerCase() === "kratos" && (
+            <p className="mt-2 text-[11px] text-emerald-600">
+              You&apos;re on the free Kratos plan for 1 year. When it expires, you&apos;ll need to use the code again or choose a paid plan.
+            </p>
+          )}
+          {subStatus?.promoCode?.toLowerCase() === "kelvin" && (
+            <p className="mt-2 text-[11px] text-emerald-600">
+              You&apos;re on the Kelvin promo (GHC 600/year). When it expires, you can renew at the same rate.
+            </p>
+          )}
           <p className="mt-2 text-[11px] text-emerald-600">
             You can&apos;t subscribe again until your current plan expires. Your assistant will keep running.
           </p>

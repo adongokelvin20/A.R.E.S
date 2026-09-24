@@ -48,6 +48,7 @@ export async function GET() {
   return NextResponse.json({
     status: sub?.status ?? "TRIAL",
     plan: sub?.plan ?? "TRIAL",
+    promoCode: sub?.promoCode ?? null,
     trialEndsAt: sub?.trialEndsAt ?? null,
     currentPeriodEnd: sub?.currentPeriodEnd ?? null,
     hasAccess: hasAccess(sub),
