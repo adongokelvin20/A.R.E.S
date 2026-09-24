@@ -71,7 +71,7 @@ export function AresAppShell({
   const [subscription, setSubscription] = useState<any>(null);
   const [showPricing, setShowPricing] = useState(locked); // if locked server-side, show pricing immediately
 
-  // Check subscription status on mount — fail gracefully so the dashboard never crashes
+  // Check subscription status on mount
   useEffect(() => {
     fetch("/api/subscription/status")
       .then((r) => {
@@ -81,17 +81,20 @@ export function AresAppShell({
       .then((sub) => {
         if (sub && typeof sub === "object") {
           setSubscription(sub);
-          // Only show pricing if access is explicitly denied (not on errors)
-          if (sub.hasAccess === false && sub.status === "EXPIRED") {
+          // Show pricing if access is denied
+          if (sub.hasAccess === false) {
             setShowPricing(true);
           }
         }
       })
       .catch(() => {
-        // If the subscription check fails, give the user access (don't lock them out)
-        setSubscription({ hasAccess: true, status: "TRIAL", daysLeft: 7 });
+        // If the subscription check fails AND we're already locked (server-side),
+        // stay locked. Don't override the server's lock decision.
+        if (!locked) {
+          setSubscription({ hasAccess: true, status: "TRIAL", daysLeft: 7 });
+        }
       });
-  }, []);
+  }, [locked]);
 
   // ===== Browser notifications for new orders =====
   // Request permission on mount, then poll for new orders every 30 seconds

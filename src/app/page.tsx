@@ -7,6 +7,8 @@ import { getOrCreateSubscription, hasAccess } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 export default async function Home() {
   try {
     const session = await getServerSession(authOptions);
@@ -14,7 +16,7 @@ export default async function Home() {
     if (session?.user?.businessId) {
       try { await ensureDatabase(); } catch {}
 
-      // Look up the business
+      // Look up the business — MUST include createdAt for the age check
       let business: any = null;
       try {
         if (db) {
@@ -31,40 +33,44 @@ export default async function Home() {
         const needsOnboarding = !business.onboardedAt;
 
         // ===== SERVER-SIDE SUBSCRIPTION CHECK =====
-        // This is the critical gate — if the subscription is expired, the user
-        // CANNOT access the dashboard. They see the pricing page instead.
-        let sub: any = null;
-        let accessGranted = true; // default to true so DB errors don't lock people out
+        // This is the hard gate. No matter what happens, if the account is
+        // older than 7 days AND there's no active subscription, the user
+        // is LOCKED OUT.
+        let accessGranted = false;
+        let locked = false;
 
+        // Step 1: Check the business age — if older than 7 days, they MUST have a subscription
+        const businessAge = business.createdAt ? Date.now() - new Date(business.createdAt).getTime() : 0;
+        const isOlderThan7Days = businessAge > SEVEN_DAYS_MS;
+
+        // Step 2: Check subscription status
+        let sub: any = null;
         try {
           sub = await getOrCreateSubscription(session.user.businessId, db);
-          accessGranted = hasAccess(sub);
         } catch (e) {
           console.error("[home] subscription check failed:", e);
-          // On error, check manually: if the business is older than 7 days and
-          // has no active subscription, lock them out.
-          if (business.createdAt) {
-            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-            if (new Date(business.createdAt) < sevenDaysAgo) {
-              accessGranted = false; // account is older than 7 days — lock it
-            }
+        }
+
+        // Step 3: Determine access
+        if (sub) {
+          // We have a subscription record — use hasAccess
+          accessGranted = hasAccess(sub);
+        } else {
+          // No subscription record (DB error or table doesn't exist)
+          // If the account is older than 7 days, LOCK THEM OUT
+          // If newer than 7 days, give them the benefit of the doubt (trial)
+          accessGranted = !isOlderThan7Days;
+        }
+
+        // Step 4: Final override — if the account is older than 7 days and
+        // the subscription is not ACTIVE (or TRIAL with days left), lock them
+        if (isOlderThan7Days) {
+          if (!sub || (sub.status !== "ACTIVE" && !(sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date()))) {
+            accessGranted = false;
           }
         }
 
-        // If access is denied, render the app shell with a "locked" flag
-        // so the client shows the pricing modal (which can't be closed)
-        if (!accessGranted) {
-          return (
-            <AresAppShellClient
-              businessId={session.user.businessId}
-              businessName={session.user.businessName ?? business.name}
-              businessType={session.user.businessType ?? business.type}
-              ownerName={session.user.name ?? "Owner"}
-              needsOnboarding={needsOnboarding}
-              locked={true}
-            />
-          );
-        }
+        locked = !accessGranted;
 
         return (
           <AresAppShellClient
@@ -73,7 +79,7 @@ export default async function Home() {
             businessType={session.user.businessType ?? business.type}
             ownerName={session.user.name ?? "Owner"}
             needsOnboarding={needsOnboarding}
-            locked={false}
+            locked={locked}
           />
         );
       }
