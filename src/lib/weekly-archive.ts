@@ -81,7 +81,7 @@ async function archiveWeek(businessId: string, weekStart: Date, weekEnd: Date) {
       include: { items: true },
     });
 
-    const validOrders = orders.filter((o) => o.status !== "CANCELLED");
+    const validOrders = orders.filter((o) => o.status === "FULFILLED");
     const revenue = validOrders.reduce((s, o) => s + o.total, 0);
     const orderCount = orders.length;
 
@@ -172,7 +172,7 @@ export async function getThisWeekData(businessId: string) {
       include: { items: true },
     });
 
-    const validOrders = orders.filter((o) => o.status !== "CANCELLED");
+    const validOrders = orders.filter((o) => o.status === "FULFILLED");
     const revenue = validOrders.reduce((s, o) => s + o.total, 0);
     const orderCount = orders.length;
 

@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
                 plan: "ANNUAL",
                 currentPeriodEnd: periodEnd,
                 amountPaid: 0,
-                promoCode: promoCode,
+                promoCode: promoCode.toLowerCase(), // save in lowercase for consistent badge display
                 paystackRef: `FREE-PROMO-${Date.now()}`,
               },
             });
