@@ -845,3 +845,21 @@ Work Log:
 
 Stage Summary:
 - Store is now properly locked when the owner's subscription expires. The age check runs regardless of DB errors. Log out button added to the lock screen. Pushed to Vercel.
+
+---
+Task ID: ares-v37
+Agent: Super Z (main)
+Task: Fix store still accessible + pricing modal can't scroll to log out button.
+
+Work Log:
+- FIXED store lock: created a dedicated /api/store/[slug]/status endpoint that ONLY checks if the store is locked (no product data). The store page now calls this FIRST before fetching products. If locked, shows the "temporarily unavailable" page immediately. This is a separate, simpler endpoint that's less likely to fail.
+- FIXED pricing modal scroll: the modal had overflow-hidden which prevented scrolling. Changed to:
+  - Outer container: overflow-y-auto (scrolls if content is too tall)
+  - Inner container: max-h-[90vh] + flex flex-col (caps height)
+  - Content area: overflow-y-auto (scrolls within the modal)
+  - Header: shrink-0 (stays fixed at top)
+  Now the log out button at the bottom is always reachable by scrolling.
+- Lint clean (1 warning). Pushed to GitHub (12d93a6).
+
+Stage Summary:
+- Store lock now uses a dedicated status check endpoint (simpler, more reliable). Pricing modal scrolls properly so the log out button is visible. Pushed to Vercel.
