@@ -632,3 +632,28 @@ Work Log:
 
 Stage Summary:
 - "Sparkles is not defined" fixed (missing import). Weekly archiving now backfills ALL missed weeks since business creation (so 14-day accounts get both weeks archived). New Archives page in the dashboard shows weekly history. Pushed to Vercel.
+
+---
+Task ID: ares-v28
+Agent: Super Z (main)
+Task: Make store chat as smart as dashboard + show current plan + lock on expiry + product image matching.
+
+Work Log:
+- UPGRADED store chat: now uses the FULL buildBusinessContext (same as dashboard) — the store agent has access to learnings, knowledge base, global brain patterns, sector prompt, real-time data. It's just as smart as the dashboard agent.
+- Added "STORE CHAT RULES" to the system prompt:
+  - NEVER reveal internal business details (owner's name, dashboard info, revenue, customer count, stock counts, internal systems)
+  - If asked "are you a bot/AI", deflect naturally
+  - Be MORE human-like: vary phrasing, react to energy, use contractions, have opinions, crack jokes
+  - Match the customer's tone
+- Added PRODUCT MATCHING: the system prompt now includes AI-analyzed image descriptions ([visual: black hoodie with kente pattern]) so the agent can match customer descriptions to products. When a customer says "do you have something red?", the agent checks the visual descriptions and recommends matching products.
+- Product image analysis already exists (VLM) — when a product is added, the image is analyzed and the description is stored in imageAlt. This is now included in the store chat context so the agent can match descriptions.
+- PRICING PAGE UPGRADED:
+  - Shows current plan status (Trial/Active/Expired) with a clear badge
+  - When ACTIVE: plans are grayed out (disabled), promo code hidden, pay button replaced with "Your plan is active — no payment needed"
+  - When EXPIRED: shows red "Subscription expired" banner, pay button says "Reactivate subscription"
+  - Can't subscribe again while active (prevents double payment)
+- SYSTEM LOCK: when subscription expires, the pricing modal appears and CANNOT be closed (the close button only works if hasAccess is true). The user is effectively locked out until they resubscribe.
+- Lint clean. Pushed to GitHub (059bf86).
+
+Stage Summary:
+- Store chat now as smart as dashboard (full context + learnings + brain + knowledge). Product image matching works (AI analyzes images, descriptions used for matching). Pricing page shows current plan, prevents re-subscribing while active, locks system on expiry. Pushed to Vercel.
