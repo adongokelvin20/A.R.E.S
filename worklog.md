@@ -657,3 +657,19 @@ Work Log:
 
 Stage Summary:
 - Store chat now as smart as dashboard (full context + learnings + brain + knowledge). Product image matching works (AI analyzes images, descriptions used for matching). Pricing page shows current plan, prevents re-subscribing while active, locks system on expiry. Pushed to Vercel.
+
+---
+Task ID: ares-v29
+Agent: Super Z (main)
+Task: Fix "Failed to initialize payment. Check Paystack configuration" error.
+
+Work Log:
+- Added detailed error messages to the subscription initiate API:
+  - If PAYSTACK_SECRET_KEY is not set: "The platform owner needs to set PAYSTACK_SECRET_KEY in Vercel environment variables. The secret key starts with 'sk_' (not 'pk_')."
+  - If the key doesn't start with "sk_": "The Paystack secret key looks wrong. Make sure you're using the SECRET key (starts with 'sk_'), not the PUBLIC key (starts with 'pk_')."
+  - If Paystack rejects the request: "Paystack rejected the request. Check that the secret key is correct and active. If you just added it, make sure you redeployed."
+- Created /api/subscription/check diagnostic endpoint — returns whether the secret key is set, starts with sk_, and the length. Helps diagnose configuration issues.
+- Lint clean. Pushed to GitHub (9bd3c54).
+
+Stage Summary:
+- Better Paystack error messages tell the user exactly what's wrong. Diagnostic endpoint available. The user likely entered the public key (pk_) instead of the secret key (sk_), or the env var name doesn't match. Pushed to Vercel.
