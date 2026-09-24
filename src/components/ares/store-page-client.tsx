@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { StoreChat } from "@/components/ares/store-chat";
 import { AresLogo } from "@/components/ares/logo";
-import { MessageCircle, Package, AlertCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Package, AlertCircle, Loader2, Lock } from "lucide-react";
 
 const CURRENCY_SYMBOL: Record<string, string> = {
   GHS: "GH₵", NGN: "₦", KES: "KSh", USD: "$", GBP: "£", ZAR: "R", EUR: "€",
@@ -17,6 +17,7 @@ export function StorePageClient({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [locked, setLocked] = useState(false);
   const [business, setBusiness] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
 
@@ -35,8 +36,13 @@ export function StorePageClient({ slug }: { slug: string }) {
       })
       .then((data) => {
         if (!mounted || !data) return;
-        setBusiness(data.business);
-        setProducts(data.products ?? []);
+        if (data.locked) {
+          if (mounted) setLocked(true);
+          if (mounted) setBusiness(data.business);
+          return;
+        }
+        if (mounted) setBusiness(data.business);
+        if (mounted) setProducts(data.products ?? []);
       })
       .catch((e) => {
         if (mounted) setError(e?.message ?? "Failed to load store");
@@ -54,6 +60,25 @@ export function StorePageClient({ slug }: { slug: string }) {
         <div className="text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-ares-sea-deep" />
           <p className="mt-3 text-sm text-muted-foreground">Loading store...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Store locked — owner's subscription expired
+  if (locked) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-ares-mist px-4">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+            <Lock className="h-7 w-7" />
+          </div>
+          <h1 className="text-xl font-semibold text-ares-navy">
+            {business?.name ?? "This store"} is temporarily unavailable
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We&apos;re taking a short break. Please check back soon or contact the business directly.
+          </p>
         </div>
       </main>
     );

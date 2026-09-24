@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   try {
     business = await db.business.findUnique({
       where: { slug },
-      select: { id: true, name: true, currency: true, agentName: true },
+      select: { id: true, name: true, currency: true, agentName: true, createdAt: true },
     });
   } catch {
     return NextResponse.json({
@@ -61,6 +61,28 @@ export async function POST(req: NextRequest) {
   }
   if (!business) return NextResponse.json({ error: "Store not found" }, { status: 404 });
   const businessId = business.id;
+
+  // ===== SUBSCRIPTION CHECK — lock the chat if the owner's subscription is expired =====
+  try {
+    const { getOrCreateSubscription, hasAccess } = await import("@/lib/paystack");
+    const sub = await getOrCreateSubscription(businessId, db);
+    const access = hasAccess(sub);
+    const businessAge = business.createdAt ? Date.now() - new Date(business.createdAt).getTime() : 0;
+    const isOlderThan7Days = businessAge > 7 * 24 * 60 * 60 * 1000;
+    let locked = !access;
+    if (isOlderThan7Days && (!sub || (sub.status !== "ACTIVE" && !(sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date())))) {
+      locked = true;
+    }
+    if (locked) {
+      return NextResponse.json({
+        reply: `${business.name} is temporarily unavailable. Please check back soon!`,
+        conversationId: null, orderCreated: null, images: [],
+        locked: true,
+      });
+    }
+  } catch (e) {
+    console.error("[store chat] subscription check failed:", e);
+  }
 
   // ===== Pre-AI: build context + customer recognition IN PARALLEL =====
   let systemPrompt = `You are ${business.agentName || "the assistant"} at ${business.name}. Be warm, concise, use contractions. Ask for the customer's name. Help them order.`;
