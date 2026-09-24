@@ -758,3 +758,30 @@ Work Log:
 
 Stage Summary:
 - Pricing page now correctly shows the active plan (Free/Kratos/Kelvin/Paid) with expiry date. Greeting only mentions revenue from closed orders, not pending ones. Pushed to Vercel.
+
+---
+Task ID: ares-v33
+Agent: Super Z (main)
+Task: CRITICAL FIX — expired accounts must be locked out. Accounts older than 7 days must be locked until they subscribe or use a promo code.
+
+Work Log:
+- ROOT CAUSE: The home page (src/app/page.tsx) let ANY logged-in user into the dashboard without checking subscription status. The subscription check was only client-side (in app-shell), which could be bypassed or delayed.
+- FIX: Added SERVER-SIDE subscription check to the home page:
+  1. When a logged-in user loads the page, the server calls getOrCreateSubscription()
+  2. getOrCreateSubscription() now checks the business creation date:
+     - If the business is OLDER than 7 days and has no subscription → creates an EXPIRED subscription (locked immediately)
+     - If the business is NEWER than 7 days → creates a TRIAL subscription with proper trialEndsAt
+  3. The server checks hasAccess(sub):
+     - TRIAL + trialEndsAt > now → access granted
+     - ACTIVE + currentPeriodEnd > now → access granted
+     - EXPIRED → access DENIED
+  4. If access is denied, the server passes `locked={true}` to the app shell
+  5. The app shell shows the pricing modal IMMEDIATELY (can't be closed when locked)
+- Updated AresAppShellClient to accept the `locked` prop
+- Updated AresAppShell to accept the `locked` prop and initialize showPricing=true when locked
+- The pricing modal onClose now checks `!locked` — can't close when server-locked
+- Fallback: if the subscription check fails (DB error), the home page checks the business creation date manually. If older than 7 days, locks the account.
+- Lint clean. Pushed to GitHub (31c874c).
+
+Stage Summary:
+- Expired accounts are now LOCKED at the server level. The home page checks subscription status before rendering the dashboard. Accounts older than 7 days with no subscription get an EXPIRED status and are locked out immediately. The pricing modal appears and cannot be closed until they subscribe or use a promo code. Pushed to Vercel.
