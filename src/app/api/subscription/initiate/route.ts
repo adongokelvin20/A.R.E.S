@@ -1,5 +1,5 @@
 /**
- * POST /api/subscription/initiate
+ * GET /api/subscription/initiate
  *   { plan: "ANNUAL" | "MONTHLY", promoCode?: string }
  *
  * Initiates a Paystack transaction for the selected plan.
@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db, ensureDatabase } from "@/lib/db";
-import { PRICING, initializeTransaction, validatePromoCode, getOrCreateSubscription } from "@/lib/paystack";
+import { PRICING, initializeTransaction, validatePromoCode, getOrCreateSubscription, getPaystackConfig, isPaystackConfigured } from "@/lib/paystack";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,6 +93,22 @@ export async function POST(req: NextRequest) {
       amount = plan === "ANNUAL" ? PRICING.ANNUAL.amount : PRICING.MONTHLY.amount;
     }
 
+    // ===== Check Paystack configuration BEFORE calling the API =====
+    const cfg = getPaystackConfig();
+    if (!cfg.secretKey) {
+      console.error("[subscription/initiate] PAYSTACK_SECRET_KEY is not set");
+      return NextResponse.json({
+        error: "Payment not configured. The platform owner needs to set PAYSTACK_SECRET_KEY in Vercel environment variables. The secret key starts with 'sk_' (not 'pk_').",
+      }, { status: 500 });
+    }
+
+    if (!cfg.secretKey.startsWith("sk_")) {
+      console.error("[subscription/initiate] PAYSTACK_SECRET_KEY doesn't start with sk_ — might be the public key");
+      return NextResponse.json({
+        error: "The Paystack secret key looks wrong. Make sure you're using the SECRET key (starts with 'sk_'), not the PUBLIC key (starts with 'pk_'). Go to Vercel → Settings → Environment Variables → PAYSTACK_SECRET_KEY and update it.",
+      }, { status: 500 });
+    }
+
     // Generate a unique reference
     const reference = `ARES-${businessId.slice(-8)}-${Date.now()}`;
 
@@ -119,7 +135,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!result) {
-      return NextResponse.json({ error: "Failed to initialize payment. Check Paystack configuration." }, { status: 500 });
+      console.error("[subscription/initiate] initializeTransaction returned null");
+      return NextResponse.json({
+        error: "Paystack rejected the request. Check that the secret key is correct and active. If you just added it, make sure you redeployed.",
+      }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -131,6 +150,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (e: any) {
     console.error("[subscription/initiate] error:", e?.message);
-    return NextResponse.json({ error: "Failed to initiate payment" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to initiate payment: " + String(e?.message ?? e).slice(0, 100) }, { status: 500 });
   }
 }
