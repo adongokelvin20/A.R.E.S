@@ -785,3 +785,23 @@ Work Log:
 
 Stage Summary:
 - Expired accounts are now LOCKED at the server level. The home page checks subscription status before rendering the dashboard. Accounts older than 7 days with no subscription get an EXPIRED status and are locked out immediately. The pricing modal appears and cannot be closed until they subscribe or use a promo code. Pushed to Vercel.
+
+---
+Task ID: ares-v34
+Agent: Super Z (main)
+Task: Fix: accounts older than 7 days can still log in — the lock wasn't working.
+
+Work Log:
+- ROOT CAUSE: hasAccess(null) returned TRUE. So when getOrCreateSubscription failed (returned null due to DB error or table not existing), the user got access. This completely bypassed the lock.
+- FIX 1: Changed hasAccess() to return FALSE on null (not true). The caller (page.tsx) now decides the fallback based on the business age.
+- FIX 2: Rewrote page.tsx with a bulletproof 4-step check:
+  1. Calculate business age from createdAt
+  2. Call getOrCreateSubscription (may return null on error)
+  3. If sub exists, use hasAccess(sub). If sub is null, check business age: if older than 7 days = NO access, if newer = access (trial)
+  4. FINAL OVERRIDE: if the account is older than 7 days AND the subscription is not ACTIVE (or TRIAL with valid trialEndsAt), accessGranted = false. Period.
+- FIX 3: Client-side subscription check no longer overrides the server lock. If the server says locked=true, the client stays locked even if the API call fails.
+- The pricing modal cannot be closed when locked=true.
+- Lint clean. Pushed to GitHub (f885f3f).
+
+Stage Summary:
+- Accounts older than 7 days are now LOCKED at the server level. hasAccess(null) returns false. The age check runs regardless of subscription status. The client respects the server lock. Pushed to Vercel.
