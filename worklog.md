@@ -824,3 +824,24 @@ Work Log:
 
 Stage Summary:
 - Store page + store chat are now locked when the owner's subscription expires. Customers see "temporarily unavailable." Owner must resubscribe to reactivate. Pushed to Vercel.
+
+---
+Task ID: ares-v36
+Agent: Super Z (main)
+Task: Fix store still accessible when locked + add log out button to lock screen.
+
+Work Log:
+- ROOT CAUSE of store still accessible: the subscription check was in a try/catch that swallowed errors. If getOrCreateSubscription failed (returned null), hasAccess(null) returned false, but the age check was inside the same try block — so if the try block failed, storeLocked stayed false.
+- FIXED store API (/api/store/[slug]): moved the age calculation OUTSIDE the try block. Now:
+  1. Calculate businessAge + isOlderThan7Days (no DB needed)
+  2. Try getOrCreateSubscription (may fail)
+  3. Check hasAccess(sub) — if false, lock
+  4. If isOlderThan7Days AND no valid sub, lock
+  5. If sub is null (check failed) AND isOlderThan7Days, DEFINITELY lock
+  No matter what happens, if the account is >7 days old with no active sub, the store is locked.
+- FIXED store chat API: same fix — age check runs even if the subscription check throws. If the account is >7 days old and the check fails, lock it.
+- Added Log out button to the pricing modal (lock screen). Uses signOut from next-auth/react, redirects to /auth. So locked users can log out and log back in with a different account.
+- Lint clean. Pushed to GitHub (02099d0).
+
+Stage Summary:
+- Store is now properly locked when the owner's subscription expires. The age check runs regardless of DB errors. Log out button added to the lock screen. Pushed to Vercel.
