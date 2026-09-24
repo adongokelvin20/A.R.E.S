@@ -805,3 +805,22 @@ Work Log:
 
 Stage Summary:
 - Accounts older than 7 days are now LOCKED at the server level. hasAccess(null) returns false. The age check runs regardless of subscription status. The client respects the server lock. Pushed to Vercel.
+
+---
+Task ID: ares-v35
+Agent: Super Z (main)
+Task: Lock the store page + store chat when the owner's subscription is expired.
+
+Work Log:
+- Updated /api/store/[slug] (store info API): now checks the owner's subscription status. If expired (or account older than 7 days with no active sub), returns {locked: true} instead of products.
+- Updated /api/store/chat (store chat API): now checks the owner's subscription status before processing any message. If locked, returns "store temporarily unavailable" message instead of an AI reply.
+- Updated StorePageClient component: handles the locked response and shows a "temporarily unavailable" page with a lock icon. No products, no chat — just a message saying "check back soon."
+- The store is now FULLY locked when the owner's subscription expires:
+  - Store page shows "temporarily unavailable"
+  - Store chat returns "temporarily unavailable"
+  - Customers can't browse products or place orders
+  - The owner must resubscribe (kratos/kelvin/pay) to reactivate the store
+- Lint clean (1 warning, no errors). Pushed to GitHub (3c8a817).
+
+Stage Summary:
+- Store page + store chat are now locked when the owner's subscription expires. Customers see "temporarily unavailable." Owner must resubscribe to reactivate. Pushed to Vercel.
