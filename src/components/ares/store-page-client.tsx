@@ -25,24 +25,42 @@ export function StorePageClient({ slug }: { slug: string }) {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetch(`/api/store/${slug}`, { cache: "no-store" })
-      .then(async (res) => {
-        if (res.status === 404) {
-          if (mounted) setNotFound(true);
-          return null;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (!mounted || !data) return;
-        if (data.locked) {
-          if (mounted) setLocked(true);
-          if (mounted) setBusiness(data.business);
+
+    // First, check the store status (locked or not)
+    fetch(`/api/store/${slug}/status`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((statusData) => {
+        if (!mounted) return;
+        if (statusData.locked) {
+          setLocked(true);
+          setLoading(false);
           return;
         }
-        if (mounted) setBusiness(data.business);
-        if (mounted) setProducts(data.products ?? []);
+        if (statusData.notFound) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        // Not locked — fetch the store data
+        return fetch(`/api/store/${slug}`, { cache: "no-store" })
+          .then(async (res) => {
+            if (res.status === 404) {
+              if (mounted) setNotFound(true);
+              return null;
+            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (!mounted || !data) return;
+            if (data.locked) {
+              if (mounted) setLocked(true);
+              if (mounted) setBusiness(data.business);
+              return;
+            }
+            if (mounted) setBusiness(data.business);
+            if (mounted) setProducts(data.products ?? []);
+          });
       })
       .catch((e) => {
         if (mounted) setError(e?.message ?? "Failed to load store");

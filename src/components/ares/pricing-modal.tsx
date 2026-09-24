@@ -35,6 +35,10 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
       setPromoApplied(true);
       setPlan("ANNUAL");
       toast({ title: "Promo applied!", description: "You get the annual plan for GHC 600/year." });
+    } else if (promoCode.trim().toLowerCase() === "kratos") {
+      setPromoApplied(true);
+      setPlan("ANNUAL");
+      toast({ title: "Promo applied!", description: "Free annual plan activated!" });
     } else {
       toast({ title: "Invalid promo code", variant: "destructive" });
     }
@@ -50,8 +54,10 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
       });
       const data = await res.json();
       if (data.authorization_url) {
-        // Redirect to Paystack
         window.location.href = data.authorization_url;
+      } else if (data.free || data.ok) {
+        toast({ title: "Subscription activated!", description: "Your plan is now active." });
+        onSubscribed();
       } else {
         toast({ title: "Payment failed", description: data.error ?? "Could not start payment", variant: "destructive" });
         setLoading(false);
@@ -66,10 +72,10 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
   const monthlyPrice = "GHC 115";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ares-navy/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between bg-gradient-to-br from-ares-navy to-ares-sea-deep p-5 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ares-navy/50 p-4 backdrop-blur-sm overflow-y-auto">
+      <div className="w-full max-w-lg my-8 rounded-3xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+        {/* Header — fixed at top */}
+        <div className="flex items-center justify-between bg-gradient-to-br from-ares-navy to-ares-sea-deep p-5 text-white rounded-t-3xl shrink-0">
           <div className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-amber-400" />
             <h3 className="text-base font-semibold">Choose your plan</h3>
@@ -79,7 +85,8 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
           </button>
         </div>
 
-        <div className="space-y-4 p-5">
+        {/* Scrollable content */}
+        <div className="space-y-4 p-5 overflow-y-auto">
           {/* Trial status */}
           {subStatus && subStatus.status === "TRIAL" && (
             <div className="rounded-xl bg-ares-foam p-3 text-center text-xs text-ares-sea-deep">
@@ -134,7 +141,7 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
               </button>
             </div>
             {promoApplied && (
-              <p className="mt-1 text-[11px] text-emerald-600">Promo "Kelvin" applied — GHC 600/year!</p>
+              <p className="mt-1 text-[11px] text-emerald-600">Promo "{promoCode}" applied — {promoCode.trim().toLowerCase() === "kratos" ? "Free plan!" : "GHC 600/year!"}</p>
             )}
           </div>
 
