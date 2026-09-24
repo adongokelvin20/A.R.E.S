@@ -6,6 +6,9 @@ import { AresAppShell } from "./app-shell";
 /**
  * Client wrapper around the app shell. Handles post-onboarding reload
  * so the server-rendered session picks up the new business type.
+ *
+ * The `locked` prop is set server-side when the subscription is expired.
+ * When locked, the dashboard shows ONLY the pricing modal (can't be closed).
  */
 export function AresAppShellClient(props: {
   businessId: string;
@@ -13,18 +16,16 @@ export function AresAppShellClient(props: {
   businessType: string;
   ownerName: string;
   needsOnboarding: boolean;
+  locked?: boolean;
 }) {
   const [needsOnboard, setNeedsOnboard] = useState(props.needsOnboarding);
 
   const handleOnboarded = useCallback(() => {
-    // Reload the page so server components pick up the updated business type
     window.location.reload();
   }, []);
 
-  // Periodically refresh the session claim if needed (no-op for now)
   useEffect(() => {
     if (!needsOnboard) return;
-    // No polling -- the onboarding modal will call handleOnboarded on completion.
   }, [needsOnboard]);
 
   return (
@@ -35,6 +36,7 @@ export function AresAppShellClient(props: {
       ownerName={props.ownerName}
       needsOnboarding={needsOnboard}
       onOnboarded={handleOnboarded}
+      locked={props.locked ?? false}
     />
   );
 }

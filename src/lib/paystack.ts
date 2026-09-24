@@ -176,17 +176,42 @@ export async function getOrCreateSubscription(businessId: string, db: any) {
   if (!db) return null;
   try {
     let sub = await db.subscription.findUnique({ where: { businessId } });
+
     if (!sub) {
-      // Create a 1-week trial
-      const trialEndsAt = new Date(Date.now() + PRICING.TRIAL_DAYS * 24 * 60 * 60 * 1000);
-      sub = await db.subscription.create({
-        data: {
-          businessId,
-          status: "TRIAL",
-          plan: "TRIAL",
-          trialEndsAt,
-        },
+      // No subscription record — check when the business was created.
+      // If the business is older than 7 days, create an EXPIRED subscription
+      // (not a trial) so they're locked out immediately.
+      const business = await db.business.findUnique({
+        where: { id: businessId },
+        select: { createdAt: true },
       });
+
+      const sevenDaysAgo = new Date(Date.now() - PRICING.TRIAL_DAYS * 24 * 60 * 60 * 1000);
+      const isOlderThan7Days = business?.createdAt && new Date(business.createdAt) < sevenDaysAgo;
+
+      if (isOlderThan7Days) {
+        // Account is older than 7 days — create as EXPIRED (locked)
+        const trialEndsAt = new Date(business.createdAt.getTime() + PRICING.TRIAL_DAYS * 24 * 60 * 60 * 1000);
+        sub = await db.subscription.create({
+          data: {
+            businessId,
+            status: "EXPIRED",
+            plan: "TRIAL",
+            trialEndsAt,
+          },
+        });
+      } else {
+        // New account — create a 7-day trial
+        const trialEndsAt = new Date(Date.now() + PRICING.TRIAL_DAYS * 24 * 60 * 60 * 1000);
+        sub = await db.subscription.create({
+          data: {
+            businessId,
+            status: "TRIAL",
+            plan: "TRIAL",
+            trialEndsAt,
+          },
+        });
+      }
     }
 
     // Check if trial has expired

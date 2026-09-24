@@ -25,6 +25,7 @@ interface AppShellProps {
   ownerName: string;
   needsOnboarding: boolean;
   onOnboarded: () => void;
+  locked?: boolean;
 }
 
 type View =
@@ -61,13 +62,14 @@ export function AresAppShell({
   ownerName,
   needsOnboarding,
   onOnboarded,
+  locked = false,
 }: AppShellProps) {
   const [view, setView] = useState<View>("overview");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
-  const [showPricing, setShowPricing] = useState(false);
+  const [showPricing, setShowPricing] = useState(locked); // if locked server-side, show pricing immediately
 
   // Check subscription status on mount — fail gracefully so the dashboard never crashes
   useEffect(() => {
@@ -251,8 +253,8 @@ export function AresAppShell({
       {showPricing && (
         <PricingModal
           onClose={() => {
-            // Only allow closing if they have access
-            if (subscription?.hasAccess) setShowPricing(false);
+            // Only allow closing if they have access AND not server-locked
+            if (subscription?.hasAccess && !locked) setShowPricing(false);
           }}
           onSubscribed={() => {
             setShowPricing(false);

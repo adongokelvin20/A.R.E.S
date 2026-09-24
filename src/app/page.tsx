@@ -3,39 +3,68 @@ import { authOptions } from "@/lib/auth";
 import { db, ensureDatabase } from "@/lib/db";
 import { AresLanding } from "@/components/ares/landing";
 import { AresAppShellClient } from "@/components/ares/app-shell-client";
+import { getOrCreateSubscription, hasAccess } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  // Wrap EVERYTHING in a try/catch so no server-side error ever shows
-  // the "unexpected error" page — fall back to the landing page instead.
   try {
     const session = await getServerSession(authOptions);
 
     if (session?.user?.businessId) {
-      // Ensure DB tables exist (handles fresh deployments)
-      try {
-        await ensureDatabase();
-      } catch (e) {
-        console.error("[home] ensureDatabase failed:", e);
-      }
+      try { await ensureDatabase(); } catch {}
 
-      // Look up the business — wrapped in try/catch so a DB error never crashes
+      // Look up the business
       let business: any = null;
       try {
         if (db) {
           business = await db.business.findUnique({
             where: { id: session.user.businessId },
-            select: { id: true, name: true, type: true, agentName: true, ownerFirstName: true, onboardedAt: true },
+            select: { id: true, name: true, type: true, agentName: true, ownerFirstName: true, onboardedAt: true, createdAt: true },
           });
         }
       } catch (e) {
         console.error("[home] business lookup failed:", e);
       }
 
-      // Only show the dashboard if the business actually exists.
       if (business) {
         const needsOnboarding = !business.onboardedAt;
+
+        // ===== SERVER-SIDE SUBSCRIPTION CHECK =====
+        // This is the critical gate — if the subscription is expired, the user
+        // CANNOT access the dashboard. They see the pricing page instead.
+        let sub: any = null;
+        let accessGranted = true; // default to true so DB errors don't lock people out
+
+        try {
+          sub = await getOrCreateSubscription(session.user.businessId, db);
+          accessGranted = hasAccess(sub);
+        } catch (e) {
+          console.error("[home] subscription check failed:", e);
+          // On error, check manually: if the business is older than 7 days and
+          // has no active subscription, lock them out.
+          if (business.createdAt) {
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            if (new Date(business.createdAt) < sevenDaysAgo) {
+              accessGranted = false; // account is older than 7 days — lock it
+            }
+          }
+        }
+
+        // If access is denied, render the app shell with a "locked" flag
+        // so the client shows the pricing modal (which can't be closed)
+        if (!accessGranted) {
+          return (
+            <AresAppShellClient
+              businessId={session.user.businessId}
+              businessName={session.user.businessName ?? business.name}
+              businessType={session.user.businessType ?? business.type}
+              ownerName={session.user.name ?? "Owner"}
+              needsOnboarding={needsOnboarding}
+              locked={true}
+            />
+          );
+        }
 
         return (
           <AresAppShellClient
@@ -44,13 +73,12 @@ export default async function Home() {
             businessType={session.user.businessType ?? business.type}
             ownerName={session.user.name ?? "Owner"}
             needsOnboarding={needsOnboarding}
+            locked={false}
           />
         );
       }
-      // Stale session or DB error -- fall through to landing page.
     }
   } catch (e) {
-    // If anything throws (auth, DB, etc.), show the landing page instead of crashing
     console.error("[home] unexpected error:", e);
   }
 
