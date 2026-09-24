@@ -19,8 +19,8 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
   }, []);
 
   const isActive = subStatus?.status === "ACTIVE";
-  const isExpired = subStatus?.status === "EXPIRED";
-  const isTrial = subStatus?.status === "TRIAL";
+  const isExpired = subStatus?.status === "EXPIRED" || (subStatus?.status === "TRIAL" && subStatus?.daysLeft === 0);
+  const isTrial = subStatus?.status === "TRIAL" && subStatus?.daysLeft > 0;
 
   function applyPromo() {
     if (!promoCode.trim()) return;
@@ -70,10 +70,10 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
       <div>
         <h2 className="text-lg font-semibold text-ares-navy">Plans & Billing</h2>
         <p className="text-xs text-muted-foreground">
-          {isTrial && subStatus.daysLeft > 0
+          {isTrial
             ? `Free trial — ${subStatus.daysLeft} day${subStatus.daysLeft === 1 ? "" : "s"} left`
             : isActive
-            ? `Active — ${subStatus.plan} plan${subStatus.currentPeriodEnd ? ` · renews ${new Date(subStatus.currentPeriodEnd).toLocaleDateString()}` : ""}`
+            ? `Active — ${subStatus?.promoCode?.toLowerCase() === "kratos" ? "Free plan (Kratos)" : subStatus?.promoCode?.toLowerCase() === "kelvin" ? "Promo plan (Kelvin)" : subStatus?.plan + " plan"}${subStatus?.currentPeriodEnd ? ` · expires ${new Date(subStatus.currentPeriodEnd).toLocaleDateString()}` : ""}`
             : isExpired
             ? "Your subscription has expired — choose a plan to continue"
             : "Choose a plan to continue"}

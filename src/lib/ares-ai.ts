@@ -50,8 +50,8 @@ export async function buildBusinessContext(businessId: string, customerPhone?: s
   const todayOrders = business.orders.filter((o) => o.createdAt >= startOfToday);
   const yesterdayOrders = business.orders.filter((o) => o.createdAt >= startOfYesterday && o.createdAt < startOfToday);
   const weekOrders = business.orders.filter((o) => o.createdAt >= startOfWeek);
-  const todayRevenue = todayOrders.filter((o) => o.status !== "CANCELLED").reduce((s, o) => s + o.total, 0);
-  const weekRevenue = weekOrders.filter((o) => o.status !== "CANCELLED").reduce((s, o) => s + o.total, 0);
+  const todayRevenue = todayOrders.filter((o) => o.status === "FULFILLED").reduce((s, o) => s + o.total, 0);
+  const weekRevenue = weekOrders.filter((o) => o.status === "FULFILLED").reduce((s, o) => s + o.total, 0);
   const pendingOrders = business.orders.filter((o) => o.status === "PENDING" || o.status === "CONFIRMED");
   const fulfilledOrders = business.orders.filter((o) => o.status === "FULFILLED");
   const lowStockProducts = business.products.filter((p) => p.stock <= p.lowStockThreshold);
@@ -253,12 +253,13 @@ export async function generateOwnerGreeting(businessId: string): Promise<string>
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayOrders = business.orders.filter((o) => o.createdAt >= todayStart);
-  const todayRevenue = todayOrders.filter((o) => o.status !== "CANCELLED").reduce((s, o) => s + o.total, 0);
+  const todayRevenue = todayOrders.filter((o) => o.status === "FULFILLED").reduce((s, o) => s + o.total, 0);
   const pendingOrders = business.orders.filter((o) => o.status === "PENDING" || o.status === "CONFIRMED").length;
   const lowStock = business.products.filter((p) => p.stock <= p.lowStockThreshold).length;
 
   const facts: string[] = [];
-  if (todayRevenue > 0) facts.push(`GH₵${todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} in sales today across ${todayOrders.length} order${todayOrders.length === 1 ? "" : "s"}`);
+  const fulfilledToday = todayOrders.filter((o) => o.status === "FULFILLED");
+  if (todayRevenue > 0) facts.push(`GH₵${todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} in completed sales today from ${fulfilledToday.length} order${fulfilledToday.length === 1 ? "" : "s"}`);
   if (pendingOrders > 0) facts.push(`${pendingOrders} order${pendingOrders === 1 ? "" : "s"} need your attention`);
   if (lowStock > 0) facts.push(`${lowStock} product${lowStock === 1 ? "" : "s"} are running low`);
 
