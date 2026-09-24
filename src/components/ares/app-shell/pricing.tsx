@@ -1,43 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Crown, Calendar, Sparkles, Loader2 } from "lucide-react";
+import { Check, Crown, Calendar, Sparkles, Loader2, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const PLANS = [
-  {
-    name: "Annual",
-    price: "GHC 1,300",
-    period: "per year",
-    description: "Best value — save 2 months vs monthly.",
-    features: [
-      "AI assistant handles all customer chats",
-      "Unlimited orders + customers",
-      "WhatsApp + store link integration",
-      "Weekly performance archives",
-      "Global brain — gets smarter over time",
-      "Priority support",
-    ],
-    plan: "ANNUAL" as const,
-    highlight: true,
-    icon: Crown,
-  },
-  {
-    name: "Monthly",
-    price: "GHC 115",
-    period: "per month",
-    description: "Flexible month-to-month. Cancel anytime.",
-    features: [
-      "Everything in annual",
-      "Month-to-month flexibility",
-      "Cancel anytime",
-      "Weekly archives",
-    ],
-    plan: "MONTHLY" as const,
-    highlight: false,
-    icon: Calendar,
-  },
-];
 
 export function AresPricing({ data, onChanged }: { data: any; onChanged: () => void }) {
   const [selectedPlan, setSelectedPlan] = useState<"ANNUAL" | "MONTHLY">("ANNUAL");
@@ -52,6 +17,10 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
       .then(setSubStatus)
       .catch(() => {});
   }, []);
+
+  const isActive = subStatus?.status === "ACTIVE";
+  const isExpired = subStatus?.status === "EXPIRED";
+  const isTrial = subStatus?.status === "TRIAL";
 
   function applyPromo() {
     if (!promoCode.trim()) return;
@@ -75,7 +44,6 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
       });
       const data = await res.json();
 
-      // Free promo — activated immediately
       if (data.free || data.ok) {
         toast({ title: "Subscription activated!", description: "Your plan is now active." });
         onChanged();
@@ -83,7 +51,6 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
         return;
       }
 
-      // Paid — redirect to Paystack
       if (data.authorization_url) {
         window.location.href = data.authorization_url;
       } else {
@@ -103,16 +70,18 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
       <div>
         <h2 className="text-lg font-semibold text-ares-navy">Plans & Billing</h2>
         <p className="text-xs text-muted-foreground">
-          {subStatus?.status === "TRIAL" && subStatus.daysLeft > 0
+          {isTrial && subStatus.daysLeft > 0
             ? `Free trial — ${subStatus.daysLeft} day${subStatus.daysLeft === 1 ? "" : "s"} left`
-            : subStatus?.status === "ACTIVE"
-            ? `Active — ${subStatus.plan} plan`
+            : isActive
+            ? `Active — ${subStatus.plan} plan${subStatus.currentPeriodEnd ? ` · renews ${new Date(subStatus.currentPeriodEnd).toLocaleDateString()}` : ""}`
+            : isExpired
+            ? "Your subscription has expired — choose a plan to continue"
             : "Choose a plan to continue"}
         </p>
       </div>
 
-      {/* Current status */}
-      {subStatus?.status === "TRIAL" && (
+      {/* Current status — Trial */}
+      {isTrial && (
         <div className="rounded-2xl border border-ares-sea/20 bg-ares-foam p-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-ares-sea-deep" />
@@ -126,21 +95,64 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
         </div>
       )}
 
-      {subStatus?.status === "ACTIVE" && (
+      {/* Current status — Active */}
+      {isActive && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <div className="flex items-center gap-2">
             <Check className="h-4 w-4 text-emerald-600" />
             <span className="text-sm font-semibold text-emerald-800">Subscription active</span>
+            <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+              {subStatus.plan}
+            </span>
           </div>
           <p className="mt-1 text-xs text-emerald-700">
-            {subStatus.plan} plan · {subStatus.currentPeriodEnd ? `Renews ${new Date(subStatus.currentPeriodEnd).toLocaleDateString()}` : "Active"}
+            {subStatus.currentPeriodEnd
+              ? `Active until ${new Date(subStatus.currentPeriodEnd).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`
+              : "Active"}
+          </p>
+          <p className="mt-2 text-[11px] text-emerald-600">
+            You can&apos;t subscribe again until your current plan expires. Your assistant will keep running.
           </p>
         </div>
       )}
 
-      {/* Plans */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {PLANS.map((plan) => (
+      {/* Expired — locked */}
+      {isExpired && (
+        <div className="rounded-2xl border border-rose-300 bg-rose-50 p-4">
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-rose-600" />
+            <span className="text-sm font-semibold text-rose-800">Subscription expired</span>
+          </div>
+          <p className="mt-1 text-xs text-rose-700">
+            Your subscription has ended. Choose a plan below to reactivate your assistant and unlock the dashboard.
+          </p>
+        </div>
+      )}
+
+      {/* Plans — disabled if already active */}
+      <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${isActive ? "opacity-50 pointer-events-none" : ""}`}>
+        {[
+          {
+            name: "Annual",
+            price: "GHC 1,300",
+            period: "per year",
+            description: "Best value — save 2 months vs monthly.",
+            features: ["AI assistant handles all customer chats", "Unlimited orders + customers", "WhatsApp + store link integration", "Weekly performance archives", "Global brain — gets smarter over time", "Priority support"],
+            plan: "ANNUAL" as const,
+            highlight: true,
+            icon: Crown,
+          },
+          {
+            name: "Monthly",
+            price: "GHC 115",
+            period: "per month",
+            description: "Flexible month-to-month. Cancel anytime.",
+            features: ["Everything in annual", "Month-to-month flexibility", "Cancel anytime", "Weekly archives"],
+            plan: "MONTHLY" as const,
+            highlight: false,
+            icon: Calendar,
+          },
+        ].map((plan) => (
           <div
             key={plan.name}
             className={`relative overflow-hidden rounded-2xl border-2 p-5 ${
@@ -159,9 +171,7 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
                 </div>
                 <div className="text-sm font-semibold text-ares-navy">{plan.name}</div>
                 {plan.highlight && (
-                  <span className="ml-auto rounded-full bg-ares-sea px-2 py-0.5 text-[10px] font-semibold text-white">
-                    BEST VALUE
-                  </span>
+                  <span className="ml-auto rounded-full bg-ares-sea px-2 py-0.5 text-[10px] font-semibold text-white">BEST VALUE</span>
                 )}
               </div>
               <div className="mt-4">
@@ -184,44 +194,55 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
         ))}
       </div>
 
-      {/* Promo code */}
-      <div className="rounded-2xl border border-ares-line bg-white p-5">
-        <label className="mb-1 block text-xs font-medium text-ares-navy">Promo code (optional)</label>
-        <div className="flex gap-2">
-          <input
-            value={promoCode}
-            onChange={(e) => { setPromoCode(e.target.value); setPromoApplied(false); }}
-            placeholder="Enter promo code"
-            className="flex-1 rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
-          />
-          <button
-            onClick={applyPromo}
-            disabled={!promoCode.trim() || promoApplied}
-            className="rounded-lg border border-ares-line bg-white px-3 py-2 text-xs font-semibold text-ares-navy hover:bg-ares-mist disabled:opacity-50"
-          >
-            {promoApplied ? <Check className="h-4 w-4 text-emerald-600" /> : "Apply"}
-          </button>
+      {/* Promo code — disabled if active */}
+      {!isActive && (
+        <div className="rounded-2xl border border-ares-line bg-white p-5">
+          <label className="mb-1 block text-xs font-medium text-ares-navy">Promo code (optional)</label>
+          <div className="flex gap-2">
+            <input
+              value={promoCode}
+              onChange={(e) => { setPromoCode(e.target.value); setPromoApplied(false); }}
+              placeholder="Enter promo code"
+              className="flex-1 rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
+            />
+            <button
+              onClick={applyPromo}
+              disabled={!promoCode.trim() || promoApplied}
+              className="rounded-lg border border-ares-line bg-white px-3 py-2 text-xs font-semibold text-ares-navy hover:bg-ares-mist disabled:opacity-50"
+            >
+              {promoApplied ? <Check className="h-4 w-4 text-emerald-600" /> : "Apply"}
+            </button>
+          </div>
+          {promoApplied && (
+            <p className="mt-2 text-[11px] text-emerald-600">
+              {promoCode.trim().toLowerCase() === "kratos" ? "Free annual plan applied!" : "Promo applied — GHC 600/year!"}
+            </p>
+          )}
         </div>
-        {promoApplied && (
-          <p className="mt-2 text-[11px] text-emerald-600">
-            {promoCode.trim().toLowerCase() === "kratos" ? "Free annual plan applied!" : "Promo applied — GHC 600/year!"}
-          </p>
-        )}
-      </div>
+      )}
 
-      {/* Pay button */}
-      <button
-        onClick={pay}
-        disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-ares-navy px-4 py-3 text-sm font-semibold text-white hover:bg-ares-sea-deep disabled:opacity-60"
-      >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />}
-        {loading
-          ? "Processing..."
-          : promoApplied && promoCode.trim().toLowerCase() === "kratos"
-          ? "Activate free plan"
-          : `Pay ${selectedPlan === "ANNUAL" ? (promoApplied && promoCode.trim().toLowerCase() === "kelvin" ? "GHC 600" : "GHC 1,300") : "GHC 115"} & activate`}
-      </button>
+      {/* Pay button — disabled if active */}
+      {isActive ? (
+        <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+          <Check className="h-4 w-4" />
+          Your plan is active — no payment needed
+        </div>
+      ) : (
+        <button
+          onClick={pay}
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-ares-navy px-4 py-3 text-sm font-semibold text-white hover:bg-ares-sea-deep disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : isExpired ? <Lock className="h-4 w-4" /> : <Crown className="h-4 w-4" />}
+          {loading
+            ? "Processing..."
+            : isExpired
+            ? "Reactivate subscription"
+            : promoApplied && promoCode.trim().toLowerCase() === "kratos"
+            ? "Activate free plan"
+            : `Pay ${selectedPlan === "ANNUAL" ? (promoApplied && promoCode.trim().toLowerCase() === "kelvin" ? "GHC 600" : "GHC 1,300") : "GHC 115"} & activate`}
+        </button>
+      )}
 
       <p className="text-center text-[10px] text-muted-foreground">
         Secure payment via Paystack · Mobile Money accepted · Cancel anytime

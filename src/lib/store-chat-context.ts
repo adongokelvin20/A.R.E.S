@@ -1,15 +1,14 @@
 /**
- * MINIMAL store chat context builder — optimized for speed.
+ * Store chat context builder — uses the FULL buildBusinessContext (same as dashboard)
+ * so the store agent is just as smart (learnings, knowledge, brain patterns, sector prompt).
  *
- * The system prompt is ~500 words (just the essentials: business name,
- * top 10 products with prices, core behavior rules). This makes the AI
- * respond in 1-2 seconds instead of 5-10.
+ * Adds a "don't reveal shop details" rule so the agent doesn't share internal
+ * business info with customers.
  *
- * Includes a 5-minute in-memory cache so repeat messages from the same
- * business skip the DB entirely (context is served from memory).
+ * Includes a 5-minute in-memory cache for speed.
  */
 import { db } from "@/lib/db";
-import { findSubtype } from "@/lib/sector-catalog";
+import { buildBusinessContext } from "@/lib/ares-ai";
 
 export interface StoreChatContext {
   agentName: string;
@@ -19,9 +18,8 @@ export interface StoreChatContext {
 }
 
 // ===== In-memory cache (5-minute TTL) =====
-// Key: businessId, Value: { context, expiry }
 const contextCache = new Map<string, { context: StoreChatContext; expiry: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 5 * 60 * 1000;
 
 export async function buildStoreChatContext(businessId: string): Promise<StoreChatContext> {
   if (!db) throw new Error("Database not available");
@@ -32,58 +30,49 @@ export async function buildStoreChatContext(businessId: string): Promise<StoreCh
     return cached.context;
   }
 
-  // Load business + products (only 10 products, no knowledge/orders/customers for speed)
-  const business = await db.business.findUnique({
-    where: { id: businessId },
-    include: {
-      products: { where: { status: "ACTIVE" }, take: 10, orderBy: { createdAt: "desc" } },
-    },
+  // Use the FULL buildBusinessContext (same as dashboard) — gives the agent
+  // learnings, knowledge, brain patterns, sector prompt, real-time data
+  const ctx = await buildBusinessContext(businessId);
+
+  // Get the products (for image lookup + matching)
+  const products = await db.product.findMany({
+    where: { businessId, status: "ACTIVE" },
+    take: 20,
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true, price: true, currency: true, imageUrl: true, imageAlt: true, stock: true, description: true, attributes: true },
   });
 
-  if (!business) throw new Error("Business not found");
+  // Build a product matching guide — includes imageAlt (AI-analyzed description)
+  // so the agent can match customer descriptions to products
+  const productGuide = products.map((p) => {
+    const attrs = p.attributes ? JSON.parse(p.attributes) : {};
+    const variants = attrs.size || attrs.color ? ` (sizes: ${attrs.size ?? "—"}, colors: ${attrs.color ?? "—"})` : "";
+    const alt = p.imageAlt ? ` [visual: ${p.imageAlt}]` : "";
+    const desc = p.description ? ` — ${p.description.slice(0, 80)}` : "";
+    return `• ${p.name}${variants} — ${p.currency} ${p.price.toFixed(2)} (stock: ${p.stock})${alt}${desc}`;
+  }).join("\n") || "(no products yet)";
 
-  const subtype = findSubtype(business.sectorCategory, business.sectorSubtype);
-  const sectorLabel = subtype?.label ?? business.type ?? "business";
-  const agentName = business.agentName || "A.R.E.S.";
-  const customInstructions = (business.agentInstructions || "").trim();
+  // Take the dashboard system prompt and ADD store-specific rules
+  const storePrompt = `${ctx.systemPrompt}
 
-  // Compact product list (just name + price)
-  const productLines = business.products
-    .map((p) => `${p.name} — ${p.currency} ${p.price.toFixed(2)} (stock: ${p.stock})`)
-    .join("\n") || "(no products yet)";
+===== STORE CHAT RULES (you're talking to a customer on the online store) =====
+- You're chatting with a CUSTOMER on the store website. Be warm, natural, human-like.
+- NEVER reveal internal business details: owner's name, dashboard info, revenue, customer count, stock counts (just say "in stock" or "running low"), internal systems, backend, or how the system works.
+- If asked "are you a bot/AI", deflect naturally: "I'm ${ctx.agentName}, I help out at ${ctx.businessName}."
+- Use the customer's name once you know it. Ask for it early if they haven't given it.
+- Be MORE human-like: vary your phrasing, react to their energy, use contractions, have opinions, crack a light joke when it fits.
+- Match the customer's tone — if they're casual, be casual. If they're formal, be polished.
+- Never start two messages the same way. Never repeat the same greeting.
 
-  // MINIMAL system prompt — ~500 words
-  // Rotate between different personality variants so the agent doesn't feel static
-  const personalityVariants = [
-    "Be warm, use contractions, have opinions. Vary your phrasing every message — never repeat the same opening twice.",
-    "Be friendly and a bit playful. Use light humor when it fits. Have favorites and recommend them naturally.",
-    "Be casual like you're talking to a friend. Short messages, contractions, real reactions. Don't sound like a script.",
-    "Be warm but efficient. Get to the point quickly but stay friendly. Use the customer's name once you know it.",
-    "Be genuinely enthusiastic about the products. If something's good, say so. If something's popular, mention it.",
-  ];
-  const personality = customInstructions
-    ? customInstructions.slice(0, 300)
-    : personalityVariants[Math.floor(Math.random() * personalityVariants.length)];
+===== PRODUCT MATCHING =====
+When a customer describes a product ("do you have something red?", "I'm looking for a hoodie"), use the product guide below to match their description. The [visual: ...] tags are AI-analyzed descriptions of the product images — use them to match what the customer is describing.
 
-  const systemPrompt = `You are ${agentName}, a real employee at ${business.name} (${sectorLabel}). You are NOT a chatbot.
+PRODUCTS:
+${productGuide}
 
-Personality: ${personality}
+If a customer's description matches a product (by name, color, type, or visual description), recommend it naturally: "Oh, you might like the [product] — it's [relevant detail]."
 
-Products:
-${productLines}
-
-Rules:
-- Use contractions (I'm, you're, don't, can't)
-- Be concise — 1-3 sentences max
-- NEVER say "How may I assist you", "Certainly", "As an AI", "I'm here to help", "Feel free to ask"
-- NEVER mention dashboards or backend systems
-- Ask for the customer's name early (within first 2-3 messages), use it after
-- Only use products listed above. If asked about something not listed, be honest.
-- Vary your sentence structure. Don't start two messages the same way.
-- React to what the customer says — if they're excited, match it. If they're asking a serious question, be straightforward.
-- Have opinions about products ("the jollof is honestly our bestseller").
-
-ORDER FLOW (follow exactly — NEVER skip steps):
+===== ORDER FLOW (follow exactly — NEVER skip steps) =====
 1. Confirm what they want (item, size/color, quantity)
 2. Ask for their NAME: "What name should I put this under?"
 3. Ask: "Is this for pickup or delivery?"
@@ -100,16 +89,13 @@ ORDER FLOW (follow exactly — NEVER skip steps):
 NEVER confirm an order without getting: name + (delivery: location, time, phone) OR (pickup: when they'll come).
 
 Order format (ONLY when all details collected AND customer confirmed):
-ORDER_CONFIRMED: {"items":[{"productName":"X","quantity":1,"unitPrice":0}],"fulfillmentType":"PICKUP","deliveryLocation":"","deliveryTime":"","deliveryPhone":"","customerName":""}
-
-Learn fact: LEARNED: <fact>
-Human pattern: BRAIN_LEARNED: <pattern>`;
+ORDER_CONFIRMED: {"items":[{"productName":"X","quantity":1,"unitPrice":0}],"fulfillmentType":"PICKUP","deliveryLocation":"","deliveryTime":"","deliveryPhone":"","customerName":""}`;
 
   const context = {
-    agentName,
-    businessName: business.name,
-    systemPrompt,
-    products: business.products,
+    agentName: ctx.agentName,
+    businessName: ctx.business.name,
+    systemPrompt: storePrompt,
+    products,
   };
 
   // Cache for 5 minutes
@@ -118,9 +104,6 @@ Human pattern: BRAIN_LEARNED: <pattern>`;
   return context;
 }
 
-/**
- * Clear the cache for a business (call when products/settings change).
- */
 export function clearContextCache(businessId?: string) {
   if (businessId) {
     contextCache.delete(businessId);
