@@ -63,25 +63,32 @@ export async function POST(req: NextRequest) {
   const businessId = business.id;
 
   // ===== SUBSCRIPTION CHECK — lock the chat if the owner's subscription is expired =====
+  const businessAge = business.createdAt ? Date.now() - new Date(business.createdAt).getTime() : 0;
+  const isOlderThan7Days = businessAge > 7 * 24 * 60 * 60 * 1000;
+  let chatLocked = false;
+
   try {
     const { getOrCreateSubscription, hasAccess } = await import("@/lib/paystack");
     const sub = await getOrCreateSubscription(businessId, db);
     const access = hasAccess(sub);
-    const businessAge = business.createdAt ? Date.now() - new Date(business.createdAt).getTime() : 0;
-    const isOlderThan7Days = businessAge > 7 * 24 * 60 * 60 * 1000;
-    let locked = !access;
-    if (isOlderThan7Days && (!sub || (sub.status !== "ACTIVE" && !(sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date())))) {
-      locked = true;
+    if (!access) chatLocked = true;
+    if (isOlderThan7Days) {
+      const hasValidSub = sub && (sub.status === "ACTIVE" || (sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date()));
+      if (!hasValidSub) chatLocked = true;
     }
-    if (locked) {
-      return NextResponse.json({
-        reply: `${business.name} is temporarily unavailable. Please check back soon!`,
-        conversationId: null, orderCreated: null, images: [],
-        locked: true,
-      });
-    }
+    if (!sub && isOlderThan7Days) chatLocked = true;
   } catch (e) {
     console.error("[store chat] subscription check failed:", e);
+    // If the check fails and account is older than 7 days, lock it
+    if (isOlderThan7Days) chatLocked = true;
+  }
+
+  if (chatLocked) {
+    return NextResponse.json({
+      reply: `${business.name} is temporarily unavailable. Please check back soon!`,
+      conversationId: null, orderCreated: null, images: [],
+      locked: true,
+    });
   }
 
   // ===== Pre-AI: build context + customer recognition IN PARALLEL =====

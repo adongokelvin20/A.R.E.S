@@ -40,20 +40,33 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     }
 
     // ===== SUBSCRIPTION CHECK — lock the store if the owner's subscription is expired =====
-    let storeLocked = false;
-    try {
-      const sub = await getOrCreateSubscription(business.id, db);
-      const access = hasAccess(sub);
-      const businessAge = business.createdAt ? Date.now() - new Date(business.createdAt).getTime() : 0;
-      const isOlderThan7Days = businessAge > SEVEN_DAYS_MS;
+    // Calculate business age FIRST (doesn't need DB)
+    const businessAge = business.createdAt ? Date.now() - new Date(business.createdAt).getTime() : 0;
+    const isOlderThan7Days = businessAge > SEVEN_DAYS_MS;
 
-      if (!access) storeLocked = true;
-      if (isOlderThan7Days && (!sub || (sub.status !== "ACTIVE" && !(sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date())))) {
-        storeLocked = true;
-      }
+    let storeLocked = false;
+    let sub: any = null;
+    try {
+      sub = await getOrCreateSubscription(business.id, db);
     } catch (e) {
-      console.error("[store API] subscription check failed:", e);
+      console.error("[store API] getOrCreateSubscription failed:", e);
     }
+
+    // Check access
+    const access = hasAccess(sub);
+    if (!access) storeLocked = true;
+
+    // Age check override — if older than 7 days and no ACTIVE/valid TRIAL, lock
+    if (isOlderThan7Days) {
+      const hasValidSub = sub && (
+        sub.status === "ACTIVE" ||
+        (sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date())
+      );
+      if (!hasValidSub) storeLocked = true;
+    }
+
+    // If subscription check completely failed (sub is null) and account is older than 7 days, DEFINITELY lock
+    if (!sub && isOlderThan7Days) storeLocked = true;
 
     if (storeLocked) {
       return NextResponse.json({

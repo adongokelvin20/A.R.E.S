@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Check, Loader2, Sparkles, Crown, Calendar } from "lucide-react";
+import { X, Check, Loader2, Sparkles, Crown, Calendar, LogOut } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { signOut } from "next-auth/react";
 
 interface SubStatus {
   status: string;
@@ -169,6 +170,15 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
           <p className="text-center text-[10px] text-muted-foreground">
             Secure payment via Paystack · Mobile Money accepted
           </p>
+
+          {/* Log out button */}
+          <button
+            onClick={() => signOut({ callbackUrl: "/auth", redirect: true })}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-ares-line bg-white px-4 py-2.5 text-xs font-medium text-muted-foreground hover:bg-ares-mist"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Log out
+          </button>
         </div>
       </div>
     </div>
