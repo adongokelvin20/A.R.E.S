@@ -739,3 +739,22 @@ SUBSCRIPTION LOCK EXPLANATION (simple language):
 7. The cycle repeats — when that period ends, it expires again and locks
 
 The check happens automatically on every dashboard load. No manual intervention needed.
+
+---
+Task ID: ares-v32
+Agent: Super Z (main)
+Task: Fix pricing showing "Free trial active / trial ended" instead of plan status + greeting counts pending orders as revenue.
+
+Work Log:
+- FIXED pricing status logic: when trial has 0 days left, it now shows as EXPIRED (not trial). The status description now shows:
+  - Trial: "Free trial — N days left"
+  - Active + kratos: "Active — Free plan (Kratos) · expires {date}"
+  - Active + kelvin: "Active — Promo plan (Kelvin) · expires {date}"
+  - Active + paid: "Active — ANNUAL plan · expires {date}"
+  - Expired: "Your subscription has expired — choose a plan to continue"
+- FIXED greeting revenue: the generateOwnerGreeting function was counting PENDING/CONFIRMED orders as revenue (o.status !== "CANCELLED"). Changed to o.status === "FULFILLED" — only closed orders count as revenue. Also changed the fact text from "sales across N orders" to "completed sales from N orders" so it's clear.
+- FIXED buildBusinessContext real-time data: same fix — todayRevenue and weekRevenue now only count FULFILLED orders.
+- Lint clean. Pushed to GitHub (1b50690).
+
+Stage Summary:
+- Pricing page now correctly shows the active plan (Free/Kratos/Kelvin/Paid) with expiry date. Greeting only mentions revenue from closed orders, not pending ones. Pushed to Vercel.
