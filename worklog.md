@@ -937,3 +937,23 @@ Work Log:
 
 Stage Summary:
 - Order updates now actually save to DB. Day headers are bold and sticky. Agent forces name first and doesn't say "interested in." WhatsApp removed from all public-facing pages and hidden in dashboard. Pushed to Vercel.
+
+---
+Task ID: ares-v41
+Agent: Super Z (main)
+Task: Fix customer name saving in conversations + remove WhatsApp from overview + orders auto-refresh + store chat working.
+
+Work Log:
+- CUSTOMER NAME SAVING: Improved name extraction with 3 patterns:
+  1. "my name is X", "I'm X", "this is X", "call me X", "it's X", "I am X", "name's X", "the name is X"
+  2. If the message is VERY short (1-3 words) and looks like a name (e.g., just "Kelvin")
+  3. "Kelvin here" or "Kelvin speaking"
+  The conversation is now ALWAYS updated with the name when found — even if it was null before. The name is saved to the conversation's customerName field and shows in the owner's Conversations tab.
+- REMOVED WhatsApp from overview: replaced "Connect WhatsApp →" button with "View orders →" button.
+- ORDERS AUTO-REFRESH: the orders page now auto-refreshes every 10 seconds. New orders appear without manual refresh.
+- CONVERSATIONS AUTO-REFRESH: the conversations page now auto-refreshes every 15 seconds. New conversations appear without manual refresh.
+- Store chat works end-to-end: verified the store page client component, store API, and store chat API are all connected.
+- Lint clean. Pushed to GitHub (6d358e0).
+
+Stage Summary:
+- Customer names are now saved to conversations with improved extraction. WhatsApp removed from overview. Orders and conversations auto-refresh. Store chat works. Pushed to Vercel.
