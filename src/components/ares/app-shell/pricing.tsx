@@ -63,7 +63,7 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
     }
   }
 
-  const annualPrice = promoApplied && promoCode.trim().toLowerCase() === "kelvin" ? "GHC 600" : "GHC 1,300";
+  const annualPrice = "GHC 1,300";
 
   return (
     <div className="space-y-5">
@@ -181,7 +181,7 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
               </div>
               <div className="mt-4">
                 <span className="font-mono text-2xl font-bold text-ares-navy">
-                  {plan.plan === "ANNUAL" && promoApplied && promoCode.trim().toLowerCase() === "kelvin" ? "GHC 600" : plan.price}
+                  {plan.plan === "ANNUAL" ? "GHC 1,300" : plan.price}
                 </span>
                 <span className="ml-1.5 text-xs text-muted-foreground">{plan.period}</span>
               </div>

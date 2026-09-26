@@ -90,13 +90,13 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
   // Determine button text
   let buttonText = "Pay & activate";
   if (loading) buttonText = "Processing...";
-  else if (isKratos) buttonText = "Activate free plan";
-  else if (isKelvin) buttonText = "Pay GHC 600 & activate";
+  else if (isKratos) buttonText = "Activate plan";
+  else if (isKelvin) buttonText = "Activate plan";
   else if (plan === "ANNUAL") buttonText = "Pay GHC 1,300 & activate";
   else buttonText = "Pay GHC 115 & activate";
 
   // Determine price display
-  const annualDisplay = isKratos ? "FREE" : isKelvin ? "GHC 600" : "GHC 1,300";
+  const annualDisplay = isKratos || isKelvin ? "Plan" : "GHC 1,300";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ares-navy/50 p-4 backdrop-blur-sm overflow-y-auto">
