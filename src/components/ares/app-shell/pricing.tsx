@@ -204,15 +204,15 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
         ))}
       </div>
 
-      {/* Promo code — disabled if active */}
+      {/* Code input — disabled if active */}
       {!isActive && (
         <div className="rounded-2xl border border-ares-line bg-white p-5">
-          <label className="mb-1 block text-xs font-medium text-ares-navy">Promo code (optional)</label>
+          <label className="mb-1 block text-xs font-medium text-ares-navy">Code (optional)</label>
           <div className="flex gap-2">
             <input
               value={promoCode}
               onChange={(e) => { setPromoCode(e.target.value); setPromoApplied(false); }}
-              placeholder="Enter promo code"
+              placeholder=""
               className="flex-1 rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
             />
             <button
@@ -225,7 +225,7 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
           </div>
           {promoApplied && (
             <p className="mt-2 text-[11px] text-emerald-600">
-              {promoCode.trim().toLowerCase() === "kratos" ? "Free annual plan applied!" : "Promo applied — GHC 600/year!"}
+              Code applied!
             </p>
           )}
         </div>

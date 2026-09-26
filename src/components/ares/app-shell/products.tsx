@@ -310,7 +310,18 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ares-navy">Category</label>
-              <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Main" className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none" />
+              {(data.business.sectorCategory === "RETAIL" || data.business.sectorSubtype === "CLOTHING_STORE") ? (
+                <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none">
+                  <option value="">Select category</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="General">General</option>
+                  <option value="Kids">Kids</option>
+                  <option value="Accessories">Accessories</option>
+                </select>
+              ) : (
+                <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Main" className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none" />
+              )}
             </div>
           </div>
 

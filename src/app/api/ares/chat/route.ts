@@ -33,10 +33,11 @@ export async function POST(req: NextRequest) {
     const businessId = session.user.businessId;
 
     const body = await req.json();
-    const { message, history = [], conversationId } = body as {
+    const { message, history = [], conversationId, mode } = body as {
       message?: string;
       history?: ChatTurn[];
       conversationId?: string;
+      mode?: string;
     };
 
     if (!message || typeof message !== "string") {
@@ -45,11 +46,82 @@ export async function POST(req: NextRequest) {
 
     const ctx = await buildBusinessContext(businessId);
 
+    // ===== If mode is "analyst", use a data analyst system prompt instead =====
+    let systemPrompt = ctx.systemPrompt;
+    if (mode === "analyst") {
+      // Build analyst data from the business context
+      const b = ctx.business;
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const todayOrders = b.orders.filter((o: any) => o.createdAt >= todayStart);
+      const todayRevenue = todayOrders.filter((o: any) => o.status === "FULFILLED").reduce((s: number, o: any) => s + o.total, 0);
+      const pendingOrders = b.orders.filter((o: any) => o.status === "PENDING" || o.status === "CONFIRMED").length;
+      const lowStock = b.products.filter((p: any) => p.stock <= p.lowStockThreshold);
+      const totalProducts = b.products.length;
+      const totalCustomers = b.customers.length;
+      const fulfilledOrders = b.orders.filter((o: any) => o.status === "FULFILLED");
+      const totalRevenue = fulfilledOrders.reduce((s: number, o: any) => s + o.total, 0);
+
+      // Top products
+      const productCounts: Record<string, { name: string; qty: number; revenue: number }> = {};
+      for (const o of fulfilledOrders) {
+        for (const item of (o as any).items || []) {
+          if (!productCounts[item.name]) productCounts[item.name] = { name: item.name, qty: 0, revenue: 0 };
+          productCounts[item.name].qty += item.quantity;
+          productCounts[item.name].revenue += item.total;
+        }
+      }
+      const topProducts = Object.values(productCounts).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+
+      // Channel breakdown
+      const channels: Record<string, number> = {};
+      for (const o of b.orders) { channels[o.channel] = (channels[o.channel] || 0) + 1; }
+
+      systemPrompt = `You are ${ctx.agentName}, the data analyst and business advisor for ${b.name} (${ctx.sectorLabel}).
+
+===== REAL BUSINESS DATA (live from database) =====
+Today's completed revenue: ${b.currency} ${todayRevenue.toFixed(2)}
+Total all-time revenue: ${b.currency} ${totalRevenue.toFixed(2)}
+Pending orders (need attention): ${pendingOrders}
+Total orders: ${b.orders.length}
+Fulfilled orders: ${fulfilledOrders.length}
+Total products: ${totalProducts}
+Low stock items: ${lowStock.length}
+Total customers: ${totalCustomers}
+
+TOP PRODUCTS (by revenue):
+${topProducts.length > 0 ? topProducts.map((p, i) => `${i+1}. ${p.name} — ${p.qty} sold, ${b.currency} ${p.revenue.toFixed(2)}`).join("\n") : "No sales yet"}
+
+ORDERS BY CHANNEL:
+${Object.entries(channels).map(([ch, count]) => `- ${ch}: ${count}`).join("\n") || "No orders yet"}
+
+LOW STOCK ALERT:
+${lowStock.length > 0 ? lowStock.map((p: any) => `- ${p.name} (stock: ${p.stock}, threshold: ${p.lowStockThreshold})`).join("\n") : "All products well stocked"}
+
+CATALOG:
+${b.products.slice(0, 20).map((p: any) => `• ${p.name} — ${p.currency} ${p.price.toFixed(2)} (stock: ${p.stock})`).join("\n") || "(no products)"}
+
+${(() => { try { const l = JSON.parse(b.agentLearnings || "[]"); return l.length > 0 ? "LEARNED FACTS:\n" + l.slice(0, 5).map((x: string, i: number) => `${i+1}. ${x}`).join("\n") : ""; } catch { return ""; } })()}
+
+YOUR ROLE:
+- You are a BUSINESS ANALYST and ADVISOR for the owner. NOT a customer service agent.
+- Help the owner make better decisions: pricing, inventory, marketing, customer retention.
+- Analyze the data and give actionable insights. Be specific, not generic.
+- Suggest strategies based on the data: "Your bestseller is X — consider restocking before it runs out."
+- When discussing numbers, present them clearly with comparisons.
+- Reference the dashboard: "Check the revenue chart on your overview — you'll see the trend."
+- Proactively suggest improvements when you notice patterns.
+- Be concise but insightful. Key takeaway first, then details.
+- NEVER fabricate data. Only use the real numbers above.
+
+When you learn something useful, add: LEARNED: <fact>
+When you notice a business insight pattern, add: BRAIN_LEARNED: <pattern>`;
+    }
+
     // ===== Internal lookup (hidden from the user) =====
     const internalNotes = await performInternalLookup(businessId, message);
 
     const messages: ChatTurn[] = [
-      { role: "system", content: ctx.systemPrompt },
+      { role: "system", content: systemPrompt },
       ...(history || [])
         .filter((m) => m && m.role && m.content)
         .slice(-8)

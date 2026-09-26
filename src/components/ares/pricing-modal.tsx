@@ -151,7 +151,7 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
 
           {/* Promo code */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-ares-navy">Promo code (optional)</label>
+            <label className="mb-1 block text-xs font-medium text-ares-navy">Code (optional)</label>
             <div className="flex gap-2">
               <input
                 value={promoCode}
@@ -168,9 +168,7 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
               </button>
             </div>
             {promoApplied && (
-              <p className="mt-1 text-[11px] text-emerald-600">
-                {isKratos ? "Free annual plan applied — no payment needed!" : "Promo applied — GHC 600/year!"}
-              </p>
+              <p className="mt-1 text-[11px] text-emerald-600">Code applied!</p>
             )}
           </div>
 

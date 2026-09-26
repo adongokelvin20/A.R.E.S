@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Sparkles, Bot, User, AlertCircle, RefreshCw } from "lucide-react";
+import { Send, Sparkles, TrendingUp, AlertCircle, RefreshCw, BarChart3 } from "lucide-react";
 
 interface Msg {
   role: "user" | "assistant";
@@ -16,7 +16,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      content: `Hi, I'm ${agentName} -- your AI employee for ${businessName}. I'm bound to your ${sector.replace(/_/g, " ").toLowerCase()} business and I only reference your real catalog. Ask me anything a customer would ask, or anything you'd want me to handle.`,
+      content: `Hi ${data.business.ownerFirstName || "there"} — I'm ${agentName}, your business analyst. I can see your live data: ${data.kpis?.todayOrderCount ?? 0} orders today, ${data.kpis?.pendingOrders ?? 0} pending. Ask me anything about your performance, inventory, or strategy.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -44,6 +44,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: content,
+          mode: "analyst",
           history: next.slice(-8).map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
         }),
       });
@@ -64,7 +65,12 @@ export function AresAiChatPanel({ data }: { data: any }) {
     }
   }
 
-  const suggestions = SUGGESTIONS[sector] ?? SUGGESTIONS.SERVICE;
+  const suggestions = [
+    "How's my business doing today?",
+    "What products should I restock?",
+    "Which products are my bestsellers?",
+    "Any suggestions to improve sales?",
+  ];
 
   return (
     <div className="flex h-[calc(100vh-9rem)] flex-col overflow-hidden rounded-2xl border border-ares-line bg-white">
@@ -83,11 +89,12 @@ export function AresAiChatPanel({ data }: { data: any }) {
           </div>
           <div>
             <div className="text-sm font-semibold">{agentName}</div>
-            <div className="text-[11px] text-white/70">Your AI assistant</div>
+            <div className="text-[11px] text-white/70">Business Analyst</div>
           </div>
         </div>
-        <span className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
-          {sector.replace(/_/g, " ")}
+        <span className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+          <BarChart3 className="h-3 w-3" />
+          Data Analyst
         </span>
       </div>
 
@@ -97,7 +104,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
           {messages.map((m, i) => (
             <div key={i} className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
               <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${m.role === "user" ? "bg-ares-navy text-white" : "bg-ares-sea-deep text-white"}`}>
-                {m.role === "user" ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                {m.role === "user" ? <span className="text-[10px] font-bold">YOU</span> : <TrendingUp className="h-3.5 w-3.5" />}
               </div>
               <div className={`max-w-[80%] ${m.role === "user" ? "" : "space-y-2"}`}>
                 <div className={`whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${m.role === "user" ? "bg-ares-navy text-white" : "border border-ares-line bg-white text-ares-navy"}`}>
@@ -116,7 +123,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
           {loading && (
             <div className="flex gap-2.5">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ares-sea-deep text-white">
-                <Bot className="h-3.5 w-3.5" />
+                <TrendingUp className="h-3.5 w-3.5" />
               </div>
               <div className="rounded-2xl border border-ares-line bg-white px-4 py-3">
                 <div className="flex gap-1">
@@ -154,7 +161,7 @@ export function AresAiChatPanel({ data }: { data: any }) {
                 send();
               }
             }}
-            placeholder={`Message ${agentName}…`}
+            placeholder={`Ask ${agentName} about your business…`}
             className="flex-1 rounded-xl border border-ares-line bg-white px-3.5 py-2.5 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none focus:ring-2 focus:ring-ares-sea/15"
             disabled={loading}
           />
@@ -174,42 +181,14 @@ export function AresAiChatPanel({ data }: { data: any }) {
           </div>
         )}
         <div className="mt-2 text-[10px] text-muted-foreground">
-          {agentName} only answers using your business data. If it doesn't know, it says so honestly -- never fabricates.
+          {agentName} analyzes your real business data to give you actionable insights and suggestions.
         </div>
       </div>
     </div>
   );
 }
 
-const SUGGESTIONS: Record<string, string[]> = {
-  CLOTHING_STORE: [
-    "What products do you have?",
-    "Do you have any black hoodies?",
-    "What's your return policy?",
-  ],
-  RESTAURANT: [
-    "What's on the menu?",
-    "Can I book a table for 4 at 7pm?",
-    "Do you deliver?",
-  ],
-  SCHOOL: [
-    "When are fees due?",
-    "What are the admission requirements?",
-    "What are school hours?",
-  ],
-  REAL_ESTATE: [
-    "What properties are available?",
-    "What documents do I need to rent?",
-    "Can I view a property before paying?",
-  ],
-  SERVICE: [
-    "Can I book an appointment?",
-    "Do you offer 24/7 service?",
-    "Is there a call-out fee?",
-  ],
-};
-
-/** Chat image with graceful error handling -- hides if the image fails to load. */
+/** Chat image with graceful error handling */
 function ChatImage({ img }: { img: { name: string; imageUrl: string; price: number; currency: string } }) {
   const [errored, setErrored] = useState(false);
   if (errored) return null;
