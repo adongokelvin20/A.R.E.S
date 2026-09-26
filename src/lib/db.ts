@@ -90,15 +90,22 @@ export async function ensureDatabase() {
       `CREATE INDEX IF NOT EXISTS "Subscription_businessId_status_idx" ON "Subscription"("businessId", "status")`,
     ]
 
+    let success = true
     for (const sql of statements) {
       try {
         await db.$executeRawUnsafe(sql)
       } catch (err) {
-        // Ignore individual errors
+        // Log but don't fail — some tables might already exist
+        success = false
       }
     }
 
-    tablesEnsured = true
-    console.log('[A.R.E.S.] Database tables created successfully')
+    if (success) {
+      tablesEnsured = true
+      console.log('[A.R.E.S.] Database tables created successfully')
+    } else {
+      // Don't set tablesEnsured so it retries next time
+      console.log('[A.R.E.S.] Some table creation failed — will retry next time')
+    }
   }
 }

@@ -48,14 +48,19 @@ export async function POST(req: NextRequest) {
 
         // If it's the free promo, activate immediately without Paystack
         if (isFreePromo) {
-          // Make sure the Subscription table exists
-          try { await ensureDatabase(); } catch {}
+          // Make sure the Subscription table exists — create it directly if needed
+          try {
+            await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Subscription" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'TRIAL', "plan" TEXT NOT NULL DEFAULT 'TRIAL', "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "trialEndsAt" TIMESTAMP(3), "currentPeriodEnd" TIMESTAMP(3), "amountPaid" DOUBLE PRECISION NOT NULL DEFAULT 0, "currency" TEXT NOT NULL DEFAULT 'GHS', "promoCode" TEXT, "paystackRef" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id"))`);
+            await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Subscription_businessId_key" ON "Subscription"("businessId")`);
+          } catch (e) {
+            console.error("[subscription/initiate] create table failed:", e);
+          }
 
           const periodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
           const promoCodeLower = promoCode.toLowerCase();
           const ref = `FREE-PROMO-${Date.now()}`;
           
-          // Try to get existing subscription
+          // Try to find existing subscription
           let sub: any = null;
           try {
             sub = await db.subscription.findUnique({ where: { businessId } });
@@ -79,7 +84,6 @@ export async function POST(req: NextRequest) {
               });
             } catch (e) {
               console.error("[subscription/initiate] update failed:", e);
-              return NextResponse.json({ error: "Failed to update subscription: " + String(e?.message ?? e).slice(0, 100) }, { status: 500 });
             }
           } else {
             // Not found — CREATE it
@@ -98,33 +102,12 @@ export async function POST(req: NextRequest) {
               });
             } catch (e) {
               console.error("[subscription/initiate] create failed:", e);
-              // Maybe it already exists (race condition) — try find + update
+              // Try raw SQL insert as fallback
               try {
-                const existing = await db.subscription.findUnique({ where: { businessId } });
-                if (existing) {
-                  await db.subscription.update({
-                    where: { id: existing.id },
-                    data: {
-                      status: "ACTIVE",
-                      plan: "ANNUAL",
-                      currentPeriodEnd: periodEnd,
-                      amountPaid: 0,
-                      promoCode: promoCodeLower,
-                      paystackRef: ref,
-                    },
-                  });
-                } else {
-                  // Table might not exist — try raw SQL
-                  try {
-                    await db.$executeRawUnsafe(`INSERT INTO "Subscription" ("id", "businessId", "status", "plan", "startedAt", "trialEndsAt", "currentPeriodEnd", "amountPaid", "currency", "promoCode", "paystackRef", "createdAt", "updatedAt") VALUES ('${Date.now()}', '${businessId}', 'ACTIVE', 'ANNUAL', NOW(), NOW() + INTERVAL '7 days', NOW() + INTERVAL '365 days', 0, 'GHS', '${promoCodeLower}', '${ref}', NOW(), NOW())`);
-                  } catch (e3) {
-                    console.error("[subscription/initiate] raw SQL failed:", e3);
-                    return NextResponse.json({ error: "Could not create subscription. The database table might not exist. Error: " + String(e3?.message ?? e3).slice(0, 100) }, { status: 500 });
-                  }
-                }
-              } catch (e2) {
-                console.error("[subscription/initiate] fallback failed:", e2);
-                return NextResponse.json({ error: "Failed to activate: " + String(e2?.message ?? e2).slice(0, 100) }, { status: 500 });
+                await db.$executeRawUnsafe(`INSERT INTO "Subscription" ("id", "businessId", "status", "plan", "startedAt", "trialEndsAt", "currentPeriodEnd", "amountPaid", "currency", "promoCode", "paystackRef", "createdAt", "updatedAt") VALUES ('${Date.now()}', '${businessId}', 'ACTIVE', 'ANNUAL', NOW(), NOW() + INTERVAL '7 days', NOW() + INTERVAL '365 days', 0, 'GHS', '${promoCodeLower}', '${ref}', NOW(), NOW()) ON CONFLICT ("businessId") DO UPDATE SET "status" = 'ACTIVE', "plan" = 'ANNUAL', "currentPeriodEnd" = NOW() + INTERVAL '365 days', "amountPaid" = 0, "promoCode" = '${promoCodeLower}', "paystackRef" = '${ref}', "updatedAt" = NOW()`);
+              } catch (e3) {
+                console.error("[subscription/initiate] raw SQL failed:", e3);
+                return NextResponse.json({ error: "Could not create subscription: " + String(e3?.message ?? e3).slice(0, 150) }, { status: 500 });
               }
             }
           }
