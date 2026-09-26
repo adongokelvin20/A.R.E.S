@@ -333,21 +333,21 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
                 {productFields.map((f) => (
                   <div key={f.key}>
                     <label className="mb-0.5 block text-[11px] text-muted-foreground">{f.label}</label>
-                    {f.type === "select" ? (
+                    {f.type === "select" && f.options ? (
                       <select
                         value={dynamicFields[f.key] ?? ""}
                         onChange={(e) => setDynamicFields((s) => ({ ...s, [f.key]: e.target.value }))}
                         className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none"
                       >
                         <option value="">Select…</option>
-                        {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+                        {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
                       </select>
                     ) : (
                       <input
                         type={f.type === "number" ? "number" : "text"}
                         value={dynamicFields[f.key] ?? ""}
                         onChange={(e) => setDynamicFields((s) => ({ ...s, [f.key]: e.target.value }))}
-                        placeholder={f.placeholder ?? f.label}
+                        placeholder={f.placeholder || f.label || ""}
                         className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
                       />
                     )}

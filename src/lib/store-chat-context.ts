@@ -38,16 +38,18 @@ export async function buildStoreChatContext(businessId: string): Promise<StoreCh
     where: { businessId, status: "ACTIVE" },
     take: 20,
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, price: true, currency: true, imageUrl: true, imageAlt: true, stock: true, description: true, attributes: true },
+    select: { id: true, name: true, price: true, currency: true, imageUrl: true, imageAlt: true, stock: true, description: true, attributes: true, category: true },
   });
 
   // Build a product matching guide — includes imageAlt (AI-analyzed description)
+  // and category (Male/Female/General for retail)
   const productGuide = products.map((p) => {
     const attrs = p.attributes ? JSON.parse(p.attributes) : {};
     const variants = attrs.size || attrs.color ? ` (sizes: ${attrs.size ?? "—"}, colors: ${attrs.color ?? "—"})` : "";
     const alt = p.imageAlt ? ` [visual: ${p.imageAlt}]` : "";
     const desc = p.description ? ` — ${p.description.slice(0, 80)}` : "";
-    return `• ${p.name}${variants} — ${p.currency} ${p.price.toFixed(2)} (stock: ${p.stock})${alt}${desc}`;
+    const cat = p.category ? ` [category: ${p.category}]` : "";
+    return `• ${p.name}${variants} — ${p.currency} ${p.price.toFixed(2)} (stock: ${p.stock})${cat}${alt}${desc}`;
   }).join("\n") || "(no products yet)";
 
   // Take the dashboard system prompt and ADD store-specific rules
@@ -75,6 +77,9 @@ MATCHING RULES:
 - If they say "gown", ONLY recommend products whose name or visual description includes "gown" or "dress"
 - If they say "red shirt", ONLY recommend products that are red AND shirts
 - If they say "size 42 shoes", ONLY recommend shoes in size 42
+- If they say "men's" or "for men", ONLY recommend products with [category: Male] or [category: General]
+- If they say "women's" or "for women", ONLY recommend products with [category: Female] or [category: General]
+- If they say "kids", ONLY recommend products with [category: Kids]
 - If NO product matches their description, say "I don't think we have that right now" — DO NOT recommend random products
 - If MULTIPLE products match, mention the best 1-2, not all of them
 
