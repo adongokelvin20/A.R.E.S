@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "A.R.E.S. — The Digital Employee for Your Business | Kevtech Corporation",
   description:
-    "A.R.E.S. by Kevtech Corporation is a digital employee for your business. It talks to customers on WhatsApp, takes orders, manages inventory, and runs operations — so you can focus on what matters. Founded by Kelvin Ayinbisa.",
+    "A.R.E.S. by Kevtech Corporation is a digital employee for your business. It talks to customers on your store link, takes orders, manages inventory, and runs operations — so you can focus on what matters. Founded by Kelvin Ayinbisa.",
   keywords: [
     "A.R.E.S.",
     "Kevtech",
@@ -25,7 +25,6 @@ export const metadata: Metadata = {
     "Kelvin Ayinbisa",
     "Business Operating System",
     "Digital Employee",
-    "WhatsApp Business",
     "Business Automation",
     "Ghana Business",
   ],
