@@ -161,6 +161,7 @@ export async function POST(req: NextRequest) {
 
   // Order detection (synchronous)
   let orderData: any = null;
+  let orderUpdateData: any = null;
   const orderMatch = reply.match(/ORDER_CONFIRMED:?\s*(\{[\s\S]*\})/i);
   if (orderMatch) {
     try {
@@ -173,6 +174,18 @@ export async function POST(req: NextRequest) {
     if (orderData?.items?.length > 0) {
       reply += `\n\nGot it! Order logged — we'll take it from here. 🎉`;
     }
+  }
+
+  // Order UPDATE detection (for correcting already-logged orders)
+  const updateMatch = reply.match(/ORDER_UPDATED:?\s*(\{[\s\S]*\})/i);
+  if (updateMatch) {
+    try {
+      let rawJson = updateMatch[1].trim();
+      const lastBrace = rawJson.lastIndexOf("}");
+      if (lastBrace > 0 && lastBrace < rawJson.length - 1) rawJson = rawJson.slice(0, lastBrace + 1);
+      try { orderUpdateData = JSON.parse(rawJson); } catch { orderUpdateData = extractOrderFields(rawJson); }
+    } catch {}
+    reply = reply.replace(/ORDER_UPDATED:?\s*\{[\s\S]*\}/gi, "").trim();
   }
 
   // Name extraction (synchronous)
@@ -203,17 +216,17 @@ export async function POST(req: NextRequest) {
   const response = NextResponse.json({
     reply,
     agentName,
-    conversationId: null, // will be set by the background task
+    conversationId: null,
     orderCreated: orderData?.items?.length > 0 ? { id: "pending", total: 0 } : null,
+    orderUpdated: !!orderUpdateData,
     images: mentionedImages,
   });
 
   // ===== FIRE-AND-FORGET: all DB writes happen after the response is sent =====
-  // We use waitUntil pattern via a background promise that doesn't block the response.
   backgroundPersist({
     businessId, sessionId, message, reply, agentName,
     customerName: customerName || extractedName, customerPhone,
-    extractedName, learnedFact, brainFact, orderData,
+    extractedName, learnedFact, brainFact, orderData, orderUpdateData,
     mentionedImages, business,
   }).catch((e) => console.error("[store chat] background persist failed:", e));
 
@@ -228,10 +241,10 @@ export async function POST(req: NextRequest) {
 async function backgroundPersist(opts: {
   businessId: string; sessionId?: string; message: string; reply: string; agentName: string;
   customerName?: string | null; customerPhone?: string; extractedName?: string | null;
-  learnedFact?: string | null; brainFact?: string | null; orderData?: any;
+  learnedFact?: string | null; brainFact?: string | null; orderData?: any; orderUpdateData?: any;
   mentionedImages: any[]; business: any;
 }) {
-  const { businessId, sessionId, message, reply, agentName, customerName, customerPhone, extractedName, learnedFact, brainFact, orderData, mentionedImages, business } = opts;
+  const { businessId, sessionId, message, reply, agentName, customerName, customerPhone, extractedName, learnedFact, brainFact, orderData, orderUpdateData, mentionedImages, business } = opts;
 
   const promises: Promise<any>[] = [];
 
@@ -297,13 +310,68 @@ async function backgroundPersist(opts: {
     );
   }
 
-  // 4. Create order
+  // 4. Create order (new order)
   if (orderData?.items?.length > 0) {
     promises.push(
       (async () => {
         try {
           await createOrderFromChat(businessId, customerName || "Store customer", orderData, business.currency);
         } catch (e) { console.error("[store chat bg] order creation failed:", e); }
+      })()
+    );
+  }
+
+  // 4b. Update existing order (correction)
+  if (orderUpdateData) {
+    promises.push(
+      (async () => {
+        try {
+          // Find the most recent order from this customer
+          const recentOrder = await db.order.findFirst({
+            where: {
+              businessId,
+              OR: [
+                { customerName: customerName || extractedName || undefined },
+                { customerPhone: customerPhone || undefined },
+              ],
+            },
+            orderBy: { createdAt: "desc" },
+            include: { items: true },
+          });
+
+          if (recentOrder) {
+            // Delete old items
+            await db.orderItem.deleteMany({ where: { orderId: recentOrder.id } });
+
+            // Calculate new total
+            let total = 0;
+            const itemRows: any[] = [];
+            for (const it of (orderUpdateData.items || [])) {
+              const qty = Math.max(1, parseInt(String(it.quantity ?? 1), 10));
+              const prod = it.productName ? await db.product.findFirst({ where: { businessId, name: { equals: String(it.productName) } } }) : null;
+              const unit = Number.isFinite(it.unitPrice) ? it.unitPrice : prod?.price ?? 0;
+              const lineTotal = unit * qty;
+              total += lineTotal;
+              itemRows.push({ name: it.productName || it.name || "Item", quantity: qty, unitPrice: unit, total: lineTotal, productId: prod?.id });
+            }
+
+            // Update the order
+            await db.order.update({
+              where: { id: recentOrder.id },
+              data: {
+                total,
+                currency: business.currency,
+                fulfillmentType: orderUpdateData.fulfillmentType === "DELIVERY" ? "DELIVERY" : "PICKUP",
+                deliveryLocation: orderUpdateData.deliveryLocation ?? recentOrder.deliveryLocation,
+                deliveryTime: orderUpdateData.deliveryTime ?? recentOrder.deliveryTime,
+                deliveryPhone: orderUpdateData.deliveryPhone ?? recentOrder.deliveryPhone,
+                customerName: orderUpdateData.customerName || customerName || recentOrder.customerName,
+                items: { create: itemRows },
+              },
+            });
+            console.log("[store chat bg] order updated:", recentOrder.id);
+          }
+        } catch (e) { console.error("[store chat bg] order update failed:", e); }
       })()
     );
   }
