@@ -48,31 +48,41 @@ export async function POST(req: NextRequest) {
 
         // If it's the free promo, activate immediately without Paystack
         if (isFreePromo) {
+          // Make sure the Subscription table exists
+          try { await ensureDatabase(); } catch {}
+
           const periodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+          const promoCodeLower = promoCode.toLowerCase();
+          const ref = `FREE-PROMO-${Date.now()}`;
           
-          // Try to get existing subscription, or create one if it doesn't exist
+          // Try to get existing subscription
           let sub: any = null;
           try {
-            sub = await getOrCreateSubscription(businessId, db);
+            sub = await db.subscription.findUnique({ where: { businessId } });
           } catch (e) {
-            console.error("[subscription/initiate] getOrCreateSubscription failed:", e);
+            console.error("[subscription/initiate] findUnique failed:", e);
           }
 
+          // If found, UPDATE it
           if (sub) {
-            // Update existing subscription
-            await db.subscription.update({
-              where: { id: sub.id },
-              data: {
-                status: "ACTIVE",
-                plan: "ANNUAL",
-                currentPeriodEnd: periodEnd,
-                amountPaid: 0,
-                promoCode: promoCode.toLowerCase(),
-                paystackRef: `FREE-PROMO-${Date.now()}`,
-              },
-            });
+            try {
+              await db.subscription.update({
+                where: { id: sub.id },
+                data: {
+                  status: "ACTIVE",
+                  plan: "ANNUAL",
+                  currentPeriodEnd: periodEnd,
+                  amountPaid: 0,
+                  promoCode: promoCodeLower,
+                  paystackRef: ref,
+                },
+              });
+            } catch (e) {
+              console.error("[subscription/initiate] update failed:", e);
+              return NextResponse.json({ error: "Failed to update subscription: " + String(e?.message ?? e).slice(0, 100) }, { status: 500 });
+            }
           } else {
-            // No subscription record — create one directly
+            // Not found — CREATE it
             try {
               await db.subscription.create({
                 data: {
@@ -81,14 +91,14 @@ export async function POST(req: NextRequest) {
                   plan: "ANNUAL",
                   currentPeriodEnd: periodEnd,
                   amountPaid: 0,
-                  promoCode: promoCode.toLowerCase(),
-                  paystackRef: `FREE-PROMO-${Date.now()}`,
+                  promoCode: promoCodeLower,
+                  paystackRef: ref,
                   trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 },
               });
             } catch (e) {
               console.error("[subscription/initiate] create failed:", e);
-              // If create fails (maybe already exists), try update
+              // Maybe it already exists (race condition) — try find + update
               try {
                 const existing = await db.subscription.findUnique({ where: { businessId } });
                 if (existing) {
@@ -99,14 +109,22 @@ export async function POST(req: NextRequest) {
                       plan: "ANNUAL",
                       currentPeriodEnd: periodEnd,
                       amountPaid: 0,
-                      promoCode: promoCode.toLowerCase(),
-                      paystackRef: `FREE-PROMO-${Date.now()}`,
+                      promoCode: promoCodeLower,
+                      paystackRef: ref,
                     },
                   });
+                } else {
+                  // Table might not exist — try raw SQL
+                  try {
+                    await db.$executeRawUnsafe(`INSERT INTO "Subscription" ("id", "businessId", "status", "plan", "startedAt", "trialEndsAt", "currentPeriodEnd", "amountPaid", "currency", "promoCode", "paystackRef", "createdAt", "updatedAt") VALUES ('${Date.now()}', '${businessId}', 'ACTIVE', 'ANNUAL', NOW(), NOW() + INTERVAL '7 days', NOW() + INTERVAL '365 days', 0, 'GHS', '${promoCodeLower}', '${ref}', NOW(), NOW())`);
+                  } catch (e3) {
+                    console.error("[subscription/initiate] raw SQL failed:", e3);
+                    return NextResponse.json({ error: "Could not create subscription. The database table might not exist. Error: " + String(e3?.message ?? e3).slice(0, 100) }, { status: 500 });
+                  }
                 }
               } catch (e2) {
-                console.error("[subscription/initiate] fallback update failed:", e2);
-                return NextResponse.json({ error: "Failed to activate subscription. Please try again." }, { status: 500 });
+                console.error("[subscription/initiate] fallback failed:", e2);
+                return NextResponse.json({ error: "Failed to activate: " + String(e2?.message ?? e2).slice(0, 100) }, { status: 500 });
               }
             }
           }
