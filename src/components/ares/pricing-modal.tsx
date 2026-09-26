@@ -129,7 +129,7 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
               <input
                 value={promoCode}
                 onChange={(e) => { setPromoCode(e.target.value); setPromoApplied(false); }}
-                placeholder="e.g. Kelvin"
+                placeholder=""
                 className="flex-1 rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
               />
               <button

@@ -48,9 +48,18 @@ export async function POST(req: NextRequest) {
 
         // If it's the free promo, activate immediately without Paystack
         if (isFreePromo) {
-          const sub = await getOrCreateSubscription(businessId, db);
           const periodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+          
+          // Try to get existing subscription, or create one if it doesn't exist
+          let sub: any = null;
+          try {
+            sub = await getOrCreateSubscription(businessId, db);
+          } catch (e) {
+            console.error("[subscription/initiate] getOrCreateSubscription failed:", e);
+          }
+
           if (sub) {
+            // Update existing subscription
             await db.subscription.update({
               where: { id: sub.id },
               data: {
@@ -58,10 +67,48 @@ export async function POST(req: NextRequest) {
                 plan: "ANNUAL",
                 currentPeriodEnd: periodEnd,
                 amountPaid: 0,
-                promoCode: promoCode.toLowerCase(), // save in lowercase for consistent badge display
+                promoCode: promoCode.toLowerCase(),
                 paystackRef: `FREE-PROMO-${Date.now()}`,
               },
             });
+          } else {
+            // No subscription record — create one directly
+            try {
+              await db.subscription.create({
+                data: {
+                  businessId,
+                  status: "ACTIVE",
+                  plan: "ANNUAL",
+                  currentPeriodEnd: periodEnd,
+                  amountPaid: 0,
+                  promoCode: promoCode.toLowerCase(),
+                  paystackRef: `FREE-PROMO-${Date.now()}`,
+                  trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                },
+              });
+            } catch (e) {
+              console.error("[subscription/initiate] create failed:", e);
+              // If create fails (maybe already exists), try update
+              try {
+                const existing = await db.subscription.findUnique({ where: { businessId } });
+                if (existing) {
+                  await db.subscription.update({
+                    where: { id: existing.id },
+                    data: {
+                      status: "ACTIVE",
+                      plan: "ANNUAL",
+                      currentPeriodEnd: periodEnd,
+                      amountPaid: 0,
+                      promoCode: promoCode.toLowerCase(),
+                      paystackRef: `FREE-PROMO-${Date.now()}`,
+                    },
+                  });
+                }
+              } catch (e2) {
+                console.error("[subscription/initiate] fallback update failed:", e2);
+                return NextResponse.json({ error: "Failed to activate subscription. Please try again." }, { status: 500 });
+              }
+            }
           }
 
           try {

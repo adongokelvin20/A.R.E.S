@@ -96,17 +96,26 @@ export function AresAppShell({
       });
   }, [locked]);
 
-  // ===== Browser notifications for new orders =====
-  // Request permission on mount, then poll for new orders every 30 seconds
+  // ===== HARDCORE notification system for new orders =====
+  // Always requests permission, polls every 15 seconds, shows BOTH browser
+  // notifications AND in-app toast notifications. This is a key feature.
   useEffect(() => {
-    // Request notification permission
+    // Aggressively request notification permission
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
-        Notification.requestPermission().catch(() => {});
+        Notification.requestPermission().then((perm) => {
+          if (perm === "denied") {
+            // If denied, show a toast telling the owner to enable notifications
+            toast({
+              title: "Enable notifications",
+              description: "You'll miss new order alerts. Click the lock icon in your browser → Allow notifications.",
+            });
+          }
+        }).catch(() => {});
       }
     }
 
-    let lastCheck = new Date(Date.now() - 5 * 60 * 1000); // start 5 min ago
+    let lastCheck = new Date(Date.now() - 5 * 60 * 1000);
     let seenOrderIds = new Set<string>();
 
     const checkNewOrders = async () => {
@@ -119,23 +128,41 @@ export function AresAppShell({
         for (const order of data.orders ?? []) {
           if (!seenOrderIds.has(order.id)) {
             seenOrderIds.add(order.id);
-            // Show browser notification
+            const symbol = order.currency === "GHS" ? "GH₵" : order.currency;
+            const orderText = `${order.customerName} ordered ${order.itemCount} item${order.itemCount === 1 ? "" : "s"} — ${symbol}${order.total.toFixed(2)} via ${order.channel === "WHATSAPP" ? "WhatsApp" : "Store"}`;
+
+            // 1. Browser notification (if permission granted)
             if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-              const symbol = order.currency === "GHS" ? "GH₵" : order.currency;
-              new Notification("New order! 🎉", {
-                body: `${order.customerName} ordered ${order.itemCount} item${order.itemCount === 1 ? "" : "s"} — ${symbol}${order.total.toFixed(2)} via ${order.channel === "WHATSAPP" ? "WhatsApp" : "Store"}`,
-                icon: "/icon.svg",
-                tag: order.id,
-              });
+              try {
+                new Notification("New order! 🎉", {
+                  body: orderText,
+                  icon: "/icon.svg",
+                  tag: order.id,
+                  requireInteraction: true, // stays until the user interacts
+                });
+              } catch {}
             }
+
+            // 2. In-app toast notification (always shows, even if browser notifications denied)
+            toast({
+              title: "New order! 🎉",
+              description: orderText,
+            });
+
+            // 3. Play a sound (if possible)
+            try {
+              const audio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=");
+              audio.volume = 0.3;
+              audio.play().catch(() => {});
+            } catch {}
           }
         }
       } catch {}
     };
 
-    // Check immediately, then every 30 seconds
+    // Check immediately, then every 15 seconds (faster)
     checkNewOrders();
-    const interval = setInterval(checkNewOrders, 30 * 1000);
+    const interval = setInterval(checkNewOrders, 15 * 1000);
     return () => clearInterval(interval);
   }, []);
 
