@@ -174,6 +174,8 @@ export function AresProducts({ data, onChanged }: { data: any; onChanged: () => 
           agentName={data?.business?.agentName ?? "Assistant"}
           productFields={productFields}
           editingProduct={editingProduct}
+          sectorCategory={sectorCategory}
+          sectorSubtype={sectorSubtype}
           onClose={() => { setShowForm(false); setEditingProduct(null); }}
           onSaved={() => { setShowForm(false); setEditingProduct(null); onChanged(); }}
         />
@@ -182,7 +184,7 @@ export function AresProducts({ data, onChanged }: { data: any; onChanged: () => 
   );
 }
 
-function ProductForm({ agentName, productFields, editingProduct, onClose, onSaved }: { agentName: string; productFields: ProductField[]; editingProduct: Product | null; onClose: () => void; onSaved: () => void }) {
+function ProductForm({ agentName, productFields, editingProduct, onClose, onSaved, sectorCategory, sectorSubtype }: { agentName: string; productFields: ProductField[]; editingProduct: Product | null; onClose: () => void; onSaved: () => void; sectorCategory: string; sectorSubtype: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const isEditing = !!editingProduct;
   const [name, setName] = useState(editingProduct?.name ?? "");
