@@ -53,17 +53,29 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
         body: JSON.stringify({ plan, promoCode: promoApplied ? promoCode : undefined }),
       });
       const data = await res.json();
+
+      // Free promo (kratos) — activated immediately
+      if (data.free || data.ok) {
+        toast({ title: "Activated!", description: "Your plan is now active. Loading your dashboard..." });
+        // Wait 2 seconds for the DB write to complete, then redirect to /
+        // which re-runs the server-side subscription check
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 2000);
+        return;
+      }
+
+      // Paid plan — redirect to Paystack
       if (data.authorization_url) {
         window.location.href = data.authorization_url;
-      } else if (data.free || data.ok) {
-        toast({ title: "Subscription activated!", description: "Your plan is now active." });
-        onSubscribed();
-      } else {
-        toast({ title: "Payment failed", description: data.error ?? "Could not start payment", variant: "destructive" });
-        setLoading(false);
+        return;
       }
+
+      // Error
+      toast({ title: "Failed", description: data.error ?? "Could not start payment", variant: "destructive" });
+      setLoading(false);
     } catch {
-      toast({ title: "Payment failed", variant: "destructive" });
+      toast({ title: "Failed", description: "Network error", variant: "destructive" });
       setLoading(false);
     }
   }

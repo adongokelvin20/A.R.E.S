@@ -126,6 +126,42 @@ export async function POST(req: NextRequest) {
             });
           } catch {}
 
+          // ===== VERIFY the subscription was actually saved =====
+          try {
+            const verify = await db.subscription.findUnique({ where: { businessId } });
+            if (!verify || verify.status !== "ACTIVE") {
+              // Something went wrong — try one more time
+              if (verify) {
+                await db.subscription.update({
+                  where: { id: verify.id },
+                  data: {
+                    status: "ACTIVE",
+                    plan: "ANNUAL",
+                    currentPeriodEnd: periodEnd,
+                    amountPaid: 0,
+                    promoCode: promoCode.toLowerCase(),
+                    paystackRef: `FREE-PROMO-${Date.now()}`,
+                  },
+                });
+              } else {
+                await db.subscription.create({
+                  data: {
+                    businessId,
+                    status: "ACTIVE",
+                    plan: "ANNUAL",
+                    currentPeriodEnd: periodEnd,
+                    amountPaid: 0,
+                    promoCode: promoCode.toLowerCase(),
+                    paystackRef: `FREE-PROMO-${Date.now()}`,
+                    trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                  },
+                });
+              }
+            }
+          } catch (e) {
+            console.error("[subscription/initiate] verification failed:", e);
+          }
+
           return NextResponse.json({
             ok: true,
             free: true,
