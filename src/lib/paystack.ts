@@ -169,11 +169,29 @@ export function validatePromoCode(code: string): { valid: boolean; amount: numbe
 }
 
 /**
+ * Ensure the Subscription table exists. Call this before any subscription query.
+ * This is separate from ensureDatabase() so it always runs.
+ */
+export async function ensureSubscriptionTable(db: any) {
+  if (!db) return;
+  try {
+    await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Subscription" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'TRIAL', "plan" TEXT NOT NULL DEFAULT 'TRIAL', "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "trialEndsAt" TIMESTAMP(3), "currentPeriodEnd" TIMESTAMP(3), "amountPaid" DOUBLE PRECISION NOT NULL DEFAULT 0, "currency" TEXT NOT NULL DEFAULT 'GHS', "promoCode" TEXT, "paystackRef" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id"))`);
+    await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Subscription_businessId_key" ON "Subscription"("businessId")`);
+  } catch (e) {
+    // Table might already exist — ignore
+  }
+}
+
+/**
  * Get the subscription status for a business.
  * Creates a trial subscription if none exists.
  */
 export async function getOrCreateSubscription(businessId: string, db: any) {
   if (!db) return null;
+  
+  // Ensure the table exists first
+  await ensureSubscriptionTable(db);
+  
   try {
     let sub = await db.subscription.findUnique({ where: { businessId } });
 
