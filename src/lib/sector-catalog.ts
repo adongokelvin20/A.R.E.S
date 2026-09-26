@@ -577,13 +577,16 @@ export const SECTOR_CATALOG: SectorCategory[] = [
     subtypes: [
       {
         id: "CAR_DEALERSHIP",
-        label: "Car Dealership",
-        description: "Vehicle sales, financing, trade-ins",
+        label: "Car Sales & Dealership",
+        description: "Vehicle sales, financing, trade-ins, test drives",
         modules: ["products", "customers", "leads", "appointments"],
         dashboardWidgets: ["greeting", "kpis", "appointments_today", "pie_chart"],
-        productFields: [{ key: "make", label: "Make", type: "text" }, { key: "year", label: "Year", type: "number" }],
-        systemPrompt: `You work at a car dealership. You're knowledgeable and persuasive without being pushy.`,
-        defaultKnowledge: [],
+        productFields: [{ key: "make", label: "Make", type: "text" }, { key: "year", label: "Year", type: "number" }, { key: "mileage", label: "Mileage", type: "text" }, { key: "condition", label: "Condition", type: "text" }],
+        systemPrompt: `You work at a car sales dealership. You're knowledgeable about vehicles, financing options, and trade-ins. You help customers find the right car for their needs and budget. You can discuss specs, arrange test drives, and explain financing. Be honest about vehicle conditions.`,
+        defaultKnowledge: [
+          { category: "services", question: "Do you offer financing?", answer: "Yes, we offer financing options. I can connect you with our finance team." },
+          { category: "services", question: "Do you take trade-ins?", answer: "Yes, we accept trade-ins. Bring your vehicle for an appraisal." },
+        ],
       },
       {
         id: "AUTO_REPAIR",

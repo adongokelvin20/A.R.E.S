@@ -178,50 +178,72 @@ export function AresConversations({ data }: { data: any }) {
             />
           </div>
         </div>
-        {/* Chat list */}
+        {/* Chat list — grouped by day with bold headers */}
         <div className="flex-1 overflow-y-auto">
           {loadingList && groups === null ? (
             <div className="flex items-center justify-center py-10">
               <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
+          ) : filteredGroups.length === 0 ? (
+            <div className="flex items-center justify-center py-10 text-xs text-muted-foreground">
+              No conversations yet
+            </div>
           ) : (
-            filteredGroups.map((g) => {
-              const isActive = selectedGroup?.key === g.key;
-              const lastMsg = g.totalMessages > 0 ? `${g.totalMessages} message${g.totalMessages === 1 ? "" : "s"}` : "No messages";
-              return (
-                <button
-                  key={g.key}
-                  onClick={() => selectGroup(g)}
-                  className={`flex w-full items-center gap-3 border-b border-ares-line/50 px-3 py-3 text-left transition-colors hover:bg-[#F0F2F5] ${isActive ? "bg-[#ECE5DD]" : ""}`}
-                >
-                  {/* Avatar */}
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white"
-                    style={{ background: avatarColor(g.key) }}
-                  >
-                    {initials(g.customerName || g.customerPhone || "?")}
+            (() => {
+              const groupedByDay: { label: string; date: string; items: Group[] }[] = [];
+              for (const g of filteredGroups) {
+                const d = new Date(g.lastActivity);
+                const dayKey = d.toDateString();
+                const dayLabel = d.toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" });
+                const existing = groupedByDay.find((x) => x.date === dayKey);
+                if (existing) existing.items.push(g);
+                else groupedByDay.push({ label: dayLabel, date: dayKey, items: [g] });
+              }
+              return groupedByDay.map((dayGroup) => (
+                <div key={dayGroup.date}>
+                  <div className="sticky top-0 z-10 flex items-center gap-2 bg-ares-mist/95 py-1.5 backdrop-blur">
+                    <div className="h-0.5 flex-1 bg-ares-navy/20 ml-3" />
+                    <span className="rounded bg-ares-navy px-3 py-1 text-[10px] font-bold text-white">
+                      {dayGroup.label}
+                    </span>
+                    <div className="h-0.5 flex-1 bg-ares-navy/20 mr-3" />
                   </div>
-                  {/* Info */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-semibold text-ares-navy">{g.customerName || g.customerPhone || "Unknown"}</span>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">{timeShort(g.lastActivity)}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-xs text-muted-foreground">{lastMsg}</span>
-                      {g.conversationCount > 1 && (
-                        <span className="shrink-0 rounded-full bg-ares-sea/20 px-1.5 py-0.5 text-[9px] font-semibold text-ares-sea-deep">
-                          {g.conversationCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })
-          )}
-          {filteredGroups.length === 0 && !loadingList && (
-            <p className="py-8 text-center text-xs text-muted-foreground">No customers match "{search}"</p>
+                  {dayGroup.items.map((g) => {
+                    const isActive = selectedGroup?.key === g.key;
+                    const lastMsg = g.totalMessages > 0 ? `${g.totalMessages} message${g.totalMessages === 1 ? "" : "s"}` : "No messages";
+                    const displayName = g.customerName && g.customerName !== "Unknown customer" ? g.customerName : (g.customerPhone || "Unknown");
+                    return (
+                      <button
+                        key={g.key}
+                        onClick={() => selectGroup(g)}
+                        className={`flex w-full items-center gap-3 border-b border-ares-line/50 px-3 py-3 text-left transition-colors hover:bg-[#F0F2F5] ${isActive ? "bg-[#ECE5DD]" : ""}`}
+                      >
+                        <div
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white"
+                          style={{ background: avatarColor(displayName) }}
+                        >
+                          {initials(displayName)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate text-sm font-bold text-ares-navy">{displayName}</span>
+                            <span className="shrink-0 text-[10px] text-muted-foreground">{timeShort(g.lastActivity)}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate text-xs text-muted-foreground">{lastMsg}</span>
+                            {g.conversationCount > 1 && (
+                              <span className="shrink-0 rounded-full bg-ares-sea/20 px-1.5 py-0.5 text-[9px] font-semibold text-ares-sea-deep">
+                                {g.conversationCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ));
+            })()
           )}
         </div>
       </div>
