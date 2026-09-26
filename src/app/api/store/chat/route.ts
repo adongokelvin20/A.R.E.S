@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
     const completion = await zai.chat.completions.create({
       messages,
       temperature: 0.85,
-      max_tokens: 250,
+      max_tokens: 400,
     });
     reply = (completion as any)?.choices?.[0]?.message?.content ??
             (completion as any)?.content ??
@@ -188,24 +188,19 @@ export async function POST(req: NextRequest) {
     reply = reply.replace(/ORDER_UPDATED:?\s*\{[\s\S]*\}/gi, "").trim();
   }
 
-  // Name extraction — try multiple patterns to catch the customer's name
+  // Name extraction — still extract for order creation, but conversation title is "Nth Customer"
   let extractedName: string | null = null;
   const msg = message.trim();
   
-  // Pattern 1: "my name is X", "I'm X", "this is X", "call me X", "it's X", "I am X", "name's X"
   const nameMatch1 = msg.match(/(?:my name is|i'm|i am|this is|it's|call me|name's|the name is|its|im)\s+([a-z][a-z\s'-]{1,30})/i);
   if (nameMatch1?.[1]) {
     extractedName = nameMatch1[1].trim().split(/\s+/).slice(0, 2).join(" ");
   }
   
-  // Pattern 2: If the message is VERY short (1-3 words) and looks like a name
-  // This catches: "Kelvin", "Akosua Mensah", "kelvin", "KELVIN"
   if (!extractedName) {
     const words = msg.split(/\s+/);
     if (words.length <= 3 && words.length >= 1) {
-      // Check if every word looks like a name (letters, hyphens, apostrophes only)
       const looksLikeName = words.every((w: string) => /^[a-z][a-z'-]{0,20}$/i.test(w.replace(/[.,!?]/g, "")));
-      // Make sure it's not a common phrase
       const lowerMsg = msg.toLowerCase().replace(/[.,!?]/g, "").trim();
       const commonPhrases = ["hi", "hey", "hello", "yes", "no", "ok", "okay", "sure", "thanks", "thank you", "bye", "goodbye", "cool", "nice", "great", "awesome", "fine", "hello there", "hey there", "good morning", "good afternoon", "good evening", "i want", "i need", "i would", "can i", "how much", "what", "yeah", "yep", "nope", "maybe", "later", "not sure", "i think", "let me", "show me", "do you", "are you", "is it", "will you", "could you"];
       if (looksLikeName && !commonPhrases.includes(lowerMsg) && lowerMsg.length >= 2) {
@@ -213,14 +208,12 @@ export async function POST(req: NextRequest) {
       }
     }
   }
-  
-  // Pattern 3: "Kelvin here" or "Kelvin speaking"
+
   if (!extractedName) {
     const nameMatch3 = msg.match(/^([a-z][a-z]{1,20})\s+(?:here|speaking)/i);
     if (nameMatch3?.[1]) extractedName = nameMatch3[1].trim();
   }
 
-  // Capitalize the first letter of each word
   if (extractedName) {
     extractedName = extractedName.split(" ").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
   }
@@ -288,24 +281,26 @@ async function backgroundPersist(opts: {
           ? await db.conversation.findFirst({ where: { businessId, externalId: sessionId, channel: "WEB", status: "OPEN" } })
           : null;
 
-        const nameToSave = customerName || extractedName || null;
-
         if (!conversation) {
-          // Create new conversation WITH the name if we have it
+          // Count how many conversations were created TODAY to determine the customer number
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+          const todayCount = await db.conversation.count({
+            where: { businessId, channel: "WEB", createdAt: { gte: startOfToday } },
+          });
+          const customerNumber = todayCount + 1;
+          const ordinal = customerNumber === 1 ? "1st" : customerNumber === 2 ? "2nd" : customerNumber === 3 ? "3rd" : `${customerNumber}th`;
+          const conversationTitle = `${ordinal} Customer`;
+
           conversation = await db.conversation.create({
             data: {
               businessId, channel: "WEB", externalId: sessionId,
-              customerName: nameToSave,
+              customerName: conversationTitle,
               customerPhone: customerPhone || null,
               status: "OPEN",
             },
           });
-        } else if (nameToSave && conversation.customerName !== nameToSave) {
-          // UPDATE the conversation with the name (in case it was null before or the name changed)
-          conversation = await db.conversation.update({
-            where: { id: conversation.id },
-            data: { customerName: nameToSave, customerPhone: customerPhone || conversation.customerPhone || null },
-          });
+          console.log(`[store chat bg] new conversation: ${conversationTitle}`);
         }
 
         // Save the customer message
