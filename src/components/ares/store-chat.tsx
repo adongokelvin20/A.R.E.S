@@ -21,7 +21,8 @@ interface StoreChatProps {
   businessName: string;
   agentName: string;
   products: Product[];
-  initialOpen?: boolean;
+  externalOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 interface Msg {
@@ -56,7 +57,7 @@ function sym(cur: string) {
   return CURRENCY_SYMBOL[cur] ?? cur + " ";
 }
 
-export function StoreChat({ slug, businessName, agentName, products, initialOpen = false }: StoreChatProps) {
+export function StoreChat({ slug, businessName, agentName, products, externalOpen, onOpenChange }: StoreChatProps) {
   // Initial greeting — lazy initializer so we don't setState in an effect
   const [messages, setMessages] = useState<Msg[]>(() => [
     {
@@ -67,7 +68,18 @@ export function StoreChat({ slug, businessName, agentName, products, initialOpen
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(initialOpen);
+  const [open, setOpen] = useState(false);
+
+  // Sync with external open state (from the "Chat with agent" button)
+  useEffect(() => {
+    if (externalOpen) handleSetOpen(true);
+  }, [externalOpen]);
+
+  // Notify parent when open state changes
+  const handleSetOpen = (val: boolean) => {
+    setOpen(val);
+    onOpenChange?.(val);
+  };
   const [sessionId] = useState(getOrCreateSessionId);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -137,7 +149,7 @@ export function StoreChat({ slug, businessName, agentName, products, initialOpen
     function handleProductClick(e: Event) {
       const detail = (e as CustomEvent).detail;
       if (detail?.productName) {
-        setOpen(true);
+        handleSetOpen(true);
         setTimeout(() => {
           send(`I'm interested in the ${detail.productName}. Can you tell me more about it?`);
         }, 300);
@@ -152,7 +164,7 @@ export function StoreChat({ slug, businessName, agentName, products, initialOpen
       {/* Floating chat bubble (WhatsApp green) */}
       {!open && (
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => handleSetOpen(true)}
           className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-emerald-600/30 transition-transform hover:scale-105"
           aria-label="Chat with us"
         >
@@ -172,7 +184,7 @@ export function StoreChat({ slug, businessName, agentName, products, initialOpen
             {/* Header — WhatsApp green */}
             <div className="flex items-center gap-3 bg-[#075E54] px-4 py-2.5 text-white">
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => handleSetOpen(false)}
                 className="rounded-lg p-1.5 text-white/80 hover:bg-white/10 sm:hidden"
                 aria-label="Close"
               >
@@ -191,7 +203,7 @@ export function StoreChat({ slug, businessName, agentName, products, initialOpen
               <button className="rounded-lg p-1.5 text-white/80 hover:bg-white/10" aria-label="Call">
                 <Phone className="h-4 w-4" />
               </button>
-              <button onClick={() => setOpen(false)} className="hidden rounded-lg p-1.5 text-white/80 hover:bg-white/10 sm:block" aria-label="Close">
+              <button onClick={() => handleSetOpen(false)} className="hidden rounded-lg p-1.5 text-white/80 hover:bg-white/10 sm:block" aria-label="Close">
                 <X className="h-4 w-4" />
               </button>
             </div>

@@ -277,7 +277,8 @@ export function StorePageClient({ slug }: { slug: string }) {
         businessName={business.name}
         agentName={business.agentName || business.name}
         products={products}
-        initialOpen={chatOpen}
+        externalOpen={chatOpen}
+        onOpenChange={setChatOpen}
       />
     </main>
   );
