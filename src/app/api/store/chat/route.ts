@@ -190,27 +190,39 @@ export async function POST(req: NextRequest) {
 
   // Name extraction — try multiple patterns to catch the customer's name
   let extractedName: string | null = null;
+  const msg = message.trim();
   
-  // Pattern 1: "my name is X", "I'm X", "this is X", "call me X", "it's X", "I am X"
-  const nameMatch1 = message.match(/(?:my name is|i'm|i am|this is|it's|call me|name's|the name is)\s+([a-z][a-z\s'-]{1,30})/i);
+  // Pattern 1: "my name is X", "I'm X", "this is X", "call me X", "it's X", "I am X", "name's X"
+  const nameMatch1 = msg.match(/(?:my name is|i'm|i am|this is|it's|call me|name's|the name is|its|im)\s+([a-z][a-z\s'-]{1,30})/i);
   if (nameMatch1?.[1]) {
     extractedName = nameMatch1[1].trim().split(/\s+/).slice(0, 2).join(" ");
   }
   
   // Pattern 2: If the message is VERY short (1-3 words) and looks like a name
-  // (e.g., the agent asked "What's your name?" and the customer just says "Kelvin" or "I'm Akosua")
+  // This catches: "Kelvin", "Akosua Mensah", "kelvin", "KELVIN"
   if (!extractedName) {
-    const words = message.trim().split(/\s+/);
-    if (words.length <= 3 && /^[a-z][a-z\s'-]{1,30}$/i.test(message.trim())) {
-      // Looks like just a name — "Kelvin" or "Akosua Mensah"
-      extractedName = message.trim().split(/\s+/).slice(0, 2).join(" ");
+    const words = msg.split(/\s+/);
+    if (words.length <= 3 && words.length >= 1) {
+      // Check if every word looks like a name (letters, hyphens, apostrophes only)
+      const looksLikeName = words.every((w: string) => /^[a-z][a-z'-]{0,20}$/i.test(w.replace(/[.,!?]/g, "")));
+      // Make sure it's not a common phrase
+      const lowerMsg = msg.toLowerCase().replace(/[.,!?]/g, "").trim();
+      const commonPhrases = ["hi", "hey", "hello", "yes", "no", "ok", "okay", "sure", "thanks", "thank you", "bye", "goodbye", "cool", "nice", "great", "awesome", "fine", "hello there", "hey there", "good morning", "good afternoon", "good evening", "i want", "i need", "i would", "can i", "how much", "what", "yeah", "yep", "nope", "maybe", "later", "not sure", "i think", "let me", "show me", "do you", "are you", "is it", "will you", "could you"];
+      if (looksLikeName && !commonPhrases.includes(lowerMsg) && lowerMsg.length >= 2) {
+        extractedName = msg.replace(/[.,!?]/g, "").trim().split(/\s+/).slice(0, 2).join(" ");
+      }
     }
   }
   
-  // Pattern 3: "it's Kelvin" or "Kelvin here" 
+  // Pattern 3: "Kelvin here" or "Kelvin speaking"
   if (!extractedName) {
-    const nameMatch3 = message.match(/^([a-z][a-z]{1,20})\s+(?:here|speaking)/i);
+    const nameMatch3 = msg.match(/^([a-z][a-z]{1,20})\s+(?:here|speaking)/i);
     if (nameMatch3?.[1]) extractedName = nameMatch3[1].trim();
+  }
+
+  // Capitalize the first letter of each word
+  if (extractedName) {
+    extractedName = extractedName.split(" ").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
   }
 
   // Image lookup — only attach images for products ACTUALLY mentioned by full name
