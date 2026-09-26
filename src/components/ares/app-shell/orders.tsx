@@ -63,6 +63,9 @@ export function AresOrders({ data, onChanged }: { data: any; onChanged: () => vo
 
   useEffect(() => {
     loadOrders();
+    // Auto-refresh orders every 10 seconds so new orders appear without manual refresh
+    const interval = setInterval(loadOrders, 10 * 1000);
+    return () => clearInterval(interval);
   }, [loadOrders]);
 
   async function updateStatus(id: string, status: string) {

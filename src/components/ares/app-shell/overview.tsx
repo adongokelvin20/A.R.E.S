@@ -79,8 +79,8 @@ export function AresOverview({
                 <button onClick={() => onNavigate("products")} className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25">
                   Add a product →
                 </button>
-                <button onClick={() => onNavigate("integrations")} className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25">
-                  Connect WhatsApp →
+                <button onClick={() => onNavigate("orders")} className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25">
+                  View orders →
                 </button>
                 <button onClick={() => onNavigate("ai")} className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25">
                   Talk to {agentName} →

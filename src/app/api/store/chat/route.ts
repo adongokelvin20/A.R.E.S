@@ -188,10 +188,30 @@ export async function POST(req: NextRequest) {
     reply = reply.replace(/ORDER_UPDATED:?\s*\{[\s\S]*\}/gi, "").trim();
   }
 
-  // Name extraction (synchronous)
-  const nameMatch = message.match(/(?:my name is|i'm|i am|this is|it's|call me)\s+([a-z][a-z\s'-]{1,30})/i);
+  // Name extraction — try multiple patterns to catch the customer's name
   let extractedName: string | null = null;
-  if (nameMatch?.[1]) extractedName = nameMatch[1].trim().split(/\s+/).slice(0, 2).join(" ");
+  
+  // Pattern 1: "my name is X", "I'm X", "this is X", "call me X", "it's X", "I am X"
+  const nameMatch1 = message.match(/(?:my name is|i'm|i am|this is|it's|call me|name's|the name is)\s+([a-z][a-z\s'-]{1,30})/i);
+  if (nameMatch1?.[1]) {
+    extractedName = nameMatch1[1].trim().split(/\s+/).slice(0, 2).join(" ");
+  }
+  
+  // Pattern 2: If the message is VERY short (1-3 words) and looks like a name
+  // (e.g., the agent asked "What's your name?" and the customer just says "Kelvin" or "I'm Akosua")
+  if (!extractedName) {
+    const words = message.trim().split(/\s+/);
+    if (words.length <= 3 && /^[a-z][a-z\s'-]{1,30}$/i.test(message.trim())) {
+      // Looks like just a name — "Kelvin" or "Akosua Mensah"
+      extractedName = message.trim().split(/\s+/).slice(0, 2).join(" ");
+    }
+  }
+  
+  // Pattern 3: "it's Kelvin" or "Kelvin here" 
+  if (!extractedName) {
+    const nameMatch3 = message.match(/^([a-z][a-z]{1,20})\s+(?:here|speaking)/i);
+    if (nameMatch3?.[1]) extractedName = nameMatch3[1].trim();
+  }
 
   // Image lookup — only attach images for products ACTUALLY mentioned by full name
   const mentionedImages: any[] = [];
@@ -256,26 +276,35 @@ async function backgroundPersist(opts: {
           ? await db.conversation.findFirst({ where: { businessId, externalId: sessionId, channel: "WEB", status: "OPEN" } })
           : null;
 
+        const nameToSave = customerName || extractedName || null;
+
         if (!conversation) {
+          // Create new conversation WITH the name if we have it
           conversation = await db.conversation.create({
             data: {
               businessId, channel: "WEB", externalId: sessionId,
-              customerName: customerName || null, customerPhone: customerPhone || null,
+              customerName: nameToSave,
+              customerPhone: customerPhone || null,
               status: "OPEN",
             },
           });
-        } else if ((customerName || customerPhone) && (!conversation.customerName || !conversation.customerPhone)) {
+        } else if (nameToSave && conversation.customerName !== nameToSave) {
+          // UPDATE the conversation with the name (in case it was null before or the name changed)
           conversation = await db.conversation.update({
             where: { id: conversation.id },
-            data: { customerName: customerName || conversation.customerName || null, customerPhone: customerPhone || conversation.customerPhone || null },
+            data: { customerName: nameToSave, customerPhone: customerPhone || conversation.customerPhone || null },
           });
         }
 
+        // Save the customer message
         await db.message.create({ data: { conversationId: conversation.id, role: "CUSTOMER", content: message } });
+        // Save the AI reply
         await db.message.create({
           data: { conversationId: conversation.id, role: "AI", content: reply, metadata: JSON.stringify({ agentName, images: mentionedImages }) },
         });
         await db.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date() } });
+        
+        console.log(`[store chat bg] conversation saved: ${conversation.id}, customerName: ${nameToSave}`);
       } catch (e) {
         console.error("[store chat bg] conversation persist failed:", e);
       }

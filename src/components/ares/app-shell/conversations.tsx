@@ -79,7 +79,12 @@ export function AresConversations({ data }: { data: any }) {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    // Auto-refresh conversations every 15 seconds
+    const interval = setInterval(load, 15 * 1000);
+    return () => clearInterval(interval);
+  }, [load]);
 
   // Auto-scroll thread to bottom on new messages
   useEffect(() => {
