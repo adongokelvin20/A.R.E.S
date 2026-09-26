@@ -19,6 +19,8 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
   const [plan, setPlan] = useState<"ANNUAL" | "MONTHLY">("ANNUAL");
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
+  const [isKratos, setIsKratos] = useState(false);
+  const [isKelvin, setIsKelvin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [subStatus, setSubStatus] = useState<SubStatus | null>(null);
 
@@ -31,14 +33,19 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
 
   function applyPromo() {
     if (!promoCode.trim()) return;
-    if (promoCode.trim().toLowerCase() === "kelvin") {
+    const code = promoCode.trim().toLowerCase();
+    if (code === "kelvin") {
       setPromoApplied(true);
+      setIsKelvin(true);
+      setIsKratos(false);
       setPlan("ANNUAL");
-      toast({ title: "Promo applied!", description: "You get the annual plan for GHC 600/year." });
-    } else if (promoCode.trim().toLowerCase() === "kratos") {
+      toast({ title: "Promo applied!", description: "Annual plan for GHC 600/year." });
+    } else if (code === "kratos") {
       setPromoApplied(true);
+      setIsKratos(true);
+      setIsKelvin(false);
       setPlan("ANNUAL");
-      toast({ title: "Promo applied!", description: "Free annual plan activated!" });
+      toast({ title: "Free plan applied!", description: "Free annual plan — no payment needed!" });
     } else {
       toast({ title: "Invalid promo code", variant: "destructive" });
     }
@@ -50,15 +57,15 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
       const res = await fetch("/api/subscription/initiate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, promoCode: promoApplied ? promoCode : undefined }),
+        body: JSON.stringify({ plan, promoCode: promoApplied ? promoCode.trim() : undefined }),
       });
       const data = await res.json();
 
-      // Free promo (kratos) — activated immediately
+      // Free promo (kratos) or successful activation
       if (data.free || data.ok) {
         toast({ title: "Activated!", description: "Your plan is now active. Loading your dashboard..." });
-        // Wait 2 seconds for the DB write to complete, then redirect to /
-        // which re-runs the server-side subscription check
+        setLoading(false);
+        // Wait 2 seconds for the DB write to complete, then redirect
         setTimeout(() => {
           window.location.href = "/";
         }, 2000);
@@ -80,13 +87,21 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
     }
   }
 
-  const annualPrice = promoApplied ? "GHC 600" : "GHC 1,300";
-  const monthlyPrice = "GHC 115";
+  // Determine button text
+  let buttonText = "Pay & activate";
+  if (loading) buttonText = "Processing...";
+  else if (isKratos) buttonText = "Activate free plan";
+  else if (isKelvin) buttonText = "Pay GHC 600 & activate";
+  else if (plan === "ANNUAL") buttonText = "Pay GHC 1,300 & activate";
+  else buttonText = "Pay GHC 115 & activate";
+
+  // Determine price display
+  const annualDisplay = isKratos ? "FREE" : isKelvin ? "GHC 600" : "GHC 1,300";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ares-navy/50 p-4 backdrop-blur-sm overflow-y-auto">
       <div className="w-full max-w-lg my-8 rounded-3xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
-        {/* Header — fixed at top */}
+        {/* Header */}
         <div className="flex items-center justify-between bg-gradient-to-br from-ares-navy to-ares-sea-deep p-5 text-white rounded-t-3xl shrink-0">
           <div className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-amber-400" />
@@ -107,29 +122,29 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
             </div>
           )}
 
-          {/* Plan toggle */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Plan toggle — disabled when kratos is applied */}
+          <div className={`grid grid-cols-2 gap-3 ${isKratos ? "opacity-50 pointer-events-none" : ""}`}>
             <button
-              onClick={() => { setPlan("ANNUAL"); setPromoApplied(false); setPromoCode(""); }}
+              onClick={() => { setPlan("ANNUAL"); setPromoApplied(false); setIsKratos(false); setIsKelvin(false); setPromoCode(""); }}
               className={`rounded-2xl border-2 p-4 text-left transition-all ${plan === "ANNUAL" ? "border-ares-sea bg-ares-foam/30" : "border-ares-line"}`}
             >
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 text-ares-sea-deep" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-ares-sea-deep">Annual</span>
               </div>
-              <div className="mt-2 font-mono text-2xl font-bold text-ares-navy">{annualPrice}</div>
-              <div className="text-[11px] text-muted-foreground">per year</div>
+              <div className="mt-2 font-mono text-2xl font-bold text-ares-navy">{annualDisplay}</div>
+              <div className="text-[11px] text-muted-foreground">{isKratos ? "free for 1 year" : "per year"}</div>
             </button>
 
             <button
-              onClick={() => { setPlan("MONTHLY"); setPromoApplied(false); setPromoCode(""); }}
+              onClick={() => { setPlan("MONTHLY"); setPromoApplied(false); setIsKratos(false); setIsKelvin(false); setPromoCode(""); }}
               className={`rounded-2xl border-2 p-4 text-left transition-all ${plan === "MONTHLY" && !promoApplied ? "border-ares-sea bg-ares-foam/30" : "border-ares-line"}`}
             >
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 text-ares-sea-deep" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-ares-sea-deep">Monthly</span>
               </div>
-              <div className="mt-2 font-mono text-2xl font-bold text-ares-navy">{monthlyPrice}</div>
+              <div className="mt-2 font-mono text-2xl font-bold text-ares-navy">GHC 115</div>
               <div className="text-[11px] text-muted-foreground">per month</div>
             </button>
           </div>
@@ -140,7 +155,7 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
             <div className="flex gap-2">
               <input
                 value={promoCode}
-                onChange={(e) => { setPromoCode(e.target.value); setPromoApplied(false); }}
+                onChange={(e) => { setPromoCode(e.target.value); setPromoApplied(false); setIsKratos(false); setIsKelvin(false); }}
                 placeholder=""
                 className="flex-1 rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
               />
@@ -153,7 +168,9 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
               </button>
             </div>
             {promoApplied && (
-              <p className="mt-1 text-[11px] text-emerald-600">Promo "{promoCode}" applied — {promoCode.trim().toLowerCase() === "kratos" ? "Free plan!" : "GHC 600/year!"}</p>
+              <p className="mt-1 text-[11px] text-emerald-600">
+                {isKratos ? "Free annual plan applied — no payment needed!" : "Promo applied — GHC 600/year!"}
+              </p>
             )}
           </div>
 
@@ -176,18 +193,20 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
             </ul>
           </div>
 
-          {/* Pay button */}
+          {/* Activate/Pay button */}
           <button
             onClick={pay}
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-ares-navy px-4 py-3 text-sm font-semibold text-white hover:bg-ares-sea-deep disabled:opacity-60"
+            className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-60 ${
+              isKratos ? "bg-emerald-600 hover:bg-emerald-700" : "bg-ares-navy hover:bg-ares-sea-deep"
+            }`}
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />}
-            {loading ? "Redirecting to payment..." : `Pay ${plan === "ANNUAL" ? (promoApplied ? "GHC 600" : "GHC 1,300") : "GHC 115"} & activate`}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : isKratos ? <Check className="h-4 w-4" /> : <Crown className="h-4 w-4" />}
+            {buttonText}
           </button>
 
           <p className="text-center text-[10px] text-muted-foreground">
-            Secure payment via Paystack · Mobile Money accepted
+            {isKratos ? "Free plan — no payment required" : "Secure payment via Paystack · Mobile Money accepted"}
           </p>
 
           {/* Log out button */}
