@@ -11,6 +11,7 @@ interface Group {
   conversationIds: string[];
   totalMessages: number;
   lastActivity: string;
+  lastMessage?: string | null;
 }
 
 interface Message {
@@ -210,7 +211,7 @@ export function AresConversations({ data }: { data: any }) {
                   </div>
                   {dayGroup.items.map((g) => {
                     const isActive = selectedGroup?.key === g.key;
-                    const lastMsg = g.totalMessages > 0 ? `${g.totalMessages} message${g.totalMessages === 1 ? "" : "s"}` : "No messages";
+                    const lastMsg = g.lastMessage ? g.lastMessage.slice(0, 40) : (g.totalMessages > 0 ? `${g.totalMessages} message${g.totalMessages === 1 ? "" : "s"}` : "No messages yet");
                     const displayName = g.customerName && g.customerName !== "Unknown customer" ? g.customerName : (g.customerPhone || "Unknown");
                     return (
                       <button
