@@ -980,3 +980,24 @@ Work Log:
 
 Stage Summary:
 - Chat button works. Agent confirms product want before sizes. Full system sweep: everything working. Pushed to Vercel.
+
+---
+Task ID: ares-v43
+Agent: Super Z (main)
+Task: Conversations grouped by customer name + daily headers + Car Sales & Dealership + chat button fix + confirm product first + full system check.
+
+Work Log:
+- CONVERSATIONS BY CUSTOMER NAME: the conversation list now shows the customer's NAME as the title (bold). If the name is "Unknown customer", it falls back to phone or "Unknown". The name is the primary identifier.
+- DAILY HEADERS in conversations: same bold navy headers as the orders page — "Saturday, Mar 8" etc. Conversations are grouped by the day they were last active.
+- CAR SALES & DEALERSHIP: updated the existing "Car Dealership" subtype to "Car Sales & Dealership" with enhanced details:
+  - Description: "Vehicle sales, financing, trade-ins, test drives"
+  - Product fields: Make, Year, Mileage, Condition
+  - System prompt: knowledgeable about vehicles, financing, trade-ins, test drives
+  - Default knowledge: financing and trade-in Q&A
+- CHAT BUTTON FIX: the "Chat with agent" button now uses externalOpen + onOpenChange pattern so it properly opens the chat panel when clicked.
+- CONFIRM PRODUCT FIRST: the order flow now requires the agent to confirm the customer wants the product ("Would you like to order the [product]?") BEFORE asking about sizes/colors/quantity.
+- Full system check: all routes, imports, components verified. Lint clean (1 immutability warning on useRef).
+- Pushed to GitHub (9bf4c09).
+
+Stage Summary:
+- Conversations show customer names as titles with daily headers. Car Sales & Dealership added. Chat button works. Agent confirms product before details. Pushed to Vercel.
