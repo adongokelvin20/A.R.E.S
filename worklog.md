@@ -1001,3 +1001,35 @@ Work Log:
 
 Stage Summary:
 - Conversations show customer names as titles with daily headers. Car Sales & Dealership added. Chat button works. Agent confirms product before details. Pushed to Vercel.
+
+---
+Task ID: ares-v44
+Agent: Super Z (main)
+Task: Ask my AI = data analyst + gender dropdown for retail + remove promo code hints + smarter agent + conversation fix.
+
+Work Log:
+- "ASK MY AI" IS NOW A DATA ANALYST:
+  - Updated /api/ares/chat to accept mode="analyst" parameter
+  - When mode is analyst, uses a completely different system prompt focused on business analysis
+  - The analyst prompt includes: today's revenue, total revenue, pending orders, total orders, fulfilled orders, total products, low stock items, total customers, top products by revenue, orders by channel, low stock alerts, catalog, learned facts
+  - Role: "You are a BUSINESS ANALYST and ADVISOR for the owner. NOT a customer service agent."
+  - Gives actionable insights, suggests strategies, references dashboard charts, proactively suggests improvements
+  - Updated the AI chat component: new header says "Business Analyst" with a chart icon, suggestions are now "How's my business doing today?", "What products should I restock?", "Which products are my bestsellers?", "Any suggestions to improve sales?"
+  - Greeting: "Hi {owner} — I'm {agentName}, your business analyst. I can see your live data..."
+
+- GENDER DROPDOWN FOR RETAIL:
+  - When the business is in the RETAIL sector or is a CLOTHING_STORE, the product category field is now a dropdown with: Male, Female, General, Kids, Accessories
+  - For non-retail businesses, the category remains a free text input
+
+- PROMO CODES HIDDEN:
+  - Changed "Promo code (optional)" label to "Code (optional)" — no mention of "promo"
+  - Removed all placeholders (was empty already, confirmed)
+  - When a code is applied, shows "Code applied!" instead of revealing which code it is or the discount
+  - No hints about code names anywhere on the system
+
+- CONVERSATIONS: "1st Customer", "2nd Customer" naming with daily reset (from previous commit)
+
+- Lint clean. Pushed to GitHub (6ed30a5).
+
+Stage Summary:
+- "Ask my AI" is now a business data analyst with live data access. Retail products have gender dropdown. Promo codes are completely hidden — just "Code (optional)" with no hints. Pushed to Vercel.
