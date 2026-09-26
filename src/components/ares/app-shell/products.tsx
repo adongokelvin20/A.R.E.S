@@ -52,8 +52,10 @@ function ProductImage({ src, alt, name }: { src: string; alt: string; name: stri
 }
 
 export function AresProducts({ data, onChanged }: { data: any; onChanged: () => void }) {
-  const products: Product[] = data.products ?? [];
-  const productFields: ProductField[] = data.business.productFields ?? [];
+  const products: Product[] = data?.products ?? [];
+  const productFields: ProductField[] = data?.business?.productFields ?? [];
+  const sectorCategory = data?.business?.sectorCategory ?? "";
+  const sectorSubtype = data?.business?.sectorSubtype ?? "";
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState("");
@@ -107,7 +109,7 @@ export function AresProducts({ data, onChanged }: { data: any; onChanged: () => 
           <Package className="mx-auto h-10 w-10 text-muted-foreground" />
           <h3 className="mt-3 text-sm font-semibold text-ares-navy">Your catalog is empty</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Add products with images. {data.business.agentName} will analyze each image so it can recognize products when customers describe them.
+            Add products with images. {data?.business?.agentName ?? "The assistant"} will analyze each image so it can recognize products when customers describe them.
           </p>
           <button onClick={() => setShowForm(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-4 py-2 text-xs font-semibold text-white hover:bg-ares-sea-deep">
             <Plus className="h-3.5 w-3.5" /> Add your first product
@@ -169,7 +171,7 @@ export function AresProducts({ data, onChanged }: { data: any; onChanged: () => 
 
       {showForm && (
         <ProductForm
-          agentName={data.business.agentName}
+          agentName={data?.business?.agentName ?? "Assistant"}
           productFields={productFields}
           editingProduct={editingProduct}
           onClose={() => { setShowForm(false); setEditingProduct(null); }}
@@ -310,7 +312,7 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ares-navy">Category</label>
-              {(data.business.sectorCategory === "RETAIL" || data.business.sectorSubtype === "CLOTHING_STORE") ? (
+              {(sectorCategory === "RETAIL" || sectorSubtype === "CLOTHING_STORE") ? (
                 <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none">
                   <option value="">Select category</option>
                   <option value="Male">Male</option>

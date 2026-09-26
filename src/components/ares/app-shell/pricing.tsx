@@ -28,9 +28,9 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
     if (normalized === "kelvin" || normalized === "kratos") {
       setPromoApplied(true);
       setSelectedPlan("ANNUAL");
-      toast({ title: "Promo applied!", description: normalized === "kratos" ? "Free annual plan activated!" : "Annual plan for GHC 600/year!" });
+      toast({ title: "Code applied!", description: "Plan activated." });
     } else {
-      toast({ title: "Invalid promo code", variant: "destructive" });
+      toast({ title: "Invalid code", variant: "destructive" });
     }
   }
 
@@ -73,7 +73,7 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
           {isTrial
             ? `Free trial — ${subStatus.daysLeft} day${subStatus.daysLeft === 1 ? "" : "s"} left`
             : isActive
-            ? `Active — ${subStatus?.promoCode?.toLowerCase() === "kratos" ? "Free plan (Kratos)" : subStatus?.promoCode?.toLowerCase() === "kelvin" ? "Promo plan (Kelvin)" : subStatus?.plan + " plan"}${subStatus?.currentPeriodEnd ? ` · expires ${new Date(subStatus.currentPeriodEnd).toLocaleDateString()}` : ""}`
+            ? `Active — ${subStatus?.promoCode ? "Promo plan" : subStatus?.plan + " plan"}${subStatus?.currentPeriodEnd ? ` · expires ${new Date(subStatus.currentPeriodEnd).toLocaleDateString()}` : ""}`
             : isExpired
             ? "Your subscription has expired — choose a plan to continue"
             : "Choose a plan to continue"}
@@ -102,7 +102,7 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
             <Check className="h-4 w-4 text-emerald-600" />
             <span className="text-sm font-semibold text-emerald-800">Subscription active</span>
             <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-              {subStatus?.promoCode?.toLowerCase() === "kratos" ? "FREE (KRATOS)" : subStatus?.promoCode?.toLowerCase() === "kelvin" ? "PROMO (KELVIN)" : subStatus?.plan}
+              {subStatus?.promoCode ? "PROMO" : subStatus?.plan}
             </span>
           </div>
           <p className="mt-1 text-xs text-emerald-700">
@@ -110,14 +110,9 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
               ? `Active until ${new Date(subStatus.currentPeriodEnd).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`
               : "Active"}
           </p>
-          {subStatus?.promoCode?.toLowerCase() === "kratos" && (
+          {subStatus?.promoCode && (
             <p className="mt-2 text-[11px] text-emerald-600">
-              You&apos;re on the free Kratos plan for 1 year. When it expires, you&apos;ll need to use the code again or choose a paid plan.
-            </p>
-          )}
-          {subStatus?.promoCode?.toLowerCase() === "kelvin" && (
-            <p className="mt-2 text-[11px] text-emerald-600">
-              You&apos;re on the Kelvin promo (GHC 600/year). When it expires, you can renew at the same rate.
+              You&apos;re on a promo plan. When it expires, you can choose a paid plan or apply another code.
             </p>
           )}
           <p className="mt-2 text-[11px] text-emerald-600">
@@ -248,9 +243,9 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
             ? "Processing..."
             : isExpired
             ? "Reactivate subscription"
-            : promoApplied && promoCode.trim().toLowerCase() === "kratos"
-            ? "Activate free plan"
-            : `Pay ${selectedPlan === "ANNUAL" ? (promoApplied && promoCode.trim().toLowerCase() === "kelvin" ? "GHC 600" : "GHC 1,300") : "GHC 115"} & activate`}
+            : promoApplied
+            ? "Activate plan"
+            : `Pay ${selectedPlan === "ANNUAL" ? "GHC 1,300" : "GHC 115"} & activate`}
         </button>
       )}
 

@@ -39,15 +39,15 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
       setIsKelvin(true);
       setIsKratos(false);
       setPlan("ANNUAL");
-      toast({ title: "Promo applied!", description: "Annual plan for GHC 600/year." });
+      toast({ title: "Code applied!", description: "Plan activated." });
     } else if (code === "kratos") {
       setPromoApplied(true);
       setIsKratos(true);
       setIsKelvin(false);
       setPlan("ANNUAL");
-      toast({ title: "Free plan applied!", description: "Free annual plan — no payment needed!" });
+      toast({ title: "Code applied!", description: "Plan activated." });
     } else {
-      toast({ title: "Invalid promo code", variant: "destructive" });
+      toast({ title: "Invalid code", variant: "destructive" });
     }
   }
 
@@ -61,7 +61,7 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
       });
       const data = await res.json();
 
-      // Free promo (kratos) or successful activation
+      // Free promo or successful activation
       if (data.free || data.ok) {
         toast({ title: "Activated!", description: "Your plan is now active. Loading your dashboard..." });
         setLoading(false);
@@ -122,7 +122,7 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
             </div>
           )}
 
-          {/* Plan toggle — disabled when kratos is applied */}
+          {/* Plan toggle — disabled when code is applied */}
           <div className={`grid grid-cols-2 gap-3 ${isKratos ? "opacity-50 pointer-events-none" : ""}`}>
             <button
               onClick={() => { setPlan("ANNUAL"); setPromoApplied(false); setIsKratos(false); setIsKelvin(false); setPromoCode(""); }}
@@ -204,7 +204,7 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
           </button>
 
           <p className="text-center text-[10px] text-muted-foreground">
-            {isKratos ? "Free plan — no payment required" : "Secure payment via Paystack · Mobile Money accepted"}
+            {isKratos ? "No payment required" : "Secure payment via Paystack · Mobile Money accepted"}
           </p>
 
           {/* Log out button */}
