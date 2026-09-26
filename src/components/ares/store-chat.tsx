@@ -21,6 +21,7 @@ interface StoreChatProps {
   businessName: string;
   agentName: string;
   products: Product[];
+  initialOpen?: boolean;
 }
 
 interface Msg {
@@ -55,7 +56,7 @@ function sym(cur: string) {
   return CURRENCY_SYMBOL[cur] ?? cur + " ";
 }
 
-export function StoreChat({ slug, businessName, agentName, products }: StoreChatProps) {
+export function StoreChat({ slug, businessName, agentName, products, initialOpen = false }: StoreChatProps) {
   // Initial greeting — lazy initializer so we don't setState in an effect
   const [messages, setMessages] = useState<Msg[]>(() => [
     {
@@ -66,7 +67,7 @@ export function StoreChat({ slug, businessName, agentName, products }: StoreChat
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [sessionId] = useState(getOrCreateSessionId);
   const scrollRef = useRef<HTMLDivElement>(null);
 

@@ -20,6 +20,7 @@ export function StorePageClient({ slug }: { slug: string }) {
   const [locked, setLocked] = useState(false);
   const [business, setBusiness] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [chatOpen, setChatOpen] = useState(false);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
@@ -177,10 +178,13 @@ export function StorePageClient({ slug }: { slug: string }) {
             </p>
           )}
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <div className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-sm">
+            <button
+              onClick={() => setChatOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-transform hover:scale-105"
+            >
               <MessageCircle className="h-4 w-4" />
               Chat with {business.agentName || "us"}
-            </div>
+            </button>
             {products.length > 0 && (
               <a href="#products" className="inline-flex items-center gap-2 rounded-xl border border-ares-line bg-white px-5 py-3 text-sm font-semibold text-ares-navy hover:bg-ares-mist">
                 <Package className="h-4 w-4" />
@@ -273,6 +277,7 @@ export function StorePageClient({ slug }: { slug: string }) {
         businessName={business.name}
         agentName={business.agentName || business.name}
         products={products}
+        initialOpen={chatOpen}
       />
     </main>
   );

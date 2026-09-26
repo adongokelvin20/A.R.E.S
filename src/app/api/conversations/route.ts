@@ -75,12 +75,17 @@ export async function GET(req: NextRequest) {
   }>();
 
   for (const c of conversations) {
-    const key = c.customerPhone || c.customerName || c.id;
+    // Group by customerName first (that's what the owner sees), then externalId (sessionId), then phone, then id
+    const key = c.customerName || c.externalId || c.customerPhone || c.id;
     const existing = grouped.get(key);
     const msgCount = c.messages.length;
     if (existing) {
       existing.conversationIds.push(c.id);
       existing.totalMessages += msgCount;
+      // Update the name if we find it on a later conversation
+      if (c.customerName && existing.customerName === "Unknown customer") {
+        existing.customerName = c.customerName;
+      }
       if (c.lastMessageAt > existing.lastActivity) {
         existing.lastActivity = c.lastMessageAt;
       }
@@ -97,7 +102,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     groups: Array.from(grouped.values()).map((g) => ({
-      key: g.customerPhone || g.customerName,
+      key: g.customerName !== "Unknown customer" ? g.customerName : g.customerPhone || g.conversationIds[0],
       customerName: g.customerName,
       customerPhone: g.customerPhone,
       conversationCount: g.conversationIds.length,
