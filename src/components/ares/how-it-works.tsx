@@ -10,13 +10,13 @@ const STEPS = [
   },
   {
     num: "02",
-    title: "Add your products and connect WhatsApp",
-    desc: "Upload your catalog with images — the assistant analyzes each one so it can recognize products when customers describe them.",
+    title: "Add your products and share your store link",
+    desc: "Upload your catalog with images — the assistant analyzes each one so it can recognize products when customers describe them. Share your store link anywhere.",
   },
   {
     num: "03",
     title: "Your assistant starts working",
-    desc: "Customers message you on WhatsApp or your store link. Your assistant answers, recommends products, takes orders with delivery details, and remembers every customer.",
+    desc: "Customers visit your store link and chat with your assistant. It answers questions, recommends products, takes orders with delivery details, and remembers every customer.",
   },
 ];
 

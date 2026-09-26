@@ -11,7 +11,7 @@ const PILLARS = [
   {
     icon: MessageSquare,
     title: "Talks to your customers like a real employee",
-    body: "Natural language, warmth when it fits, opinions about your products. It handles WhatsApp chats, takes orders, answers questions, and remembers every customer.",
+    body: "Natural language, warmth when it fits, opinions about your products. It handles customer chats on your store link, takes orders, answers questions, and remembers every customer.",
   },
   {
     icon: Workflow,

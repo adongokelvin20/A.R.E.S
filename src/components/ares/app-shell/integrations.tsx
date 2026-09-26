@@ -15,13 +15,7 @@ const INTEGRATION_META: Record<
     fields?: { key: string; label: string; type: string; placeholder?: string; help?: string }[];
   }
 > = {
-  WHATSAPP_META: {
-    title: "WhatsApp",
-    icon: MessageCircle,
-    color: "bg-emerald-50 text-emerald-600",
-    description:
-      "Connect your WhatsApp Business number in one click via Meta Embedded Signup. No tokens, no IDs, no webhook setup.",
-  },
+  // WhatsApp hidden for now — backend kept, just not shown in the UI
   PAYMENT_PAYSTACK: {
     title: "Paystack",
     icon: CreditCard,

@@ -46,7 +46,7 @@ export function AresHero() {
           </h1>
 
           <p className="ares-fade-up mt-6 max-w-lg text-balance text-base leading-relaxed text-white/70 sm:text-lg" style={{ animationDelay: "240ms" }}>
-            From Kevtech Corporation — A.R.E.S. learns your business, talks to your customers on WhatsApp, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
+            From Kevtech Corporation — A.R.E.S. learns your business, talks to your customers on your store link, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
           </p>
 
           {/* CTAs */}

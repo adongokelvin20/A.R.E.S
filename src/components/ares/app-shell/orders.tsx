@@ -217,13 +217,13 @@ export function AresOrders({ data, onChanged }: { data: any; onChanged: () => vo
         <div className="space-y-5">
           {groupedByDay.map((group) => (
             <div key={group.date}>
-              {/* Day header */}
-              <div className="mb-3 flex items-center gap-3">
-                <div className="h-px flex-1 bg-ares-line" />
-                <span className="rounded-full bg-ares-foam px-3 py-1 text-[11px] font-semibold text-ares-sea-deep">
+              {/* Day header — bold and visual */}
+              <div className="sticky top-0 z-10 mb-4 flex items-center gap-3 bg-ares-mist/95 py-2 backdrop-blur">
+                <div className="h-0.5 flex-1 bg-ares-navy/20" />
+                <span className="rounded-lg bg-ares-navy px-4 py-2 text-sm font-bold text-white shadow-sm">
                   {group.label}
                 </span>
-                <div className="h-px flex-1 bg-ares-line" />
+                <div className="h-0.5 flex-1 bg-ares-navy/20" />
               </div>
               {/* Orders for this day */}
               <div className="space-y-3">
