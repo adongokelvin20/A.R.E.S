@@ -957,3 +957,26 @@ Work Log:
 
 Stage Summary:
 - Customer names are now saved to conversations with improved extraction. WhatsApp removed from overview. Orders and conversations auto-refresh. Store chat works. Pushed to Vercel.
+
+---
+Task ID: ares-v42
+Agent: Super Z (main)
+Task: Fix chat button + confirm product before sizes + full system sweep.
+
+Work Log:
+- FIXED "Chat with agent" button: changed from initialOpen prop (which only reads once) to externalOpen + onOpenChange pattern. The button now properly opens the chat panel when clicked.
+- FIXED order flow: the agent now FIRST confirms the customer actually wants the product ("Would you like to order the [product]?") BEFORE asking about sizes/colors/quantity. Only after they say yes does the agent proceed to details.
+- Customer name extraction: 3 patterns (explicit, short name, "X here") — saves to conversation record which shows in the owner's Conversations tab.
+- Full system sweep verified:
+  - Public site: hero, platform, how-it-works, business types, pricing, footer (no WhatsApp)
+  - Auth: signup, login, onboarding
+  - Dashboard: overview, products, orders (auto-refresh 10s, daily headers, closed at bottom), conversations (auto-refresh 15s, WhatsApp-style), AI chat, automations, integrations (no WhatsApp shown), pricing/plans, archives, audit log, settings
+  - Store page: loads via client component, product grid, clickable products, "Chat with agent" button works, floating chat bubble works
+  - Store chat: AI responds, asks name first, confirms product before details, saves conversations with customer name, takes orders with delivery details, can correct orders
+  - Subscription: 7-day trial, kratos=free, kelvin=GHC600, Paystack payment, server-side lock, store lock
+  - Notifications: browser + toast + sound, polls every 15s
+  - Weekly archives: auto-archive on dashboard load, backfill missed weeks
+- Lint clean (1 warning). Pushed to GitHub (ca7c788).
+
+Stage Summary:
+- Chat button works. Agent confirms product want before sizes. Full system sweep: everything working. Pushed to Vercel.
