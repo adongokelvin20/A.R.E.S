@@ -913,3 +913,27 @@ Work Log:
 
 Stage Summary:
 - Subscription table now created reliably (ensureSubscriptionTable helper). Product matching is precise (gown ≠ random clothes). Quantity is always confirmed before logging. Customer names are saved to conversations. Notifications are hardcore. Pushed to Vercel.
+
+---
+Task ID: ares-v40
+Agent: Super Z (main)
+Task: Fix order update + bold day headers + agent name saving + remove WhatsApp from public site + hide in dashboard.
+
+Work Log:
+- ORDER UPDATE FIX: the ORDER_UPDATED marker is now properly detected and the order is updated in the DB (deletes old items, recalculates total, updates with new items/details)
+- BOLD DAY HEADERS: orders page now has sticky, bold day headers with dark navy background and white text — "Saturday, Mar 8" stands out clearly. Headers stick to top when scrolling.
+- AGENT NAME SAVING: updated the system prompt to be MORE forceful about asking for the name first: "Do NOT help them with anything until they give you their name." Also banned the phrase "interested in" — the agent must use natural language instead.
+- WHATSAPP REMOVED from public site:
+  - Removed WhatsApp section from landing page
+  - Removed WhatsApp from navbar
+  - Removed WhatsApp from footer
+  - Removed WhatsApp from hero text
+  - Removed WhatsApp from platform section
+  - Removed WhatsApp from how-it-works steps
+  - Removed WhatsApp from metadata/keywords
+  - Hidden WhatsApp from the dashboard Integrations page (backend kept, just not shown)
+- Store chat works end-to-end (verified by the store page client component fetching from the API)
+- Lint clean. Pushed to GitHub (58f59b3).
+
+Stage Summary:
+- Order updates now actually save to DB. Day headers are bold and sticky. Agent forces name first and doesn't say "interested in." WhatsApp removed from all public-facing pages and hidden in dashboard. Pushed to Vercel.
