@@ -863,3 +863,28 @@ Work Log:
 
 Stage Summary:
 - Store lock now uses a dedicated status check endpoint (simpler, more reliable). Pricing modal scrolls properly so the log out button is visible. Pushed to Vercel.
+
+---
+Task ID: ares-v38
+Agent: Super Z (main)
+Task: Fix kratos promo not working + remove placeholder + hardcore notifications.
+
+Work Log:
+- FIXED kratos activation: the old code called getOrCreateSubscription() which might return null (DB error). If null, the code skipped the update and returned {ok: true} without actually creating the subscription. Now:
+  1. Try getOrCreateSubscription — if it returns a sub, UPDATE it
+  2. If it returns null, CREATE a new subscription directly with status=ACTIVE
+  3. If create fails (already exists), FIND it and UPDATE it
+  4. If all fails, return an error
+  No matter what, the subscription is properly activated.
+- Removed placeholder text from the promo code input (was "e.g. Kelvin" — now empty).
+- HARDCORE notifications: 
+  1. Always requests permission on mount (shows a toast if denied telling the user to enable)
+  2. Polls every 15 seconds (was 30)
+  3. Shows browser notification with requireInteraction: true (stays until user interacts)
+  4. Shows in-app toast notification (always shows, even if browser notifications denied)
+  5. Plays a sound
+  Triple-layer notification: browser + in-app toast + sound. The owner will never miss an order.
+- Lint clean. Pushed to GitHub (451b632).
+
+Stage Summary:
+- Kratos now properly activates (creates subscription even if getOrCreateSubscription fails). Promo input has no placeholder. Notifications are hardcore: browser + toast + sound, polls every 15s. Pushed to Vercel.
