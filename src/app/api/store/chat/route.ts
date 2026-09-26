@@ -180,12 +180,15 @@ export async function POST(req: NextRequest) {
   let extractedName: string | null = null;
   if (nameMatch?.[1]) extractedName = nameMatch[1].trim().split(/\s+/).slice(0, 2).join(" ");
 
-  // Image lookup — reuse cached products (no DB query!)
+  // Image lookup — only attach images for products ACTUALLY mentioned by full name
   const mentionedImages: any[] = [];
   if (contextProducts.length > 0) {
     const replyLower = reply.toLowerCase();
     for (const p of contextProducts) {
-      if (p.imageUrl && p.name && replyLower.includes(p.name.toLowerCase().split(" ")[0])) {
+      if (!p.imageUrl || !p.name) continue;
+      const fullName = p.name.toLowerCase();
+      // Only attach image if the FULL product name appears in the reply
+      if (replyLower.includes(fullName)) {
         mentionedImages.push({ productId: p.id, name: p.name, imageUrl: p.imageUrl, price: p.price, currency: p.currency });
         if (mentionedImages.length >= 3) break;
       }

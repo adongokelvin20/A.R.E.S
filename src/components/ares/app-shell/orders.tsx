@@ -119,7 +119,30 @@ export function AresOrders({ data, onChanged }: { data: any; onChanged: () => vo
     toast({ title: "Exported", description: `${list.length} orders exported to CSV.` });
   }
 
-  const filtered = list?.filter((o) => filter === "ALL" ? true : o.status === filter) ?? [];
+  // Sort: open orders (PENDING/CONFIRMED) first by date, then closed (FULFILLED/CANCELLED) at bottom
+  const filtered = (list?.filter((o) => filter === "ALL" ? true : o.status === filter) ?? [])
+    .sort((a, b) => {
+      const aClosed = a.status === "FULFILLED" || a.status === "CANCELLED";
+      const bClosed = b.status === "FULFILLED" || b.status === "CANCELLED";
+      if (aClosed && !bClosed) return 1;  // a goes after b
+      if (!aClosed && bClosed) return -1; // a goes before b
+      // Both same open/closed status — sort by date (newest first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+  // Group orders by day with headers
+  const groupedByDay: { label: string; date: string; orders: any[] }[] = [];
+  for (const order of filtered) {
+    const orderDate = new Date(order.createdAt);
+    const dayKey = orderDate.toDateString();
+    const dayLabel = orderDate.toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" });
+    const existing = groupedByDay.find((g) => g.date === dayKey);
+    if (existing) {
+      existing.orders.push(order);
+    } else {
+      groupedByDay.push({ label: dayLabel, date: dayKey, orders: [order] });
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -189,13 +212,25 @@ export function AresOrders({ data, onChanged }: { data: any; onChanged: () => vo
         </div>
       )}
 
-      {/* Orders list */}
+      {/* Orders list — grouped by day with headers */}
       {filtered.length > 0 && (
-        <div className="space-y-3">
-          {filtered.map((o) => {
-            const expanded = expandedId === o.id;
-            return (
-              <div key={o.id} className="rounded-2xl border border-ares-line bg-white overflow-hidden">
+        <div className="space-y-5">
+          {groupedByDay.map((group) => (
+            <div key={group.date}>
+              {/* Day header */}
+              <div className="mb-3 flex items-center gap-3">
+                <div className="h-px flex-1 bg-ares-line" />
+                <span className="rounded-full bg-ares-foam px-3 py-1 text-[11px] font-semibold text-ares-sea-deep">
+                  {group.label}
+                </span>
+                <div className="h-px flex-1 bg-ares-line" />
+              </div>
+              {/* Orders for this day */}
+              <div className="space-y-3">
+                {group.orders.map((o) => {
+                  const expanded = expandedId === o.id;
+                  return (
+                    <div key={o.id} className={`rounded-2xl border bg-white overflow-hidden ${o.status === "FULFILLED" || o.status === "CANCELLED" ? "border-ares-line opacity-75" : "border-ares-line"}`}>
                 <div className="p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -329,6 +364,9 @@ export function AresOrders({ data, onChanged }: { data: any; onChanged: () => vo
               </div>
             );
           })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
