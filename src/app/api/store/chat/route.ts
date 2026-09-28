@@ -117,12 +117,17 @@ export async function POST(req: NextRequest) {
     returningCustomerName = prevConvoResult.value.customerName;
   }
 
-  // Build messages (minimal history — only 4 messages)
+  // If we recognize the customer, inject a STRONG instruction to not ask for name again
+  if (returningCustomerName) {
+    systemPrompt += `\n\nCRITICAL: This is a RETURNING CUSTOMER named ${returningCustomerName}. They are on the same device as before. DO NOT ask for their name — you already know it. Greet them naturally like "Hey ${returningCustomerName}, good to see you again!" Skip the name question entirely in the order flow — just use "${returningCustomerName}" as the customer name when logging the order.`;
+  }
+
+  // Build messages with more history for better memory
   const messages: ChatTurn[] = [
     { role: "system", content: systemPrompt },
     ...(history || [])
       .filter((m) => m && m.role && m.content)
-      .slice(-4)
+      .slice(-10)
       .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
     { role: "user", content: message },
   ];
