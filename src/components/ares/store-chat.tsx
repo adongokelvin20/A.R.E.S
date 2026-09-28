@@ -333,14 +333,36 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    // Convert to base64 and send as a message
                     const reader = new FileReader();
                     reader.onload = async () => {
                       const base64 = reader.result as string;
-                      // Add the image to the chat
+                      // Add the image to the chat immediately
                       setMessages((m) => [...m, { role: "user", content: "📷 Payment screenshot uploaded", images: [{ imageUrl: base64, name: "Payment proof", price: 0, currency: "" }], createdAt: new Date().toISOString() }]);
-                      // Tell the agent about the screenshot
-                      send(`I just uploaded a payment screenshot. Please verify it. My order code should be in the screenshot.`);
+                      // Show "analyzing..." 
+                      setLoading(true);
+                      try {
+                        // Call the verify-payment API
+                        const verifyRes = await fetch("/api/store/verify-payment", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ slug, sessionId, imageBase64: base64 }),
+                        });
+                        const verifyData = await verifyRes.json();
+                        // Show the verification result
+                        setMessages((m) => [...m, {
+                          role: "assistant",
+                          content: verifyData.reason ?? verifyData.error ?? "Verification failed.",
+                          createdAt: new Date().toISOString(),
+                        }]);
+                      } catch {
+                        setMessages((m) => [...m, {
+                          role: "assistant",
+                          content: "I couldn't analyze that screenshot. Please try again or contact the store.",
+                          createdAt: new Date().toISOString(),
+                        }]);
+                      } finally {
+                        setLoading(false);
+                      }
                     };
                     reader.readAsDataURL(file);
                     e.target.value = "";
