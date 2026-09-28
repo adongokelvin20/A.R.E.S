@@ -31,14 +31,14 @@ interface Order {
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-amber-100 text-amber-700",
-  CONFIRMED: "bg-sky-100 text-sky-700",
-  FULFILLED: "bg-emerald-100 text-emerald-700",
+  CONFIRMED: "bg-emerald-100 text-emerald-700",
+  FULFILLED: "bg-ares-foam text-ares-sea-deep",
   CANCELLED: "bg-slate-100 text-slate-500",
 };
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
-  CONFIRMED: "Confirmed",
+  CONFIRMED: "Paid",
   FULFILLED: "Closed",
   CANCELLED: "Cancelled",
 };
@@ -239,6 +239,11 @@ export function AresOrders({ data, onChanged }: { data: any; onChanged: () => vo
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs text-muted-foreground">#{o.id.slice(-6).toUpperCase()}</span>
+                        {o.notes && o.notes.includes("Order code:") && (
+                          <span className="rounded bg-ares-sea/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-ares-sea-deep">
+                            {o.notes.replace("Order code: ", "")}
+                          </span>
+                        )}
                         <span className="font-semibold text-sm text-ares-navy">
                           {o.customerName || "Walk-in customer"}
                         </span>

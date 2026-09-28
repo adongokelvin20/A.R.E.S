@@ -15,17 +15,24 @@ import { db } from "@/lib/db";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.businessId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get("search");
   const orders = await db.order.findMany({
     where: { businessId: session.user.businessId },
     orderBy: { createdAt: "desc" },
     include: { items: true },
     take: 100,
   });
+  // If searching by order code, filter by notes containing the code
+  if (search) {
+    const filtered = orders.filter((o) => (o.notes ?? "").toUpperCase().includes(search.toUpperCase()));
+    return NextResponse.json({ orders: filtered });
+  }
   return NextResponse.json({ orders });
 }
 

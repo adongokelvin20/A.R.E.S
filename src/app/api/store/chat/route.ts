@@ -172,13 +172,12 @@ export async function POST(req: NextRequest) {
     } catch {}
     reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}/gi, "").trim();
     if (orderData?.items?.length > 0) {
-      // Generate the order code for the reply
-      const date = new Date();
-      const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
-      const random = Math.random().toString(36).slice(2, 6).toUpperCase();
-      const orderCode = `ARES-${dateStr}-${random}`;
+      // Generate a short 4-character order code
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let orderCode = "";
+      for (let i = 0; i < 4; i++) orderCode += chars[Math.floor(Math.random() * chars.length)];
       orderData.orderCode = orderCode;
-      reply += `\n\nYour order code is ${orderCode}. Please use this as your payment reference. We'll confirm everything once your payment is received! 🎉`;
+      reply += `\n\nYour order code is **${orderCode}**. Use this as your payment reference. We'll confirm once your payment comes through! 🎉`;
     }
   }
 
@@ -471,11 +470,10 @@ async function createOrderFromChat(businessId: string, customerName: string, dat
     await db.customer.update({ where: { id: customerId }, data: { lifetimeValue: { increment: total } } });
   }
 
-  // Generate a unique order code: ARES-YYYYMMDD-XXXX (random 4 chars)
-  const date = new Date();
-  const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
-  const random = Math.random().toString(36).slice(2, 6).toUpperCase();
-  const orderCode = `ARES-${dateStr}-${random}`;
+  // Generate a short 4-character order code
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let orderCode = "";
+  for (let i = 0; i < 4; i++) orderCode += chars[Math.floor(Math.random() * chars.length)];
 
   return db.order.create({
     data: {

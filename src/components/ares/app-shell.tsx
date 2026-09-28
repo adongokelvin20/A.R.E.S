@@ -14,6 +14,7 @@ import { AresSettings } from "./app-shell/settings";
 import { AresAudit } from "./app-shell/audit";
 import { AresPricing as AresDashboardPricing } from "./app-shell/pricing";
 import { AresArchives } from "./app-shell/archives";
+import { AresOrderLookup } from "./app-shell/order-lookup";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "next-auth/react";
 import { PricingModal } from "./pricing-modal";
@@ -38,6 +39,7 @@ type View =
   | "integrations"
   | "pricing"
   | "archives"
+  | "lookup"
   | "audit"
   | "settings";
 
@@ -50,6 +52,7 @@ const NAV: NavItem[] = [
   { id: "automations", label: "Automations", icon: "workflow" },
   { id: "integrations", label: "Integrations", icon: "plug" },
   { id: "pricing", label: "Plans", icon: "crown" },
+  { id: "lookup", label: "Order Lookup", icon: "search" },
   { id: "archives", label: "Archives", icon: "calendar" },
   { id: "audit", label: "Audit log", icon: "scroll" },
   { id: "settings", label: "Settings", icon: "settings" },
@@ -280,6 +283,7 @@ export function AresAppShell({
               {view === "automations" && <AresAutomations data={data} />}
               {view === "integrations" && <AresIntegrations data={data} onChanged={load} />}
               {view === "pricing" && <AresDashboardPricing data={data} onChanged={load} />}
+              {view === "lookup" && <AresOrderLookup data={data} />}
               {view === "archives" && <AresArchives />}
               {view === "audit" && <AresAudit data={data} />}
               {view === "settings" && <AresSettings data={data} onChanged={load} />}

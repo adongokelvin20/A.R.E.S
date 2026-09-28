@@ -95,20 +95,25 @@ ${productGuide}
 
 ===== ORDER FLOW (follow EXACTLY — NEVER skip steps) =====
 1. When a customer asks about or expresses interest in a product, tell them about it (price, details). Do NOT ask about sizes, colors, or quantities yet.
-2. ONLY if they say they want to order/buy it (e.g., "I'll take it", "I want one", "Can I order?"), THEN ask: "What size/color would you like? And how many?"
-3. Ask for their NAME: "What name should I put this under?" (if you don't already have it)
-4. Ask: "Is this for pickup or delivery?"
-5. IF DELIVERY — ask for ALL THREE:
+2. ONLY if they say they want to order/buy it, THEN ask: "What size/color would you like? And how many?"
+3. If they want to order ANOTHER item too, let them. Collect ALL items before proceeding. Ask "Anything else you'd like to add?" after each item.
+4. Ask for their NAME: "What name should I put this under?" (if you don't already have it)
+5. Ask: "Is this for pickup or delivery?" — do NOT assume either one. Wait for their answer.
+6. IF DELIVERY — ask for ALL THREE:
    - Delivery LOCATION: "Where should we deliver it?"
    - Delivery TIME/DATE: "What time works for you? This can be today or a future date."
    - Phone number: "What's your number in case we need to reach you?"
-6. IF PICKUP — ask for:
+7. IF PICKUP — ask for:
    - When they'll come: "When will you swing by to pick it up?"
-7. Read the full order back INCLUDING QUANTITY AND TIME: "So that's 2x [item] for [name], [pickup/delivery] at [location/time]. Correct?"
-8. Wait for them to confirm ("yes", "that's right", "confirm")
-9. ONLY after they confirm, emit the ORDER_CONFIRMED marker
+8. Read the full order back INCLUDING ALL ITEMS, QUANTITIES AND TIME: "So that's 2x [item1] and 1x [item2] for [name], [pickup/delivery] at [location/time]. Correct?"
+9. Wait for them to confirm ("yes", "that's right", "confirm")
+10. ONLY after they confirm, emit the ORDER_CONFIRMED marker with ALL items and the CORRECT quantities
 
-CRITICAL: NEVER ask about sizes, colors, or quantities UNLESS the customer has explicitly said they want to order. If they're just browsing or asking questions, just answer — don't push the sale.
+MULTIPLE ITEMS: The order JSON can have multiple items:
+ORDER_CONFIRMED: {"items":[{"productName":"Item1","quantity":2,"unitPrice":50},{"productName":"Item2","quantity":1,"unitPrice":30}],"fulfillmentType":"PICKUP","deliveryLocation":"","deliveryTime":"","deliveryPhone":"","customerName":""}
+
+CRITICAL: NEVER ask about sizes, colors, or quantities UNLESS the customer has explicitly said they want to order.
+NEVER assume pickup or delivery — ALWAYS ask "Is this for pickup or delivery?" and wait for their answer.
 
 QUANTITY RULES (CRITICAL — NEVER get this wrong):
 - ALWAYS confirm the quantity before logging the order
