@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical } from "lucide-react";
+import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical, Paperclip } from "lucide-react";
 
 interface Product {
   id: string;
@@ -85,6 +85,7 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
   // Load previous chat history when the chat opens for the first time
+  // Like WhatsApp: show old messages, then start a new conversation below
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!open || historyLoaded) return;
@@ -94,18 +95,26 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
       const saved = localStorage.getItem(`ares-chat-${slug}`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setMessages(parsed);
+        if (Array.isArray(parsed) && parsed.length > 1) {
+          // Show old messages + a divider + a fresh greeting (like WhatsApp new chat)
+          setMessages([
+            ...parsed,
+            {
+              role: "assistant",
+              content: `Good to see you again! How can I help you today? 😊`,
+              createdAt: new Date().toISOString(),
+            },
+          ]);
         }
       }
     } catch {}
   }, [open, historyLoaded, slug]);
 
-  // Save messages to localStorage whenever they change
+  // Save ALL messages to localStorage (persistent memory)
   useEffect(() => {
     if (messages.length > 1) {
       try {
-        localStorage.setItem(`ares-chat-${slug}`, JSON.stringify(messages));
+        localStorage.setItem(`ares-chat-${slug}`, JSON.stringify(messages.slice(-50))); // keep last 50 messages
       } catch {}
     }
   }, [messages, slug]);
@@ -312,8 +321,32 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
               </div>
             )}
 
-            {/* Input bar — WhatsApp style */}
+            {/* Input bar — WhatsApp style with screenshot upload */}
             <div className="flex items-center gap-2 bg-[#F0F2F5] px-3 py-2.5">
+              {/* Screenshot upload button */}
+              <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-[#075E54] hover:bg-ares-mist" title="Upload payment screenshot">
+                <Paperclip className="h-5 w-5" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    // Convert to base64 and send as a message
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const base64 = reader.result as string;
+                      // Add the image to the chat
+                      setMessages((m) => [...m, { role: "user", content: "📷 Payment screenshot uploaded", images: [{ imageUrl: base64, name: "Payment proof", price: 0, currency: "" }], createdAt: new Date().toISOString() }]);
+                      // Tell the agent about the screenshot
+                      send(`I just uploaded a payment screenshot. Please verify it. My order code should be in the screenshot.`);
+                    };
+                    reader.readAsDataURL(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
               <div className="flex flex-1 items-center rounded-full bg-white px-4 py-2">
                 <input
                   value={input}

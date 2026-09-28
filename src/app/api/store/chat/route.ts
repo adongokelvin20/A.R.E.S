@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
     } catch {}
     reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}/gi, "").trim();
     if (orderData?.items?.length > 0) {
-      // Generate a short 4-character order code
+      // Generate ONE order code used for both the reply AND the DB record
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let orderCode = "";
       for (let i = 0; i < 4; i++) orderCode += chars[Math.floor(Math.random() * chars.length)];
@@ -475,10 +475,8 @@ async function createOrderFromChat(businessId: string, customerName: string, dat
     await db.customer.update({ where: { id: customerId }, data: { lifetimeValue: { increment: total } } });
   }
 
-  // Generate a short 4-character order code
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let orderCode = "";
-  for (let i = 0; i < 4; i++) orderCode += chars[Math.floor(Math.random() * chars.length)];
+  // Use the order code that was already generated and given to the customer
+  const orderCode = data.orderCode || "????";
 
   return db.order.create({
     data: {
