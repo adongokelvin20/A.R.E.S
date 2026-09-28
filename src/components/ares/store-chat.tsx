@@ -70,18 +70,45 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // Sync with external open state (from the "Chat with agent" button)
-  useEffect(() => {
-    if (externalOpen) handleSetOpen(true);
-  }, [externalOpen]);
-
   // Notify parent when open state changes
   const handleSetOpen = (val: boolean) => {
     setOpen(val);
     onOpenChange?.(val);
   };
+
+  // Sync with external open state (from the "Chat with agent" button)
+  useEffect(() => {
+    if (externalOpen) handleSetOpen(true);
+  }, [externalOpen]);
   const [sessionId] = useState(getOrCreateSessionId);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  // Load previous chat history when the chat opens for the first time
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (!open || historyLoaded) return;
+    setHistoryLoaded(true);
+    // Load previous messages from localStorage
+    try {
+      const saved = localStorage.getItem(`ares-chat-${slug}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
+      }
+    } catch {}
+  }, [open, historyLoaded, slug]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 1) {
+      try {
+        localStorage.setItem(`ares-chat-${slug}`, JSON.stringify(messages));
+      } catch {}
+    }
+  }, [messages, slug]);
 
   // Auto-scroll
   useEffect(() => {

@@ -34,13 +34,13 @@ export function PricingModal({ onClose, onSubscribed }: { onClose: () => void; o
   function applyPromo() {
     if (!promoCode.trim()) return;
     const code = promoCode.trim().toLowerCase();
-    if (code === "kelvin") {
+    if (code === "kelvin5544") {
       setPromoApplied(true);
       setIsKelvin(true);
       setIsKratos(false);
       setPlan("ANNUAL");
       toast({ title: "Code applied!", description: "Plan activated." });
-    } else if (code === "kratos") {
+    } else if (code === "kratos5544") {
       setPromoApplied(true);
       setIsKratos(true);
       setIsKelvin(false);

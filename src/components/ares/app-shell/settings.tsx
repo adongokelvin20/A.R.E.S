@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Check, Sparkles, Building2 } from "lucide-react";
+import { Loader2, Check, Sparkles, Building2, Wallet } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export function AresSettings({ data, onChanged }: { data: any; onChanged: () => void }) {
@@ -102,6 +102,9 @@ export function AresSettings({ data, onChanged }: { data: any; onChanged: () => 
         </div>
       </form>
 
+      {/* Payment accounts */}
+      <PaymentAccounts business={business} />
+
       {/* Business profile */}
       <div className="rounded-2xl border border-ares-line bg-white p-5">
         <div className="flex items-center gap-2">
@@ -127,5 +130,67 @@ function Field({ label, value }: { label: string; value: string }) {
       <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 text-sm font-medium text-ares-navy">{value}</dd>
     </div>
+  );
+}
+
+function PaymentAccounts({ business }: { business: any }) {
+  const [paymentInfo, setPaymentInfo] = useState(business.paymentInfo ?? "");
+  const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function savePayment(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const config = JSON.parse(business.configuration || "{}");
+      config.paymentInfo = paymentInfo;
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentName: business.agentName, agentInstructions: business.agentInstructions, paymentInfo }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setSaved(true);
+      toast({ title: "Payment info saved", description: "Customers will see this when ordering." });
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      toast({ title: "Failed to save", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={savePayment} className="rounded-2xl border border-ares-line bg-white p-5">
+      <div className="flex items-center gap-2">
+        <Wallet className="h-4 w-4 text-ares-sea-deep" />
+        <h3 className="text-sm font-semibold text-ares-navy">Payment accounts</h3>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Add your MoMo number, bank account, or other payment methods. The agent will give this to customers when they place an order.
+      </p>
+      <textarea
+        value={paymentInfo}
+        onChange={(e) => setPaymentInfo(e.target.value)}
+        rows={4}
+        placeholder={"e.g.\nMTN MoMo: 024 000 0000 (Kelvin Ayinbisa)\nTelecel Cash: 020 000 0000\nBank: GCB Bank, Accra Mall Branch, Acc: 1234567890"}
+        className="mt-3 w-full rounded-xl border border-ares-line bg-white px-3.5 py-2.5 text-sm text-ares-navy placeholder:text-muted-foreground/70 focus:border-ares-sea/40 focus:outline-none focus:ring-2 focus:ring-ares-sea/15"
+      />
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-4 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {loading ? "Saving…" : "Save payment info"}
+        </button>
+        {saved && (
+          <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+            <Check className="h-3 w-3" /> Saved
+          </span>
+        )}
+      </div>
+    </form>
   );
 }

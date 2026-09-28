@@ -57,11 +57,13 @@ export async function GET(req: NextRequest) {
 
   // Parse all selected sectors from configuration (for multi-sector product fields)
   let allSectors: { category: string; subtype: string }[] = [];
+  let paymentInfo = "";
   try {
     const config = JSON.parse(business.configuration || "{}");
     if (Array.isArray(config.allSectors)) {
       allSectors = config.allSectors.map((s: any) => ({ category: s.category, subtype: s.subtype }));
     }
+    if (config.paymentInfo) paymentInfo = config.paymentInfo;
   } catch {}
   if (allSectors.length === 0 && business.sectorCategory && business.sectorSubtype) {
     allSectors = [{ category: business.sectorCategory, subtype: business.sectorSubtype }];
@@ -172,6 +174,7 @@ export async function GET(req: NextRequest) {
       learnings,
       productFields,
       allSectors,
+      paymentInfo,
     },
     kpis: {
       todayRevenue,

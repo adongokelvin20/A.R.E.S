@@ -25,9 +25,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { agentName, agentInstructions } = body as {
+    const { agentName, agentInstructions, paymentInfo } = body as {
       agentName?: string;
       agentInstructions?: string;
+      paymentInfo?: string;
     };
 
     // Validate
@@ -45,6 +46,18 @@ export async function POST(req: NextRequest) {
 
     if (agentInstructions && agentInstructions.length > 5000) {
       return NextResponse.json({ error: "Instructions must be 5000 characters or less" }, { status: 400 });
+    }
+
+    // Save paymentInfo to business.configuration
+    if (paymentInfo !== undefined) {
+      try {
+        const biz = await db.business.findUnique({ where: { id: businessId }, select: { configuration: true } });
+        const config = JSON.parse(biz?.configuration || "{}");
+        config.paymentInfo = paymentInfo;
+        await db.business.update({ where: { id: businessId }, data: { configuration: JSON.stringify(config) } });
+      } catch (e) {
+        console.error("[settings] paymentInfo save failed:", e);
+      }
     }
 
     // Update the business

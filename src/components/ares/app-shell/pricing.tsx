@@ -25,7 +25,7 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
   function applyPromo() {
     if (!promoCode.trim()) return;
     const normalized = promoCode.trim().toLowerCase();
-    if (normalized === "kelvin" || normalized === "kratos") {
+    if (normalized === "kelvin5544" || normalized === "kratos5544") {
       setPromoApplied(true);
       setSelectedPlan("ANNUAL");
       toast({ title: "Code applied!", description: "Plan activated." });
@@ -97,25 +97,25 @@ export function AresPricing({ data, onChanged }: { data: any; onChanged: () => v
 
       {/* Current status — Active */}
       {isActive && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+        <div className="rounded-2xl border border-ares-sea/20 bg-ares-foam p-4">
           <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-emerald-600" />
-            <span className="text-sm font-semibold text-emerald-800">Subscription active</span>
-            <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+            <Check className="h-4 w-4 text-ares-sea-deep" />
+            <span className="text-sm font-semibold text-ares-navy">Subscription active</span>
+            <span className="ml-auto rounded-full bg-ares-sea/10 px-2.5 py-0.5 text-[10px] font-semibold text-ares-sea-deep">
               {subStatus?.promoCode ? "PROMO" : subStatus?.plan}
             </span>
           </div>
-          <p className="mt-1 text-xs text-emerald-700">
+          <p className="mt-1 text-xs text-muted-foreground">
             {subStatus?.currentPeriodEnd
               ? `Active until ${new Date(subStatus.currentPeriodEnd).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`
               : "Active"}
           </p>
           {subStatus?.promoCode && (
-            <p className="mt-2 text-[11px] text-emerald-600">
+            <p className="mt-2 text-[11px] text-ares-sea-deep">
               You&apos;re on a promo plan. When it expires, you can choose a paid plan or apply another code.
             </p>
           )}
-          <p className="mt-2 text-[11px] text-emerald-600">
+          <p className="mt-2 text-[11px] text-muted-foreground">
             You can&apos;t subscribe again until your current plan expires. Your assistant will keep running.
           </p>
         </div>

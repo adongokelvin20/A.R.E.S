@@ -172,7 +172,13 @@ export async function POST(req: NextRequest) {
     } catch {}
     reply = reply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*\}/gi, "").trim();
     if (orderData?.items?.length > 0) {
-      reply += `\n\nGot it! Order logged — we'll take it from here. 🎉`;
+      // Generate the order code for the reply
+      const date = new Date();
+      const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+      const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+      const orderCode = `ARES-${dateStr}-${random}`;
+      orderData.orderCode = orderCode;
+      reply += `\n\nYour order code is ${orderCode}. Please use this as your payment reference. We'll confirm everything once your payment is received! 🎉`;
     }
   }
 
@@ -465,11 +471,17 @@ async function createOrderFromChat(businessId: string, customerName: string, dat
     await db.customer.update({ where: { id: customerId }, data: { lifetimeValue: { increment: total } } });
   }
 
+  // Generate a unique order code: ARES-YYYYMMDD-XXXX (random 4 chars)
+  const date = new Date();
+  const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+  const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const orderCode = `ARES-${dateStr}-${random}`;
+
   return db.order.create({
     data: {
       businessId, customerId, customerName: resolvedName, customerPhone: phone,
       status: "PENDING", channel: "WEB", total, currency,
-      notes: "Created via store chat",
+      notes: `Order code: ${orderCode}`,
       fulfillmentType: data.fulfillmentType === "DELIVERY" ? "DELIVERY" : "PICKUP",
       deliveryLocation: data.deliveryLocation ?? null, deliveryTime: data.deliveryTime ?? null,
       deliveryPhone: data.deliveryPhone ?? null,

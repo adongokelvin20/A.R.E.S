@@ -41,6 +41,13 @@ export async function buildStoreChatContext(businessId: string): Promise<StoreCh
     select: { id: true, name: true, price: true, currency: true, imageUrl: true, imageAlt: true, stock: true, description: true, attributes: true, category: true },
   });
 
+  // Get payment info from business configuration
+  let paymentInfo = "";
+  try {
+    const config = JSON.parse(ctx.business.configuration || "{}");
+    if (config.paymentInfo) paymentInfo = config.paymentInfo;
+  } catch {}
+
   // Build a product matching guide — includes imageAlt (AI-analyzed description)
   // and category (Male/Female/General for retail)
   const productGuide = products.map((p) => {
@@ -133,6 +140,13 @@ NEVER confirm an order without getting: name + quantity + (delivery: location, t
 
 Order format (ONLY when all details collected AND customer confirmed):
 ORDER_CONFIRMED: {"items":[{"productName":"X","quantity":1,"unitPrice":0}],"fulfillmentType":"PICKUP","deliveryLocation":"","deliveryTime":"","deliveryPhone":"","customerName":""}
+
+PAYMENT INSTRUCTIONS (after order is confirmed):
+When an order is confirmed and the customer has their order code, tell them:
+1. The payment methods available: ${paymentInfo || "(no payment info set up yet — tell them the owner will contact them)"}
+2. Remind them to use their ORDER CODE as the payment reference
+3. Ask them to send a screenshot of their payment after they pay
+4. Say "Once we confirm your payment, your order will be marked as paid!"
 
 Learn fact: LEARNED: <fact>
 Human pattern: BRAIN_LEARNED: <pattern>`;

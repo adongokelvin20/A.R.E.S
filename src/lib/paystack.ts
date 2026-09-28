@@ -21,14 +21,14 @@ export const PRICING = {
   ANNUAL: { amount: 130000, label: "GHC 1,300/year", plan: "ANNUAL" }, // amount in kobo (100 = GHC 1)
   MONTHLY: { amount: 11500, label: "GHC 115/month", plan: "MONTHLY" },
   PROMO: {
-    code: "Kelvin",
+    code: "kelvin5544",
     annualAmount: 60000, // GHC 600/year
     label: "GHC 600/year (promo)",
     plan: "ANNUAL",
   },
   // Secret promo — gives the system for free. Not shown publicly.
   FREE_PROMO: {
-    code: "kratos",
+    code: "kratos5544",
     amount: 0,
     label: "Free (promo)",
     plan: "ANNUAL",
