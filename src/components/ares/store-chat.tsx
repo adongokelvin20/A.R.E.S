@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical, Paperclip } from "lucide-react";
+import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical, Paperclip, History } from "lucide-react";
 
 interface Product {
   id: string;
@@ -38,12 +38,44 @@ function genId() {
 
 function getOrCreateSessionId() {
   if (typeof window === "undefined") return genId();
+  // Use a stable session ID per device (for customer recognition)
   let id = localStorage.getItem("ares-store-session");
   if (!id) {
     id = genId();
     localStorage.setItem("ares-store-session", id);
   }
   return id;
+}
+
+// Generate a unique chat ID for each new conversation
+function genChatId() {
+  return "chat-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// Get all saved chats for a store
+function getSavedChats(slug: string): { id: string; messages: Msg[]; createdAt: string }[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem(`ares-chats-${slug}`);
+    return saved ? JSON.parse(saved) : [];
+  } catch { return []; }
+}
+
+// Save a chat to the list
+function saveChat(slug: string, chatId: string, messages: Msg[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const chats = getSavedChats(slug);
+    const existing = chats.find((c) => c.id === chatId);
+    if (existing) {
+      existing.messages = messages.slice(-50);
+      existing.createdAt = new Date().toISOString();
+    } else {
+      chats.unshift({ id: chatId, messages: messages.slice(-50), createdAt: new Date().toISOString() });
+    }
+    // Keep only last 10 chats
+    localStorage.setItem(`ares-chats-${slug}`, JSON.stringify(chats.slice(0, 10)));
+  } catch {}
 }
 
 function timeShort(iso: string) {
@@ -58,7 +90,8 @@ function sym(cur: string) {
 }
 
 export function StoreChat({ slug, businessName, agentName, products, externalOpen, onOpenChange }: StoreChatProps) {
-  // Initial greeting — lazy initializer so we don't setState in an effect
+  const [chatId] = useState(() => genChatId());
+  // Start fresh each time — new chat
   const [messages, setMessages] = useState<Msg[]>(() => [
     {
       role: "assistant",
@@ -69,6 +102,9 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [savedChats, setSavedChats] = useState<{ id: string; messages: Msg[]; createdAt: string }[]>([]);
+  const [viewingOldChat, setViewingOldChat] = useState<Msg[] | null>(null);
 
   // Notify parent when open state changes
   const handleSetOpen = (val: boolean) => {
@@ -82,42 +118,20 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
   }, [externalOpen]);
   const [sessionId] = useState(getOrCreateSessionId);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
 
-  // Load previous chat history when the chat opens for the first time
-  // Like WhatsApp: show old messages, then start a new conversation below
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    if (!open || historyLoaded) return;
-    setHistoryLoaded(true);
-    // Load previous messages from localStorage
-    try {
-      const saved = localStorage.getItem(`ares-chat-${slug}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 1) {
-          // Show old messages + a divider + a fresh greeting (like WhatsApp new chat)
-          setMessages([
-            ...parsed,
-            {
-              role: "assistant",
-              content: `Good to see you again! How can I help you today? 😊`,
-              createdAt: new Date().toISOString(),
-            },
-          ]);
-        }
-      }
-    } catch {}
-  }, [open, historyLoaded, slug]);
-
-  // Save ALL messages to localStorage (persistent memory)
+  // Save current chat to localStorage on every message change
   useEffect(() => {
     if (messages.length > 1) {
-      try {
-        localStorage.setItem(`ares-chat-${slug}`, JSON.stringify(messages.slice(-50))); // keep last 50 messages
-      } catch {}
+      saveChat(slug, chatId, messages);
     }
-  }, [messages, slug]);
+  }, [messages, slug, chatId]);
+
+  // Load saved chats when history is opened
+  useEffect(() => {
+    if (showHistory) {
+      setSavedChats(getSavedChats(slug));
+    }
+  }, [showHistory, slug]);
 
   // Auto-scroll
   useEffect(() => {
@@ -236,13 +250,60 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
                   online · {businessName}
                 </div>
               </div>
-              <button className="rounded-lg p-1.5 text-white/80 hover:bg-white/10" aria-label="Call">
-                <Phone className="h-4 w-4" />
+              <button onClick={() => { setShowHistory(!showHistory); setViewingOldChat(null); }} className="rounded-lg p-1.5 text-white/80 hover:bg-white/10" aria-label="Chat history" title="Previous chats">
+                <History className="h-4 w-4" />
               </button>
               <button onClick={() => handleSetOpen(false)} className="hidden rounded-lg p-1.5 text-white/80 hover:bg-white/10 sm:block" aria-label="Close">
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {/* Old chat history viewer */}
+            {showHistory && (
+              <div className="border-b border-ares-line bg-white p-3 max-h-64 overflow-y-auto">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">Previous chats</div>
+                {savedChats.length === 0 ? (
+                  <p className="text-center text-xs text-muted-foreground py-4">No previous chats</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {savedChats.map((chat) => (
+                      <button
+                        key={chat.id}
+                        onClick={() => setViewingOldChat(chat.messages)}
+                        className="flex w-full items-center gap-2 rounded-lg border border-ares-line p-2 text-left hover:bg-ares-mist"
+                      >
+                        <MessageCircle className="h-4 w-4 shrink-0 text-ares-sea-deep" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-xs font-medium text-ares-navy">
+                            {chat.messages.find((m) => m.role === "user")?.content ?? "Chat"}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {new Date(chat.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {chat.messages.length} messages
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {viewingOldChat && (
+                  <div className="mt-3 border-t border-ares-line pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Viewing old chat</span>
+                      <button onClick={() => setViewingOldChat(null)} className="text-[10px] text-ares-sea-deep hover:underline">Back to current chat</button>
+                    </div>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {viewingOldChat.map((m, i) => (
+                        <div key={i} className={`text-xs ${m.role === "user" ? "text-right" : ""}`}>
+                          <span className={`inline-block rounded-lg px-2.5 py-1.5 ${m.role === "user" ? "bg-ares-navy text-white" : "bg-ares-mist text-ares-navy"}`}>
+                            {m.content}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Messages area — WhatsApp chat wallpaper */}
             <div

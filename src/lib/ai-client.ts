@@ -98,13 +98,16 @@ function createOpenApiClient(apiKey: string) {
               "Authorization": `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-              model: "glm-4.5-flash",
+              model: "glm-4v-flash",
               messages: body.messages,
               thinking: { type: "disabled" },
             }),
           });
 
-          if (!response.ok) throw new Error(`Vision API error ${response.status}`);
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Vision API error ${response.status}: ${text.slice(0, 200)}`);
+          }
           return await response.json();
         },
       },

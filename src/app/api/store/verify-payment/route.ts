@@ -83,10 +83,11 @@ export async function POST(req: NextRequest) {
 
     // Send the image to the VLM for analysis
     let analysis = "";
+    let vlmAvailable = false;
     try {
       const zai = await getZaiClient();
       const visionRes = await (zai as any).chat.completions.createVision({
-        model: "glm-4v",
+        model: "glm-4v-flash",
         messages: [
           {
             role: "user",
@@ -118,11 +119,31 @@ Be strict. If it's a photo of something else (not a payment screenshot), say IS_
         ],
       });
       analysis = (visionRes as any)?.choices?.[0]?.message?.content?.toString().trim() ?? "";
+      vlmAvailable = true;
     } catch (e: any) {
       console.error("[verify-payment] VLM failed:", e?.message);
+      // Fallback: can't analyze the image, so forward to owner for manual verification
+      // Mark the order with a note that payment screenshot was uploaded
+      try {
+        await db.auditLog.create({
+          data: {
+            businessId: business.id,
+            actorType: "SYSTEM",
+            actorName: "Payment Verification",
+            action: "PAYMENT_SCREENSHOT_UPLOADED",
+            tool: "store.vlm_verify",
+            target: order.id,
+            result: "PENDING_APPROVAL",
+            riskLevel: "MEDIUM",
+            details: JSON.stringify({ orderCode: expectedCode, amount: expectedAmount, note: "VLM unavailable — owner must verify manually" }),
+          },
+        });
+      } catch {}
+
       return NextResponse.json({
         verified: false,
-        reason: "I couldn't analyze the screenshot. Please try uploading it again, or contact the store directly.",
+        pendingManual: true,
+        reason: `Thanks for uploading your payment screenshot! I've received it and the store owner will verify it shortly. Your order ${expectedCode} is being processed. You'll be notified once payment is confirmed.`,
       });
     }
 
