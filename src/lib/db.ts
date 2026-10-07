@@ -27,13 +27,25 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
  */
 let tablesEnsured = false
 export async function ensureDatabase() {
-  if (tablesEnsured) return
   if (!db) return
 
   // Skip during build time
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     return
   }
+
+  // Always run idempotent migrations (safe to run every request)
+  // These add new columns to existing tables — needed because warm Vercel
+  // function instances may have tablesEnsured=true from before schema changes
+  const migrations = [
+    `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image2Data" TEXT`,
+    `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image3Data" TEXT`,
+  ]
+  for (const sql of migrations) {
+    try { await db.$executeRawUnsafe(sql) } catch {}
+  }
+
+  if (tablesEnsured) return
 
   try {
     await db.user.findFirst({ select: { id: true } })
@@ -84,9 +96,6 @@ export async function ensureDatabase() {
       // Weekly Archive
       `CREATE TABLE IF NOT EXISTS "WeeklyArchive" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "weekStart" TIMESTAMP(3) NOT NULL, "weekEnd" TIMESTAMP(3) NOT NULL, "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0, "orderCount" INTEGER NOT NULL DEFAULT 0, "customerCount" INTEGER NOT NULL DEFAULT 0, "newCustomers" INTEGER NOT NULL DEFAULT 0, "topProducts" TEXT NOT NULL DEFAULT '[]', "channelBreakdown" TEXT NOT NULL DEFAULT '{}', "statusBreakdown" TEXT NOT NULL DEFAULT '{}', "summary" TEXT NOT NULL DEFAULT '', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "WeeklyArchive_pkey" PRIMARY KEY ("id"))`,
       `CREATE INDEX IF NOT EXISTS "WeeklyArchive_businessId_weekStart_idx" ON "WeeklyArchive"("businessId", "weekStart")`,
-      // Add multi-image columns to Product table (for existing DBs that don't have them)
-      `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image2Data" TEXT`,
-      `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image3Data" TEXT`,
       // Subscription
       `CREATE TABLE IF NOT EXISTS "Subscription" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'TRIAL', "plan" TEXT NOT NULL DEFAULT 'TRIAL', "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "trialEndsAt" TIMESTAMP(3), "currentPeriodEnd" TIMESTAMP(3), "amountPaid" DOUBLE PRECISION NOT NULL DEFAULT 0, "currency" TEXT NOT NULL DEFAULT 'GHS', "promoCode" TEXT, "paystackRef" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id"))`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "Subscription_businessId_key" ON "Subscription"("businessId")`,

@@ -43,6 +43,14 @@ export async function GET(req: NextRequest) {
   // Ensure DB tables exist
   try { await ensureDatabase(); } catch {}
 
+  // Always ensure Product table has the new image2Data/image3Data columns
+  // (ensureDatabase may have been cached as 'done' on a warm function instance
+  // from before the schema change, so the ALTER TABLE never ran)
+  try {
+    await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image2Data" TEXT`);
+    await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image3Data" TEXT`);
+  } catch {}
+
   // Load business (check suspended status + full record)
   let business;
   try {
@@ -97,7 +105,16 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       db.order.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 500 }),
       db.customer.findMany({ where: { businessId } }),
-      db.product.findMany({ where: { businessId, status: "ACTIVE" } }),
+      // Use select to avoid querying image2Data/image3Data columns which may not exist
+      // on the production DB yet (ALTER TABLE only runs on cold starts)
+      db.product.findMany({
+        where: { businessId, status: "ACTIVE" },
+        select: {
+          id: true, name: true, description: true, category: true, price: true,
+          currency: true, stock: true, lowStockThreshold: true, imageUrl: true,
+          imageAlt: true, attributes: true, status: true, createdAt: true,
+        },
+      }),
       db.auditLog.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 25 }),
       db.alert.findMany({ where: { businessId, status: "OPEN" }, orderBy: { createdAt: "desc" }, take: 12 }),
       db.insight.findMany({ where: { businessId, status: "OPEN" }, orderBy: { createdAt: "desc" }, take: 8 }),
