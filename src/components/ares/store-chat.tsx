@@ -147,6 +147,12 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
   // Voice note recording
   const startRecording = useCallback(async () => {
     try {
+      // Check if browser supports microphone
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setMessages((m) => [...m, { role: "assistant", content: "Your browser doesn't support voice notes. Please type your message instead.", createdAt: new Date().toISOString() }]);
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
@@ -162,7 +168,7 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
         reader.onload = async () => {
           const base64 = reader.result as string;
           // Add voice note to chat
-          setMessages((m) => [...m, { role: "user", content: "🎤 Voice note", createdAt: new Date().toISOString() }]);
+          setMessages((m) => [...m, { role: "user", content: "🎤 Voice note — transcribing...", createdAt: new Date().toISOString() }]);
           setLoading(true);
           try {
             const res = await fetch("/api/store/transcribe", {
@@ -212,8 +218,15 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
 
       mediaRecorder.start();
       setIsRecording(true);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Recording failed:", e);
+      // Show user-friendly error message
+      const errMsg = e?.name === "NotAllowedError"
+        ? "Microphone access was denied. Please allow microphone access in your browser settings to use voice notes."
+        : e?.name === "NotFoundError"
+        ? "No microphone found on this device. Please type your message instead."
+        : "Couldn't start recording. Please type your message instead.";
+      setMessages((m) => [...m, { role: "assistant", content: errMsg, createdAt: new Date().toISOString() }]);
     }
   }, [slug, sessionId, messages]);
 
