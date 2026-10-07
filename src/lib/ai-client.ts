@@ -40,15 +40,13 @@ export async function getZaiClient() {
     }
   }
 
-  // 2. On Vercel: try Z.ai SDK first (uses internal token, always works)
+  // 2. On Vercel: call Z.ai API directly (no SDK, no config file, no filesystem writes)
   try {
-    const ZAIModule = await import("z-ai-web-dev-sdk");
-    const ZAI = ZAIModule.default;
-    clientInstance = new ZAI(ZAI_CONFIG);
-    console.log("[ChatBiz AI] Using Z.ai SDK");
+    clientInstance = createDirectZaiClient();
+    console.log("[ChatBiz AI] Using Z.ai direct API");
     return clientInstance;
-  } catch (e) {
-    console.log("[ChatBiz AI] SDK failed, trying Open API");
+  } catch (e: any) {
+    console.log("[ChatBiz AI] Direct Z.ai failed:", e?.message?.slice(0, 100));
   }
 
   // 3. Try Z.ai Open API (if API key is set)
@@ -160,6 +158,68 @@ export async function getClients() {
  * Z.ai Open API client (publicly accessible from Vercel)
  * Uses open.bigmodel.cn which is the public API endpoint
  */
+/**
+ * Direct Z.ai API client — calls the Z.ai internal API directly using fetch.
+ * No SDK, no config file writes, no filesystem dependencies.
+ * Works on Vercel serverless (read-only filesystem).
+ */
+function createDirectZaiClient() {
+  return {
+    _mode: "zai-direct",
+    _provider: "zai-direct",
+    chat: {
+      completions: {
+        create: async (body: any) => {
+          const response = await fetch("https://internal-api.z.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${ZAI_CONFIG.apiKey}`,
+              "X-Z-AI-From": "Z",
+              "X-Chat-Id": ZAI_CONFIG.chatId,
+              "X-User-Id": ZAI_CONFIG.userId,
+              "X-Token": ZAI_CONFIG.token,
+            },
+            body: JSON.stringify({
+              model: "glm-4.5-flash",
+              messages: body.messages,
+              temperature: body.temperature ?? 0.85,
+              max_tokens: body.max_tokens ?? 700,
+            }),
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Z.ai direct API error ${response.status}: ${text.slice(0, 200)}`);
+          }
+          return await response.json();
+        },
+        createVision: async (body: any) => {
+          const response = await fetch("https://internal-api.z.ai/v1/chat/completions/vision", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${ZAI_CONFIG.apiKey}`,
+              "X-Z-AI-From": "Z",
+              "X-Chat-Id": ZAI_CONFIG.chatId,
+              "X-User-Id": ZAI_CONFIG.userId,
+              "X-Token": ZAI_CONFIG.token,
+            },
+            body: JSON.stringify({
+              model: "glm-4v-flash",
+              messages: body.messages,
+            }),
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Z.ai vision API error ${response.status}: ${text.slice(0, 200)}`);
+          }
+          return await response.json();
+        },
+      },
+    },
+  };
+}
+
 function createOpenApiClient(apiKey: string) {
   const OPEN_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 
