@@ -51,14 +51,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Save paymentInfo to business.configuration
+    let savedConfig: any = {};
     if (paymentInfo !== undefined || momoAccountName !== undefined || paymentEnabled !== undefined) {
       try {
         const biz = await db.business.findUnique({ where: { id: businessId }, select: { configuration: true } });
-        const config = JSON.parse(biz?.configuration || "{}");
-        if (paymentInfo !== undefined) config.paymentInfo = paymentInfo;
-        if (momoAccountName !== undefined) config.momoAccountName = momoAccountName.trim();
-        if (paymentEnabled !== undefined) config.paymentEnabled = paymentEnabled;
-        await db.business.update({ where: { id: businessId }, data: { configuration: JSON.stringify(config) } });
+        savedConfig = JSON.parse(biz?.configuration || "{}");
+        if (paymentInfo !== undefined) savedConfig.paymentInfo = paymentInfo;
+        if (momoAccountName !== undefined) savedConfig.momoAccountName = momoAccountName.trim();
+        if (paymentEnabled !== undefined) savedConfig.paymentEnabled = paymentEnabled;
+        await db.business.update({ where: { id: businessId }, data: { configuration: JSON.stringify(savedConfig) } });
       } catch (e) {
         console.error("[settings] payment save failed:", e);
       }
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       agentName: updated.agentName,
       agentInstructions: updated.agentInstructions,
+      configuration: savedConfig,
     });
   } catch (err: any) {
     console.error("[settings] error:", err?.message ?? err);

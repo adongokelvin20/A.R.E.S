@@ -107,8 +107,9 @@ export async function GET(req: NextRequest) {
   const yesterdayOrders = orders.filter(
     (o) => o.createdAt >= startOfYesterday && o.createdAt < startOfToday
   );
-  const todayRevenue = todayOrders.filter((o) => o.status === "FULFILLED").reduce((s, o) => s + o.total, 0);
-  const yesterdayRevenue = yesterdayOrders.filter((o) => o.status === "FULFILLED").reduce((s, o) => s + o.total, 0);
+  // CONFIRMED = payment verified (previously misnamed FULFILLED)
+  const todayRevenue = todayOrders.filter((o) => o.status === "CONFIRMED").reduce((s, o) => s + o.total, 0);
+  const yesterdayRevenue = yesterdayOrders.filter((o) => o.status === "CONFIRMED").reduce((s, o) => s + o.total, 0);
   const revenueDeltaPct =
     yesterdayRevenue > 0
       ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
@@ -124,7 +125,7 @@ export async function GET(req: NextRequest) {
     const dayStart = new Date(startOfToday.getTime() - i * 86400000);
     const dayEnd = new Date(dayStart.getTime() + 86400000);
     const dayOrders = orders.filter(
-      (o) => o.createdAt >= dayStart && o.createdAt < dayEnd && o.status === "FULFILLED"
+      (o) => o.createdAt >= dayStart && o.createdAt < dayEnd && o.status === "CONFIRMED"
     );
     series.push({
       date: dayStart.toISOString().slice(5, 10),
@@ -167,6 +168,7 @@ export async function GET(req: NextRequest) {
       agentInstructions: business.agentInstructions,
       ownerFirstName: business.ownerFirstName,
       modules: JSON.parse(business.enabledModules),
+      configuration: business.configuration || "{}",
       sectorCategory: business.sectorCategory,
       sectorSubtype: business.sectorSubtype,
       sectorLabel: subtype?.label ?? business.type,

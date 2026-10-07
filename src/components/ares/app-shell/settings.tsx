@@ -185,9 +185,11 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 function PaymentAccounts({ business }: { business: any }) {
-  const [paymentInfo, setPaymentInfo] = useState(business.paymentInfo ?? "");
-  const [momoAccountName, setMomoAccountName] = useState(() => { try { const config = JSON.parse(business.configuration || "{}"); return config.momoAccountName ?? ""; } catch { return ""; } });
-  const [paymentEnabled, setPaymentEnabled] = useState(() => { try { const config = JSON.parse(business.configuration || "{}"); return config.paymentEnabled !== false; } catch { return true; } });
+  // Parse configuration once — paymentInfo, momoAccountName, paymentEnabled all live in business.configuration
+  const parsedConfig = (() => { try { return JSON.parse(business.configuration || "{}"); } catch { return {}; } })();
+  const [paymentInfo, setPaymentInfo] = useState(parsedConfig.paymentInfo ?? "");
+  const [momoAccountName, setMomoAccountName] = useState(parsedConfig.momoAccountName ?? "");
+  const [paymentEnabled, setPaymentEnabled] = useState(parsedConfig.paymentEnabled !== false);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 

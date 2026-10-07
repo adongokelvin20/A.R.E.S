@@ -17,6 +17,7 @@ import { AresArchives } from "./app-shell/archives";
 import { AresOrderLookup } from "./app-shell/order-lookup";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "next-auth/react";
+import { AlertCircle } from "lucide-react";
 import { PricingModal } from "./pricing-modal";
 
 interface AppShellProps {
@@ -68,6 +69,7 @@ export function AresAppShell({
   const [view, setView] = useState<View>("overview");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
   const [showPricing, setShowPricing] = useState(locked); // if locked server-side, show pricing immediately
@@ -193,6 +195,7 @@ export function AresAppShell({
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await fetch(`/api/ares/dashboard?t=${Date.now()}`);
       if (res.status === 401) {
@@ -201,9 +204,15 @@ export function AresAppShell({
         return;
       }
       const json = await res.json();
-      setData(json);
-    } catch (e) {
+      if (json?.error) {
+        setLoadError(json.error);
+        setData(null);
+      } else {
+        setData(json);
+      }
+    } catch (e: any) {
       console.error("dashboard load failed", e);
+      setLoadError(e?.message ?? "Failed to load dashboard. Please refresh the page.");
     } finally {
       setLoading(false);
     }
@@ -263,13 +272,39 @@ export function AresAppShell({
         </div>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {loading || !data ? (
+          {loading ? (
             <div className="space-y-4">
               <Skeleton className="h-24 rounded-2xl" />
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {[1,2,3,4].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
               </div>
               <Skeleton className="h-72 rounded-2xl" />
+            </div>
+          ) : loadError ? (
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <div className="max-w-md text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+                  <AlertCircle className="h-7 w-7" />
+                </div>
+                <h2 className="text-lg font-semibold text-ares-navy">Couldn't load your dashboard</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
+                <button onClick={load} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep">
+                  Try again
+                </button>
+              </div>
+            </div>
+          ) : !data ? (
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <div className="max-w-md text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-ares-foam text-ares-sea-deep">
+                  <AlertCircle className="h-7 w-7" />
+                </div>
+                <h2 className="text-lg font-semibold text-ares-navy">No data available</h2>
+                <p className="mt-2 text-sm text-muted-foreground">We couldn't load your business data. Please try again.</p>
+                <button onClick={load} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep">
+                  Refresh
+                </button>
+              </div>
             </div>
           ) : (
             <>
