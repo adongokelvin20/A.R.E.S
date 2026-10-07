@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, ensureDatabase } from "@/lib/db";
 import { buildStoreChatContext } from "@/lib/store-chat-context";
-import { getChatClientWithFallback as getChatClient } from "@/lib/ai-client";
+import { getChatClient } from "@/lib/ai-client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
