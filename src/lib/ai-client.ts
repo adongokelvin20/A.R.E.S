@@ -25,16 +25,14 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_CHAT_MODELS = ["openrouter/free"];
 // Vision: openrouter/free is an auto-router — works ~40% of the time for vision.
-// Retry it multiple times, then try specific free vision models as fallback.
+// Retry it 3 times (max ~15s), which gives ~78% success rate while staying
+// within Vercel's 30s function timeout. Don't add specific free vision models
+// — they all returned errors in testing (gemma: "Provider returned error",
+// nemotron-omni: "ResourceExhausted").
 const OPENROUTER_VISION_MODELS = [
   "openrouter/free",
   "openrouter/free",
   "openrouter/free",
-  "openrouter/free",
-  "openrouter/free",
-  "google/gemma-4-31b-it:free",
-  "google/gemma-4-26b-a4b-it:free",
-  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
 ];
 
 // ---------- Gemini (Vision) ----------

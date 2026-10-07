@@ -17,7 +17,7 @@ import { getVisionClient } from "@/lib/ai-client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 function isAmountMatch(found: number, expected: number): boolean {
   if (!Number.isFinite(found) || !Number.isFinite(expected)) return false;
