@@ -127,7 +127,7 @@ export async function getChatClient() {
 }
 
 /**
- * Vision / VLM client. Provider chain:
+ * Vision / VLM client. Provider chain (tries each in order, falls back on error):
  *   1. Gemini 2.0 Flash  (free tier, vision-capable, reliable)
  *   2. OpenRouter        (free models — often broken for vision but worth trying)
  *   3. Smart fallback    (returns "" — caller should treat as "manual review needed")
@@ -135,26 +135,57 @@ export async function getChatClient() {
 export async function getVisionClient() {
   if (visionClientInstance) return visionClientInstance;
 
+  const providers: any[] = [];
+
   // 1. Gemini (preferred — actually works for vision on free tier)
-  if (GEMINI_API_KEY && GEMINI_API_KEY.startsWith("AIza")) {
-    visionClientInstance = createGeminiVisionClient(GEMINI_API_KEY);
-    console.log("[ChatBiz AI] Vision: Gemini 2.0 Flash");
-    return visionClientInstance;
+  if (GEMINI_API_KEY) {
+    providers.push({
+      name: "gemini",
+      client: createGeminiVisionClient(GEMINI_API_KEY),
+    });
   }
 
-  // 2. OpenRouter (vision models are unreliable on free tier)
+  // 2. OpenRouter (vision models are unreliable on free tier, but try as fallback)
   if (OPENROUTER_API_KEY) {
-    visionClientInstance = createOpenRouterVisionClient(OPENROUTER_API_KEY);
-    console.log("[ChatBiz AI] Vision: OpenRouter (fallback)");
+    providers.push({
+      name: "openrouter",
+      client: createOpenRouterVisionClient(OPENROUTER_API_KEY),
+    });
+  }
+
+  if (providers.length === 0) {
+    visionClientInstance = {
+      _provider: "smart",
+      analyze: async () => "",
+    };
+    console.log("[ChatBiz AI] Vision: smart fallback (no VLM)");
     return visionClientInstance;
   }
 
-  // 3. Smart fallback (no VLM)
+  // Build a fallback-chain client
   visionClientInstance = {
-    _provider: "smart",
-    analyze: async () => "",
+    _provider: providers[0].name + (providers.length > 1 ? `+${providers[1].name}` : ""),
+    analyze: async (imageBase64: string, prompt: string): Promise<string> => {
+      let lastError: any = null;
+      for (const p of providers) {
+        try {
+          const result = await p.client.analyze(imageBase64, prompt);
+          if (result && result.trim().length > 5) {
+            console.log(`[ChatBiz AI] Vision succeeded via: ${p.name}`);
+            return result;
+          }
+          console.warn(`[ChatBiz AI] Vision provider ${p.name} returned empty result`);
+        } catch (e: any) {
+          console.warn(`[ChatBiz AI] Vision provider ${p.name} failed:`, e?.message?.slice(0, 150));
+          lastError = e;
+        }
+      }
+      // All providers failed — return empty string so caller treats as manual review
+      console.error("[ChatBiz AI] All vision providers failed. Last error:", lastError?.message?.slice(0, 200));
+      return "";
+    },
   };
-  console.log("[ChatBiz AI] Vision: smart fallback (no VLM)");
+  console.log(`[ChatBiz AI] Vision: ${visionClientInstance._provider}`);
   return visionClientInstance;
 }
 
@@ -326,7 +357,10 @@ function createOpenRouterVisionClient(apiKey: string) {
 
           const json = await response.json();
           const text = json?.choices?.[0]?.message?.content?.toString().trim() ?? "";
-          if (text) return text;
+          // Only return if the response actually looks like a VLM analysis (contains expected markers)
+          if (text && /IS_PAYMENT|AMOUNT|ORDER_CODE/i.test(text)) return text;
+          // Otherwise treat as empty (model didn't actually analyze the image)
+          if (text) console.warn(`[ChatBiz AI] OpenRouter ${model} returned non-VLM text, ignoring:`, text.slice(0, 80));
         } catch (e: any) {
           lastError = e;
           continue;
