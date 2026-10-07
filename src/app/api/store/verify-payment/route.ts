@@ -117,12 +117,26 @@ REFERENCE: <the full reference/note/message field verbatim — or NOT_FOUND>`);
     }
 
     // ===== Parse VLM response (be flexible about formatting) =====
-    const isPayment = /IS_PAYMENT[:\s]*\s*YES/im.test(analysis);
+    const isPaymentYes = /IS_PAYMENT[:\s]*\s*YES/im.test(analysis);
+    const isPaymentNo = /IS_PAYMENT[:\s]*\s*NO/im.test(analysis);
     const amountMatch = analysis.match(/AMOUNT[:\s]*\s*([\d.,]+)/im);
     const referenceMatch = analysis.match(/REFERENCE[:\s]*\s*(.+?)$/im);
     const orderCodeMatch = analysis.match(/ORDER_CODE[:\s]*\s*([A-Z0-9]{4})\b/im);
     const recipientMatch = analysis.match(/RECIPIENT_NAME[:\s]*\s*(.+?)$/im);
     const dateMatch = analysis.match(/DATE[:\s]*\s*(.+?)$/im);
+
+    // If VLM didn't return a clear YES or NO, it probably returned garbage from
+    // a text-only model (OpenRouter's openrouter/free auto-router sometimes does
+    // this). Fall back to manual review instead of falsely rejecting.
+    if (!isPaymentYes && !isPaymentNo) {
+      console.warn("[verify-payment] VLM response has no IS_PAYMENT marker — treating as manual review. Response:", analysis.slice(0, 150));
+      return NextResponse.json({ verified: false, pendingManual: true, reason: "Thanks for uploading! The store owner will verify your payment shortly." });
+    }
+
+    // If VLM explicitly said this is NOT a payment, reject
+    if (!isPaymentYes) {
+      return NextResponse.json({ verified: false, reason: "This doesn't look like a payment screenshot. Please upload a screenshot of your actual payment confirmation from your mobile money or banking app." });
+    }
 
     const foundAmount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, "")) : NaN;
     const foundReference = referenceMatch ? referenceMatch[1].trim() : "";
@@ -131,11 +145,9 @@ REFERENCE: <the full reference/note/message field verbatim — or NOT_FOUND>`);
     const foundDateStr = dateMatch ? dateMatch[1].trim() : "";
     const foundDate = parseDate(foundDateStr);
 
-    console.log(`[verify-payment] VLM: isPayment=${isPayment}, amount=${foundAmount}, orderCode=${foundOrderCode}, recipient=${foundRecipient}, date=${foundDateStr}`);
+    console.log(`[verify-payment] VLM: isPaymentYes=${isPaymentYes}, amount=${foundAmount}, orderCode=${foundOrderCode}, recipient=${foundRecipient}, date=${foundDateStr}`);
 
-    // ===== CHECK 1: Is this a payment screenshot? =====
-    if (!isPayment)
-      return NextResponse.json({ verified: false, reason: "This doesn't look like a payment screenshot. Please upload a screenshot of your actual payment confirmation from your mobile money or banking app." });
+    // ===== CHECK 1 already passed above (IS_PAYMENT: YES confirmed) =====
 
     // ===== CHECK 2: Order code must be found in the screenshot =====
     let codeToLookup = orderCode?.trim() || foundOrderCode || null;
