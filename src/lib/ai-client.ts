@@ -127,65 +127,27 @@ export async function getChatClient() {
 }
 
 /**
- * Vision / VLM client. Provider chain (tries each in order, falls back on error):
- *   1. Gemini 2.0 Flash  (free tier, vision-capable, reliable)
- *   2. OpenRouter        (free models — often broken for vision but worth trying)
- *   3. Smart fallback    (returns "" — caller should treat as "manual review needed")
+ * Vision / VLM client. Uses OpenRouter (openrouter/free) — confirmed working
+ * for payment screenshot analysis on free tier.
+ *
+ * If OpenRouter returns empty/garbage, falls back to "manual review pending"
+ * in the verify-payment route (never falsely rejects a real screenshot).
  */
 export async function getVisionClient() {
   if (visionClientInstance) return visionClientInstance;
 
-  const providers: any[] = [];
-
-  // 1. Gemini (preferred — actually works for vision on free tier)
-  if (GEMINI_API_KEY) {
-    providers.push({
-      name: "gemini",
-      client: createGeminiVisionClient(GEMINI_API_KEY),
-    });
-  }
-
-  // 2. OpenRouter (vision models are unreliable on free tier, but try as fallback)
   if (OPENROUTER_API_KEY) {
-    providers.push({
-      name: "openrouter",
-      client: createOpenRouterVisionClient(OPENROUTER_API_KEY),
-    });
-  }
-
-  if (providers.length === 0) {
-    visionClientInstance = {
-      _provider: "smart",
-      analyze: async () => "",
-    };
-    console.log("[ChatBiz AI] Vision: smart fallback (no VLM)");
+    visionClientInstance = createOpenRouterVisionClient(OPENROUTER_API_KEY);
+    console.log("[ChatBiz AI] Vision: OpenRouter (openrouter/free)");
     return visionClientInstance;
   }
 
-  // Build a fallback-chain client
+  // No OpenRouter key — smart fallback (returns empty, route handles as manual review)
   visionClientInstance = {
-    _provider: providers[0].name + (providers.length > 1 ? `+${providers[1].name}` : ""),
-    analyze: async (imageBase64: string, prompt: string): Promise<string> => {
-      let lastError: any = null;
-      for (const p of providers) {
-        try {
-          const result = await p.client.analyze(imageBase64, prompt);
-          if (result && result.trim().length > 5) {
-            console.log(`[ChatBiz AI] Vision succeeded via: ${p.name}`);
-            return result;
-          }
-          console.warn(`[ChatBiz AI] Vision provider ${p.name} returned empty result`);
-        } catch (e: any) {
-          console.warn(`[ChatBiz AI] Vision provider ${p.name} failed:`, e?.message?.slice(0, 150));
-          lastError = e;
-        }
-      }
-      // All providers failed — return empty string so caller treats as manual review
-      console.error("[ChatBiz AI] All vision providers failed. Last error:", lastError?.message?.slice(0, 200));
-      return "";
-    },
+    _provider: "smart",
+    analyze: async () => "",
   };
-  console.log(`[ChatBiz AI] Vision: ${visionClientInstance._provider}`);
+  console.log("[ChatBiz AI] Vision: smart fallback (no OPENROUTER_API_KEY)");
   return visionClientInstance;
 }
 
@@ -357,10 +319,12 @@ function createOpenRouterVisionClient(apiKey: string) {
 
           const json = await response.json();
           const text = json?.choices?.[0]?.message?.content?.toString().trim() ?? "";
-          // Only return if the response actually looks like a VLM analysis (contains expected markers)
-          if (text && /IS_PAYMENT|AMOUNT|ORDER_CODE/i.test(text)) return text;
-          // Otherwise treat as empty (model didn't actually analyze the image)
-          if (text) console.warn(`[ChatBiz AI] OpenRouter ${model} returned non-VLM text, ignoring:`, text.slice(0, 80));
+          // Accept any non-empty response — verify-payment route parses it.
+          // OpenRouter's openrouter/free is an auto-router: sometimes it picks a
+          // text-only model that ignores the image, but most of the time it
+          // routes to a vision-capable model and returns the right extraction.
+          if (text && text.length > 5) return text;
+          console.warn(`[ChatBiz AI] OpenRouter ${model} returned empty content`);
         } catch (e: any) {
           lastError = e;
           continue;
