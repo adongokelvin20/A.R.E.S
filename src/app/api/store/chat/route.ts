@@ -158,15 +158,18 @@ export async function POST(req: NextRequest) {
 
   // ===== MISSING ORDER_CONFIRMED DETECTION =====
   // If the AI did NOT emit ORDER_CONFIRMED, but the customer said "yes/yep/yh/correct"
-  // to a recent "Is this correct?" question, the AI forgot to emit the marker.
-  // Use the fallback extraction to get the order from conversation history.
+  // to a recent "Is this correct?" question — AND the AI actually read back order details
+  // (items, prices, total) — then the AI forgot to emit the marker. Use fallback extraction.
+  // This only triggers when there's evidence of a proper read-back, not just "Is this correct?"
   if (!orderData?.items?.length && !orderConfirmedDetected) {
-    const customerSaidYes = /\b(yes|yeah|yh|yep|correct|that'?s right|that'?s correct|confirm|confirmed|ok|okay|sure|go ahead|proceed)\b/i.test(message.trim());
-    const aiRecentlyAskedConfirmation = /\b(is this correct\??|shall i (?:confirm|proceed)\??|does that look right\??|correct\??)\b/i.test(
-      (history || []).slice(-4).filter((m) => m.role === "assistant").map((m) => (typeof m.content === "string" ? m.content : "")).join(" \n ")
-    );
-    if (customerSaidYes && aiRecentlyAskedConfirmation) {
-      console.warn("[store chat] MISSING ORDER_CONFIRMED — customer said yes to 'Is this correct?' but AI didn't emit marker. Using fallback extraction.");
+    const customerSaidYes = /\b(yes|yeah|yh|yep|correct|that'?s right|that'?s correct|confirm|confirmed)\b/i.test(message.trim());
+    const recentAiMessages = (history || []).slice(-4).filter((m) => m.role === "assistant").map((m) => (typeof m.content === "string" ? m.content : "")).join(" \n ");
+    const aiRecentlyAskedConfirmation = /\b(is this correct\??|shall i (?:confirm|proceed)\??|does that look right\??)\b/i.test(recentAiMessages);
+    // Only trigger fallback if the AI ALSO mentioned order details (prices, items, total)
+    // This prevents auto-logging when the AI just asked "Is this correct?" without a read-back
+    const aiDidReadback = /(ghc|gh₵|\$|total|price|delivery|pickup)/i.test(recentAiMessages);
+    if (customerSaidYes && aiRecentlyAskedConfirmation && aiDidReadback) {
+      console.warn("[store chat] MISSING ORDER_CONFIRMED — customer said yes to read-back. Using fallback extraction.");
       try {
         orderData = await extractOrderFromConversation(history || [], message, agentName, business.name, contextProducts);
         if (orderData?.items?.length > 0) {
