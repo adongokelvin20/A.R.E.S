@@ -24,7 +24,18 @@ const ZAI_CHAT_MODEL = "glm-4.5-flash";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_CHAT_MODELS = ["openrouter/free"];
-const OPENROUTER_VISION_MODELS = ["openrouter/free"];
+// Vision: openrouter/free is an auto-router — works ~40% of the time for vision.
+// Retry it multiple times, then try specific free vision models as fallback.
+const OPENROUTER_VISION_MODELS = [
+  "openrouter/free",
+  "openrouter/free",
+  "openrouter/free",
+  "openrouter/free",
+  "openrouter/free",
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+];
 
 // ---------- Gemini (Vision) ----------
 // Free tier, vision-capable. Get key from https://aistudio.google.com/apikey
@@ -283,6 +294,8 @@ function createOpenRouterVisionClient(apiKey: string) {
     _provider: "openrouter",
     analyze: async (imageBase64: string, prompt: string): Promise<string> => {
       let lastError: any = null;
+      let lastNonEmptyText = "";
+
       for (const model of OPENROUTER_VISION_MODELS) {
         try {
           const response = await fetch(OPENROUTER_URL, {
@@ -319,16 +332,33 @@ function createOpenRouterVisionClient(apiKey: string) {
 
           const json = await response.json();
           const text = json?.choices?.[0]?.message?.content?.toString().trim() ?? "";
-          // Accept any non-empty response — verify-payment route parses it.
-          // OpenRouter's openrouter/free is an auto-router: sometimes it picks a
-          // text-only model that ignores the image, but most of the time it
-          // routes to a vision-capable model and returns the right extraction.
-          if (text && text.length > 5) return text;
-          console.warn(`[ChatBiz AI] OpenRouter ${model} returned empty content`);
+
+          if (!text || text.length < 5) {
+            console.warn(`[ChatBiz AI] OpenRouter ${model} returned empty content`);
+            continue;
+          }
+
+          // Prefer responses that actually contain VLM markers (IS_PAYMENT, AMOUNT, etc.)
+          // — these are from vision-capable models that actually analyzed the image.
+          if (/IS_PAYMENT|AMOUNT|ORDER_CODE/i.test(text)) {
+            console.log(`[ChatBiz AI] Vision succeeded via: ${model}`);
+            return text;
+          }
+
+          // If no markers, save as fallback but keep trying other models
+          if (!lastNonEmptyText) lastNonEmptyText = text;
+          console.warn(`[ChatBiz AI] OpenRouter ${model} returned non-VLM text (no markers), retrying...`);
         } catch (e: any) {
           lastError = e;
           continue;
         }
+      }
+
+      // Return the last non-empty text we got, even if it didn't have markers
+      // — verify-payment route will try to parse it
+      if (lastNonEmptyText) {
+        console.warn("[ChatBiz AI] Returning last non-empty vision response (no markers found in any attempt)");
+        return lastNonEmptyText;
       }
       throw lastError || new Error("All vision models failed");
     },
