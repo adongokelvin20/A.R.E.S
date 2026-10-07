@@ -86,7 +86,8 @@ async function archiveWeek(businessId: string, weekStart: Date, weekEnd: Date) {
       include: { items: true },
     });
 
-    const validOrders = orders.filter((o) => o.status === "FULFILLED");
+    // CONFIRMED = payment verified (previously misnamed FULFILLED)
+    const validOrders = orders.filter((o) => o.status === "CONFIRMED");
     const revenue = validOrders.reduce((s, o) => s + o.total, 0);
     const orderCount = orders.length;
 
@@ -177,7 +178,8 @@ export async function getThisWeekData(businessId: string) {
       include: { items: true },
     });
 
-    const validOrders = orders.filter((o) => o.status === "FULFILLED");
+    // CONFIRMED = payment verified (previously misnamed FULFILLED)
+    const validOrders = orders.filter((o) => o.status === "CONFIRMED");
     const revenue = validOrders.reduce((s, o) => s + o.total, 0);
     const orderCount = orders.length;
 

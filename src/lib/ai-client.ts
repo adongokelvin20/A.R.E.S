@@ -26,6 +26,12 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_CHAT_MODELS = ["openrouter/free"];
 const OPENROUTER_VISION_MODELS = ["openrouter/free"];
 
+// ---------- Gemini (Vision) ----------
+// Free tier, vision-capable. Get key from https://aistudio.google.com/apikey
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const GEMINI_VISION_MODEL = "gemini-2.0-flash";
+
 let zaiClientInstance: any = null;
 let openRouterChatInstance: any = null;
 let visionClientInstance: any = null;
@@ -121,18 +127,29 @@ export async function getChatClient() {
 }
 
 /**
- * Vision / VLM client. Uses OpenRouter (Z.ai vision needs paid plan).
+ * Vision / VLM client. Provider chain:
+ *   1. Gemini 2.0 Flash  (free tier, vision-capable, reliable)
+ *   2. OpenRouter        (free models — often broken for vision but worth trying)
+ *   3. Smart fallback    (returns "" — caller should treat as "manual review needed")
  */
 export async function getVisionClient() {
   if (visionClientInstance) return visionClientInstance;
 
-  if (OPENROUTER_API_KEY) {
-    visionClientInstance = createOpenRouterVisionClient(OPENROUTER_API_KEY);
-    console.log("[ChatBiz AI] Vision: OpenRouter");
+  // 1. Gemini (preferred — actually works for vision on free tier)
+  if (GEMINI_API_KEY && GEMINI_API_KEY.startsWith("AIza")) {
+    visionClientInstance = createGeminiVisionClient(GEMINI_API_KEY);
+    console.log("[ChatBiz AI] Vision: Gemini 2.0 Flash");
     return visionClientInstance;
   }
 
-  // Fallback: no real vision — return empty string
+  // 2. OpenRouter (vision models are unreliable on free tier)
+  if (OPENROUTER_API_KEY) {
+    visionClientInstance = createOpenRouterVisionClient(OPENROUTER_API_KEY);
+    console.log("[ChatBiz AI] Vision: OpenRouter (fallback)");
+    return visionClientInstance;
+  }
+
+  // 3. Smart fallback (no VLM)
   visionClientInstance = {
     _provider: "smart",
     analyze: async () => "",
@@ -218,6 +235,54 @@ async function callOpenRouterChat(messages: any[], temperature: number, maxToken
     }
   }
   throw lastError || new Error("All OpenRouter chat models failed");
+}
+
+/**
+ * Gemini Vision client (FREE tier — works for payment screenshot analysis).
+ * Uses inline_data for the image. Returns text content only.
+ */
+function createGeminiVisionClient(apiKey: string) {
+  return {
+    _provider: "gemini",
+    analyze: async (imageBase64: string, prompt: string): Promise<string> => {
+      // Gemini expects raw base64 (no data URL prefix)
+      const base64Data = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
+      const mimeType = imageBase64.match(/^data:(image\/[a-z+]+);/)?.[1] || "image/png";
+
+      const body = {
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: mimeType, data: base64Data } },
+            ],
+          },
+        ],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+      };
+
+      const url = `${GEMINI_URL}?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Gemini vision error ${response.status}: ${text.slice(0, 250)}`);
+      }
+
+      const json = await response.json();
+      // Gemini response shape: { candidates: [{ content: { parts: [{ text }] } }] }
+      const text =
+        json?.candidates?.[0]?.content?.parts
+          ?.map((p: any) => p?.text || "")
+          .join("")
+          .trim() ?? "";
+      return text;
+    },
+  };
 }
 
 function createOpenRouterVisionClient(apiKey: string) {

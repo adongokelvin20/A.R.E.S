@@ -98,19 +98,31 @@ export async function POST(req: NextRequest) {
       const vision = await getVisionClient() as any;
       vlmProvider = vision._provider || "unknown";
       const recipientInstr = momoAccountName ? `\nRECIPIENT_NAME: <name of the person who RECEIVED the money — or NOT_FOUND>` : "";
-      analysis = await vision.analyze(imageBase64, `Analyze this screenshot and extract:\nIS_PAYMENT: <YES if this is a mobile money/bank transfer payment confirmation, otherwise NO>\nAMOUNT: <the payment amount as a number, e.g. 150.00 — or NOT_FOUND>\nORDER_CODE: <any 4-character uppercase alphanumeric code visible in the reference/note field — or NOT_FOUND>\n${recipientInstr}\nDATE: <the payment date in YYYY-MM-DD format if parseable, otherwise the raw text — or NOT_FOUND>\nREFERENCE: <the full reference/note/message field verbatim — or NOT_FOUND>`);
+      analysis = await vision.analyze(imageBase64, `Analyze this screenshot and extract:
+IS_PAYMENT: <YES if this is a mobile money/bank transfer payment confirmation, otherwise NO>
+AMOUNT: <the payment amount as a number, e.g. 150.00 — or NOT_FOUND>
+ORDER_CODE: <any 4-character uppercase alphanumeric code visible in the reference/note field — or NOT_FOUND>
+${recipientInstr}
+DATE: <the payment date in YYYY-MM-DD format if parseable, otherwise the raw text — or NOT_FOUND>
+REFERENCE: <the full reference/note/message field verbatim — or NOT_FOUND>`);
     } catch (e: any) {
       console.error("[verify-payment] VLM failed:", e?.message);
       return NextResponse.json({ verified: false, pendingManual: true, reason: "Thanks for uploading! The store owner will verify your payment shortly." });
     }
 
-    // ===== Parse VLM response =====
-    const isPayment = /^IS_PAYMENT:\s*YES/im.test(analysis);
-    const amountMatch = analysis.match(/^AMOUNT:\s*([\d.,]+)/im);
-    const referenceMatch = analysis.match(/^REFERENCE:\s*(.+?)$/im);
-    const orderCodeMatch = analysis.match(/^ORDER_CODE:\s*([A-Z0-9]{4})\b/im);
-    const recipientMatch = analysis.match(/^RECIPIENT_NAME:\s*(.+?)$/im);
-    const dateMatch = analysis.match(/^DATE:\s*(.+?)$/im);
+    // If VLM returned empty analysis (model broken / no vision support), treat as manual review
+    if (!analysis || analysis.trim().length < 10) {
+      console.warn("[verify-payment] VLM returned empty analysis (provider:", vlmProvider + ") — falling back to manual review");
+      return NextResponse.json({ verified: false, pendingManual: true, reason: "Thanks for uploading! The store owner will verify your payment shortly." });
+    }
+
+    // ===== Parse VLM response (be flexible about formatting) =====
+    const isPayment = /IS_PAYMENT[:\s]*\s*YES/im.test(analysis);
+    const amountMatch = analysis.match(/AMOUNT[:\s]*\s*([\d.,]+)/im);
+    const referenceMatch = analysis.match(/REFERENCE[:\s]*\s*(.+?)$/im);
+    const orderCodeMatch = analysis.match(/ORDER_CODE[:\s]*\s*([A-Z0-9]{4})\b/im);
+    const recipientMatch = analysis.match(/RECIPIENT_NAME[:\s]*\s*(.+?)$/im);
+    const dateMatch = analysis.match(/DATE[:\s]*\s*(.+?)$/im);
 
     const foundAmount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, "")) : NaN;
     const foundReference = referenceMatch ? referenceMatch[1].trim() : "";
