@@ -331,6 +331,9 @@ export function StorePageClient({ slug }: { slug: string }) {
             <AresLogo className="h-5 w-5" />
             <span>Store powered by ChatBiz · {business.name}</span>
           </div>
+          <div className="mt-2 text-[10px] text-muted-foreground/60">
+            ChatBiz v3.1 · Built by Kelvin Ayinbisa &amp; Jessy · Mic + VLM + Archive fixes live
+          </div>
         </div>
       </footer>
 
