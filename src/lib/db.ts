@@ -38,8 +38,13 @@ export async function ensureDatabase() {
   // These add new columns to existing tables — needed because warm Vercel
   // function instances may have tablesEnsured=true from before schema changes
   const migrations = [
+    // Product table — add multi-image columns
     `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image2Data" TEXT`,
     `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image3Data" TEXT`,
+    // WeeklyArchive table — may not exist if tablesEnsured was cached before
+    // the table was added. CREATE TABLE IF NOT EXISTS is idempotent.
+    `CREATE TABLE IF NOT EXISTS "WeeklyArchive" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "weekStart" TIMESTAMP(3) NOT NULL, "weekEnd" TIMESTAMP(3) NOT NULL, "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0, "orderCount" INTEGER NOT NULL DEFAULT 0, "customerCount" INTEGER NOT NULL DEFAULT 0, "newCustomers" INTEGER NOT NULL DEFAULT 0, "topProducts" TEXT NOT NULL DEFAULT '[]', "channelBreakdown" TEXT NOT NULL DEFAULT '{}', "statusBreakdown" TEXT NOT NULL DEFAULT '{}', "summary" TEXT NOT NULL DEFAULT '', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "WeeklyArchive_pkey" PRIMARY KEY ("id"))`,
+    `CREATE INDEX IF NOT EXISTS "WeeklyArchive_businessId_weekStart_idx" ON "WeeklyArchive"("businessId", "weekStart")`,
   ]
   for (const sql of migrations) {
     try { await db.$executeRawUnsafe(sql) } catch {}

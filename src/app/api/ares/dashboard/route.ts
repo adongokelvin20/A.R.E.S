@@ -44,11 +44,12 @@ export async function GET(req: NextRequest) {
   try { await ensureDatabase(); } catch {}
 
   // Always ensure Product table has the new image2Data/image3Data columns
-  // (ensureDatabase may have been cached as 'done' on a warm function instance
-  // from before the schema change, so the ALTER TABLE never ran)
+  // AND WeeklyArchive table exists (idempotent — safe to run every time)
   try {
     await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image2Data" TEXT`);
     await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image3Data" TEXT`);
+    await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "WeeklyArchive" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "weekStart" TIMESTAMP(3) NOT NULL, "weekEnd" TIMESTAMP(3) NOT NULL, "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0, "orderCount" INTEGER NOT NULL DEFAULT 0, "customerCount" INTEGER NOT NULL DEFAULT 0, "newCustomers" INTEGER NOT NULL DEFAULT 0, "topProducts" TEXT NOT NULL DEFAULT '[]', "channelBreakdown" TEXT NOT NULL DEFAULT '{}', "statusBreakdown" TEXT NOT NULL DEFAULT '{}', "summary" TEXT NOT NULL DEFAULT '', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "WeeklyArchive_pkey" PRIMARY KEY ("id"))`);
+    await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "WeeklyArchive_businessId_weekStart_idx" ON "WeeklyArchive"("businessId", "weekStart")`);
   } catch {}
 
   // Load business (check suspended status + full record)
