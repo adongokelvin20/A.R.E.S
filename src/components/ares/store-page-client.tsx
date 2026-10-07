@@ -173,7 +173,7 @@ export function StorePageClient({ slug }: { slug: string }) {
             <AresLogo className="h-8 w-8" />
             <div>
               <div className="text-sm font-bold text-ares-navy">{business.name}</div>
-              <div className="text-[10px] text-muted-foreground">Online store · powered by ChatBiz</div>
+              <div className="text-[10px] text-muted-foreground">Online store · powered by ChatBiz · v3.1 (mic+vlm+archive fixed)</div>
             </div>
           </div>
           {business.phone && (
