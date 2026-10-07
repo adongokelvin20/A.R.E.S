@@ -108,7 +108,7 @@ function createOpenRouterChatClient(apiKey: string) {
     let lastError: any = null;
     for (const model of MODELS) {
       try {
-        const response = await fetch(OPENROUTER_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}`, "HTTP-Referer": "https://ares-two-eta.vercel.app", "X-Title": "A.R.E.S." }, body: JSON.stringify({ model, messages: body.messages, temperature: body.temperature ?? 0.85, max_tokens: body.max_tokens ?? 700 }) });
+        const response = await fetch(OPENROUTER_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}`, "HTTP-Referer": "https://ares-two-eta.vercel.app", "X-Title": "ChatBiz" }, body: JSON.stringify({ model, messages: body.messages, temperature: body.temperature ?? 0.85, max_tokens: body.max_tokens ?? 700, thinking: { type: "disabled" } }) });
         if (!response.ok) { const text = await response.text(); lastError = new Error(`OpenRouter ${model} error ${response.status}: ${text.slice(0, 200)}`); if (response.status === 401) throw lastError; if (response.status === 429 || response.status === 402 || response.status === 404) continue; throw lastError; }
         return await response.json();
       } catch (e: any) { lastError = e; continue; }
