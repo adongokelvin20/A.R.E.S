@@ -29,6 +29,12 @@ export async function PATCH(
   }
 
   try {
+    // Ensure image2Data/image3Data columns exist before saving
+    try {
+      await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image2Data" TEXT`);
+      await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image3Data" TEXT`);
+    } catch {}
+
     const formData = await req.formData();
     const name = formData.get("name")?.toString().trim();
     const description = formData.get("description")?.toString().trim() || null;

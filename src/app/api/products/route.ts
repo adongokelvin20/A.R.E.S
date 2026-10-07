@@ -19,11 +19,38 @@ export async function GET(req: NextRequest) {
   if (!session?.user?.businessId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const products = await db.product.findMany({
-    where: { businessId: session.user.businessId },
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json({ products });
+  try {
+    // Ensure image2Data/image3Data columns exist (idempotent)
+    try {
+      await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image2Data" TEXT`);
+      await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image3Data" TEXT`);
+    } catch {}
+
+    const products = await db.product.findMany({
+      where: { businessId: session.user.businessId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, name: true, description: true, category: true, sku: true,
+        price: true, currency: true, stock: true, lowStockThreshold: true,
+        imageUrl: true, image2Data: true, image3Data: true, imageAlt: true,
+        attributes: true, status: true, createdAt: true, updatedAt: true,
+      },
+    });
+
+    // Return image2Url/image3Url as API paths (not the raw base64 data)
+    const productsWithUrls = products.map((p) => ({
+      ...p,
+      image2Data: undefined, // Don't send raw base64 to the frontend
+      image3Data: undefined,
+      image2Url: p.image2Data ? `/api/image/${p.id}/2` : null,
+      image3Url: p.image3Data ? `/api/image/${p.id}/3` : null,
+    }));
+
+    return NextResponse.json({ products: productsWithUrls });
+  } catch (e: any) {
+    console.error("[products GET] error:", e?.message);
+    return NextResponse.json({ error: "Failed to load products" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -34,6 +61,12 @@ export async function POST(req: NextRequest) {
   const businessId = session.user.businessId;
 
   try {
+    // Ensure image2Data/image3Data columns exist before saving
+    try {
+      await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image2Data" TEXT`);
+      await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "image3Data" TEXT`);
+    } catch {}
+
     const formData = await req.formData();
     const name = formData.get("name")?.toString().trim();
     let description = formData.get("description")?.toString().trim() || null;
