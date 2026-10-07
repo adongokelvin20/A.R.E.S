@@ -285,51 +285,66 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
           <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-ares-mist"><X className="h-4 w-4" /></button>
         </div>
         <form onSubmit={submit} className="space-y-4 p-6">
-          {/* Image upload — up to 3 images */}
+          {/* Image upload — up to 3 images (BIG, VISIBLE upload area) */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-ares-navy">Product images (up to 3)</label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {/* Image 1 (primary — gets AI analysis) */}
               <div className="flex flex-col items-center gap-1">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-ares-line bg-ares-mist">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className={`flex h-28 w-full items-center justify-center overflow-hidden rounded-xl border-2 transition-colors ${imagePreview ? "border-ares-sea/40 bg-ares-mist" : "border-dashed border-ares-line bg-ares-foam hover:border-ares-sea/60 hover:bg-ares-mist"}`}
+                >
                   {imagePreview ? (
                     <img src={imagePreview} alt="Primary" className="h-full w-full object-cover" />
                   ) : (
-                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                      <Upload className="h-6 w-6" />
+                      <span className="text-[10px] font-medium">Upload</span>
+                    </div>
                   )}
-                </div>
-                <input ref={fileRef} type="file" accept="image/*" onChange={(e) => onFile(e, 1)} className="hidden" />
-                <button type="button" onClick={() => fileRef.current?.click()} className="text-[10px] font-medium text-ares-sea-deep hover:underline">
-                  {imagePreview ? "Change" : "Image 1"}
                 </button>
+                <input ref={fileRef} type="file" accept="image/*" onChange={(e) => onFile(e, 1)} className="hidden" />
+                <span className="text-[10px] font-medium text-ares-navy">Image 1 (main)</span>
               </div>
               {/* Image 2 */}
               <div className="flex flex-col items-center gap-1">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-dashed border-ares-line bg-ares-mist">
+                <button
+                  type="button"
+                  onClick={() => file2Ref.current?.click()}
+                  className={`flex h-28 w-full items-center justify-center overflow-hidden rounded-xl border-2 transition-colors ${image2Preview ? "border-ares-sea/40 bg-ares-mist" : "border-dashed border-ares-line bg-ares-foam hover:border-ares-sea/60 hover:bg-ares-mist"}`}
+                >
                   {image2Preview ? (
                     <img src={image2Preview} alt="Image 2" className="h-full w-full object-cover" />
                   ) : (
-                    <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
+                      <Upload className="h-6 w-6" />
+                      <span className="text-[10px]">Optional</span>
+                    </div>
                   )}
-                </div>
-                <input ref={file2Ref} type="file" accept="image/*" onChange={(e) => onFile(e, 2)} className="hidden" />
-                <button type="button" onClick={() => file2Ref.current?.click()} className="text-[10px] font-medium text-ares-sea-deep hover:underline">
-                  {image2Preview ? "Change" : "Image 2"}
                 </button>
+                <input ref={file2Ref} type="file" accept="image/*" onChange={(e) => onFile(e, 2)} className="hidden" />
+                <span className="text-[10px] font-medium text-muted-foreground">Image 2</span>
               </div>
               {/* Image 3 */}
               <div className="flex flex-col items-center gap-1">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-dashed border-ares-line bg-ares-mist">
+                <button
+                  type="button"
+                  onClick={() => file3Ref.current?.click()}
+                  className={`flex h-28 w-full items-center justify-center overflow-hidden rounded-xl border-2 transition-colors ${image3Preview ? "border-ares-sea/40 bg-ares-mist" : "border-dashed border-ares-line bg-ares-foam hover:border-ares-sea/60 hover:bg-ares-mist"}`}
+                >
                   {image3Preview ? (
                     <img src={image3Preview} alt="Image 3" className="h-full w-full object-cover" />
                   ) : (
-                    <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
+                      <Upload className="h-6 w-6" />
+                      <span className="text-[10px]">Optional</span>
+                    </div>
                   )}
-                </div>
-                <input ref={file3Ref} type="file" accept="image/*" onChange={(e) => onFile(e, 3)} className="hidden" />
-                <button type="button" onClick={() => file3Ref.current?.click()} className="text-[10px] font-medium text-ares-sea-deep hover:underline">
-                  {image3Preview ? "Change" : "Image 3"}
                 </button>
+                <input ref={file3Ref} type="file" accept="image/*" onChange={(e) => onFile(e, 3)} className="hidden" />
+                <span className="text-[10px] font-medium text-muted-foreground">Image 3</span>
               </div>
             </div>
             <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -338,7 +353,7 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
               ) : aiAnalyzed ? (
                 <span className="inline-flex items-center gap-1 text-emerald-600"><Sparkles className="h-3 w-3" /> {agentName} analyzed image 1</span>
               ) : (
-                <>PNG or JPG, max 2MB each. Image 1 is the main image — {agentName} will analyze it to recognize the product.</>
+                <>Tap a box above to upload. PNG or JPG, max 2MB each. Image 1 is analyzed by {agentName}.</>
               )}
             </p>
             <input

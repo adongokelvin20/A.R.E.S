@@ -152,13 +152,29 @@ export async function GET(req: NextRequest) {
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfYesterday = new Date(startOfToday.getTime() - 86400000);
 
+  // Calculate this week's start (Monday)
+  const getWeekStart = (d: Date) => {
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const ws = new Date(d);
+    ws.setDate(diff);
+    ws.setHours(0, 0, 0, 0);
+    return ws;
+  };
+  const weekStart = getWeekStart(now);
+
   const todayOrders = orders.filter((o) => o.createdAt >= startOfToday);
   const yesterdayOrders = orders.filter(
     (o) => o.createdAt >= startOfYesterday && o.createdAt < startOfToday
   );
+  // This week's orders (for week-to-date KPIs — resets every Monday)
+  const weekOrders = orders.filter((o) => o.createdAt >= weekStart);
+  const weekCustomers = customers.filter((c) => c.createdAt >= weekStart);
+
   // CONFIRMED = payment verified (previously misnamed FULFILLED)
   const todayRevenue = todayOrders.filter((o) => o.status === "CONFIRMED").reduce((s, o) => s + o.total, 0);
   const yesterdayRevenue = yesterdayOrders.filter((o) => o.status === "CONFIRMED").reduce((s, o) => s + o.total, 0);
+  const weekRevenue = weekOrders.filter((o) => o.status === "CONFIRMED").reduce((s, o) => s + o.total, 0);
   const revenueDeltaPct =
     yesterdayRevenue > 0
       ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
@@ -241,6 +257,11 @@ export async function GET(req: NextRequest) {
       totalProducts: products.length,
       lowStockCount: products.filter((p) => p.stock <= p.lowStockThreshold).length,
       openConversations: conversations.filter((c) => c.status === "OPEN").length,
+      // Week-to-date KPIs (reset every Monday when checkAndArchiveWeek runs)
+      weekRevenue,
+      weekOrderCount: weekOrders.length,
+      weekNewCustomers: weekCustomers.length,
+      weekStart: weekStart.toISOString(),
     },
     series,
     channelBreakdown,
