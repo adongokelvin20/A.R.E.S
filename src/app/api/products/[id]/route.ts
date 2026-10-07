@@ -38,11 +38,13 @@ export async function PATCH(
     const lowStockThreshold = parseInt(formData.get("lowStockThreshold")?.toString() ?? "5", 10);
     const manualImageAlt = formData.get("imageAlt")?.toString().trim() || null;
     const file = formData.get("image") as File | null;
+    const file2 = formData.get("image2") as File | null;
+    const file3 = formData.get("image3") as File | null;
 
     // Dynamic fields
     const attributes: Record<string, string> = {};
     for (const [key, value] of formData.entries()) {
-      if (!["name", "description", "category", "price", "stock", "lowStockThreshold", "imageAlt", "image"].includes(key)) {
+      if (!["name", "description", "category", "price", "stock", "lowStockThreshold", "imageAlt", "image", "image2", "image3"].includes(key)) {
         const v = value.toString().trim();
         if (v) attributes[key] = v;
       }
@@ -50,38 +52,42 @@ export async function PATCH(
 
     let imageUrl = product.imageUrl;
     let imageData = product.imageData;
+    let image2Data = product.image2Data;
+    let image3Data = product.image3Data;
     let imageAlt = manualImageAlt ?? product.imageAlt;
 
-    // If a new image is uploaded, store it in the database
-    if (file && file.size > 0 && file.size < 2 * 1024 * 1024) {
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const arrayBuffer = await file.arrayBuffer();
+    async function processImage(f: File): Promise<string | null> {
+      if (!f || f.size === 0 || f.size >= 2 * 1024 * 1024) return null;
+      const ext = (f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const arrayBuffer = await f.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const base64 = `data:image/${ext};base64,${buffer.toString("base64")}`;
-      imageData = base64;
+      return `data:image/${ext};base64,${buffer.toString("base64")}`;
+    }
+
+    // If a new primary image is uploaded, store it in the database
+    if (file && file.size > 0) {
+      imageData = await processImage(file);
       imageUrl = `/api/image/${id}`;
 
       // AI analyze new image if no manual alt
       if (!manualImageAlt) {
         try {
-          const { getZaiClient } = await import("@/lib/ai-client");
-          const zai = await getZaiClient();
-          const visionRes = await zai.chat.completions.createVision({
-            model: "glm-4v",
-            messages: [{
-              role: "user",
-              content: [
-                { type: "text", text: `Describe this product image in one concise sentence. Focus on product type, color, key features. Just the description.` },
-                { type: "image_url", image_url: { url: base64 } },
-              ],
-            }],
-          });
-          const aiDesc = (visionRes as any)?.choices?.[0]?.message?.content?.toString().trim();
+          const { getVisionClient } = await import("@/lib/ai-client");
+          const vision = await getVisionClient();
+          const aiDesc = await vision.analyze(imageData!, `Describe this product image in one concise sentence. Focus on product type, color, key features. Just the description.`);
           if (aiDesc && aiDesc.length > 5 && aiDesc.length < 300) imageAlt = aiDesc;
         } catch (e) {
           console.error("[products PATCH] VLM analysis failed", e);
         }
       }
+    }
+
+    // Process additional images
+    if (file2 && file2.size > 0) {
+      image2Data = await processImage(file2);
+    }
+    if (file3 && file3.size > 0) {
+      image3Data = await processImage(file3);
     }
 
     const updated = await db.product.update({
@@ -95,6 +101,8 @@ export async function PATCH(
         lowStockThreshold: Number.isFinite(lowStockThreshold) ? lowStockThreshold : product.lowStockThreshold,
         imageUrl,
         imageData,
+        image2Data,
+        image3Data,
         imageAlt,
         attributes: JSON.stringify(attributes),
       },

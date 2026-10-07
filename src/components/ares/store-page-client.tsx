@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { StoreChat } from "@/components/ares/store-chat";
 import { AresLogo } from "@/components/ares/logo";
-import { MessageCircle, Package, AlertCircle, Loader2, Lock } from "lucide-react";
+import { MessageCircle, Package, AlertCircle, Loader2, Lock, X } from "lucide-react";
 
 const CURRENCY_SYMBOL: Record<string, string> = {
   GHS: "GH₵", NGN: "₦", KES: "KSh", USD: "$", GBP: "£", ZAR: "R", EUR: "€",
@@ -24,6 +24,8 @@ export function StorePageClient({ slug }: { slug: string }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [paymentEnabled, setPaymentEnabled] = useState(true);
+  const [galleryProduct, setGalleryProduct] = useState<any>(null);
+  const [galleryImageIdx, setGalleryImageIdx] = useState(0);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
@@ -173,7 +175,7 @@ export function StorePageClient({ slug }: { slug: string }) {
             <AresLogo className="h-8 w-8" />
             <div>
               <div className="text-sm font-bold text-ares-navy">{business.name}</div>
-              <div className="text-[10px] text-muted-foreground">Online store · powered by ChatBiz · v3.2 (mic fixed)</div>
+              <div className="text-[10px] text-muted-foreground">Online store · powered by ChatBiz · v3.3 (3 images + smart agent)</div>
             </div>
           </div>
           {business.phone && (
@@ -285,7 +287,9 @@ export function StorePageClient({ slug }: { slug: string }) {
           )}
 
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {filteredProducts.map((p) => (
+            {filteredProducts.map((p) => {
+              const images = [p.imageUrl, p.image2Url, p.image3Url].filter(Boolean);
+              return (
               <article
                 key={p.id}
                 onClick={() => {
@@ -293,13 +297,27 @@ export function StorePageClient({ slug }: { slug: string }) {
                 }}
                 className="cursor-pointer overflow-hidden rounded-2xl border border-ares-line bg-white transition-shadow hover:shadow-md"
               >
-                <div className="aspect-square overflow-hidden bg-ares-mist">
+                <div
+                  className="relative aspect-square overflow-hidden bg-ares-mist"
+                  onClick={(e) => {
+                    if (images.length > 0) {
+                      e.stopPropagation();
+                      setGalleryProduct(p);
+                      setGalleryImageIdx(0);
+                    }
+                  }}
+                >
                   {p.imageUrl ? (
                     <img src={p.imageUrl} alt={p.imageAlt || p.name} className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full items-center justify-center">
                       <Package className="h-10 w-10 text-muted-foreground/30" />
                     </div>
+                  )}
+                  {images.length > 1 && (
+                    <span className="absolute right-2 top-2 rounded-full bg-ares-navy/80 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+                      {images.length} photos
+                    </span>
                   )}
                 </div>
                 <div className="p-3">
@@ -319,9 +337,51 @@ export function StorePageClient({ slug }: { slug: string }) {
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         </section>
+      )}
+
+      {/* Full-screen image gallery */}
+      {galleryProduct && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+          onClick={() => setGalleryProduct(null)}
+        >
+          <button
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            onClick={() => setGalleryProduct(null)}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="relative max-h-[90vh] max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            {(() => {
+              const images = [galleryProduct.imageUrl, galleryProduct.image2Url, galleryProduct.image3Url].filter(Boolean);
+              const current = images[galleryImageIdx] || images[0];
+              return (
+                <>
+                  <img src={current} alt={galleryProduct.name} className="max-h-[80vh] w-auto rounded-xl object-contain" />
+                  <div className="mt-3 text-center text-white">
+                    <div className="text-sm font-semibold">{galleryProduct.name}</div>
+                    <div className="text-xs text-white/70">{sym(galleryProduct.currency)}{galleryProduct.price.toFixed(2)}</div>
+                  </div>
+                  {images.length > 1 && (
+                    <div className="mt-3 flex justify-center gap-2">
+                      {images.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setGalleryImageIdx(idx)}
+                          className={`h-2 rounded-full transition-all ${idx === galleryImageIdx ? "w-8 bg-white" : "w-2 bg-white/40 hover:bg-white/60"}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </div>
       )}
 
       {/* Footer */}
@@ -332,7 +392,7 @@ export function StorePageClient({ slug }: { slug: string }) {
             <span>Store powered by ChatBiz · {business.name}</span>
           </div>
           <div className="mt-2 text-[10px] text-muted-foreground/60">
-            ChatBiz v3.2 · Built by Kelvin Ayinbisa &amp; Jessy · Mic fixed
+            ChatBiz v3.3 · Built by Kelvin Ayinbisa &amp; Jessy · 3 images + smart agent
           </div>
         </div>
       </footer>

@@ -44,11 +44,13 @@ export async function POST(req: NextRequest) {
     const lowStockThreshold = parseInt(formData.get("lowStockThreshold")?.toString() ?? "5", 10);
     const manualImageAlt = formData.get("imageAlt")?.toString().trim() || null;
     const file = formData.get("image") as File | null;
+    const file2 = formData.get("image2") as File | null;
+    const file3 = formData.get("image3") as File | null;
 
     // Dynamic fields
     const attributes: Record<string, string> = {};
     for (const [key, value] of formData.entries()) {
-      if (!["name", "description", "category", "sku", "price", "stock", "lowStockThreshold", "imageAlt", "image"].includes(key)) {
+      if (!["name", "description", "category", "sku", "price", "stock", "lowStockThreshold", "imageAlt", "image", "image2", "image3"].includes(key)) {
         const v = value.toString().trim();
         if (v) attributes[key] = v;
       }
@@ -60,21 +62,27 @@ export async function POST(req: NextRequest) {
 
     let imageUrl: string | null = null;
     let imageData: string | null = null;
+    let image2Data: string | null = null;
+    let image3Data: string | null = null;
     let imageAlt: string | null = manualImageAlt;
 
-    if (file && file.size > 0 && file.size < 2 * 1024 * 1024) {
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const arrayBuffer = await file.arrayBuffer();
+    async function processImage(f: File): Promise<string | null> {
+      if (!f || f.size === 0 || f.size >= 2 * 1024 * 1024) return null;
+      const ext = (f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const arrayBuffer = await f.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const base64 = `data:image/${ext};base64,${buffer.toString("base64")}`;
-      imageData = base64;
+      return `data:image/${ext};base64,${buffer.toString("base64")}`;
+    }
+
+    if (file && file.size > 0) {
+      imageData = await processImage(file);
 
       // If no manual imageAlt provided, analyze the image with VLM
-      if (!imageAlt) {
+      if (imageData && !imageAlt) {
         try {
           const { getVisionClient } = await import("@/lib/ai-client");
           const vision = await getVisionClient();
-          const analysis = await vision.analyze(base64, `Analyze this product image. Extract: DESCRIPTION (1-2 sentences), CATEGORY (Male/Female/Kids/General/Unisex), COLOR, TYPE, MATCHING_TAGS (comma-separated).\n\nFormat:\nDESCRIPTION: <text>\nCATEGORY: <text>\nCOLOR: <text>\nTYPE: <text>\nMATCHING_TAGS: <text>`);
+          const analysis = await vision.analyze(imageData, `Analyze this product image. Extract: DESCRIPTION (1-2 sentences), CATEGORY (Male/Female/Kids/General/Unisex), COLOR, TYPE, MATCHING_TAGS (comma-separated).\n\nFormat:\nDESCRIPTION: <text>\nCATEGORY: <text>\nCOLOR: <text>\nTYPE: <text>\nMATCHING_TAGS: <text>`);
           const descMatch = analysis.match(/^DESCRIPTION:\s*(.+?)$/im);
           const catMatch = analysis.match(/^CATEGORY:\s*(.+?)$/im);
           const colorMatch = analysis.match(/^COLOR:\s*(.+?)$/im);
@@ -94,6 +102,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Process additional images (no VLM analysis needed — just store them)
+    if (file2 && file2.size > 0) {
+      image2Data = await processImage(file2);
+    }
+    if (file3 && file3.size > 0) {
+      image3Data = await processImage(file3);
+    }
+
     const product = await db.product.create({
       data: {
         businessId,
@@ -107,6 +123,8 @@ export async function POST(req: NextRequest) {
         lowStockThreshold,
         imageUrl,
         imageData,
+        image2Data,
+        image3Data,
         imageAlt,
         attributes: JSON.stringify(attributes),
         status: "ACTIVE",

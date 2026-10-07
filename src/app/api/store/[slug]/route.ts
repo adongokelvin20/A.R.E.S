@@ -86,6 +86,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       select: {
         id: true, name: true, description: true, price: true, currency: true,
         category: true, imageUrl: true, imageAlt: true, stock: true, attributes: true,
+        image2Data: true, image3Data: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -100,6 +101,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       products: products.map((p) => ({
         id: p.id, name: p.name, description: p.description, price: p.price,
         currency: p.currency, category: p.category, imageUrl: p.imageUrl,
+        image2Url: p.image2Data ? `/api/image/${p.id}/2` : null,
+        image3Url: p.image3Data ? `/api/image/${p.id}/3` : null,
         imageAlt: p.imageAlt, inStock: p.stock > 0,
         attributes: JSON.parse(p.attributes || "{}"),
       })),

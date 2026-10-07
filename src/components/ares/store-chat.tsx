@@ -107,6 +107,7 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
   const [savedChats, setSavedChats] = useState<{ id: string; messages: Msg[]; createdAt: string }[]>([]);
   const [viewingOldChat, setViewingOldChat] = useState<Msg[] | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [viewingImage, setViewingImage] = useState<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -425,11 +426,11 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
                           </div>
                         )}
                         <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
-                        {/* Product images */}
+                        {/* Product images — tappable to view full-size */}
                         {m.images && m.images.length > 0 && (
                           <div className="mt-2 grid grid-cols-2 gap-1">
                             {m.images.map((img: any, idx: number) => (
-                              <div key={idx} className="overflow-hidden rounded">
+                              <div key={idx} className="overflow-hidden rounded cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewingImage(img)}>
                                 <img src={img.imageUrl} alt={img.name} className="h-20 w-full object-cover" />
                                 <div className="bg-white px-1.5 py-1 text-[10px]">
                                   <div className="font-medium text-[#075E54]">{img.name}</div>
@@ -557,6 +558,30 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen image viewer */}
+      {viewingImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setViewingImage(null)}
+        >
+          <button
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            onClick={() => setViewingImage(null)}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="max-h-[90vh] max-w-md" onClick={(e) => e.stopPropagation()}>
+            <img src={viewingImage.imageUrl} alt={viewingImage.name} className="max-h-[80vh] w-auto rounded-xl object-contain" />
+            <div className="mt-3 text-center text-white">
+              <div className="text-sm font-semibold">{viewingImage.name}</div>
+              {viewingImage.price > 0 && (
+                <div className="text-xs text-white/70">{sym(viewingImage.currency)}{viewingImage.price.toFixed(2)}</div>
+              )}
             </div>
           </div>
         </div>

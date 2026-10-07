@@ -23,6 +23,8 @@ interface Product {
   stock: number;
   lowStockThreshold: number;
   imageUrl?: string | null;
+  image2Url?: string | null;
+  image3Url?: string | null;
   imageAlt?: string | null;
   attributes: any;
   status: string;
@@ -196,6 +198,8 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
   const descPlaceholder = isFood ? "Ingredients, portion size, spice level" : isHealth ? "Dosage, side effects, usage instructions" : isRetail ? "Material, fit, care instructions" : isRealEstate ? "Location, size, amenities" : isService ? "Duration, what's included" : "Describe this product";
   const categoryPlaceholder = isFood ? "e.g. Main Dish" : isHealth ? "e.g. Pain Relief" : isRealEstate ? "e.g. Apartment" : isService ? "e.g. Hair" : "e.g. Category";
   const fileRef = useRef<HTMLInputElement>(null);
+  const file2Ref = useRef<HTMLInputElement>(null);
+  const file3Ref = useRef<HTMLInputElement>(null);
   const isEditing = !!editingProduct;
   const [name, setName] = useState(editingProduct?.name ?? "");
   const [description, setDescription] = useState(editingProduct?.description ?? "");
@@ -205,7 +209,11 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
   const [lowStockThreshold, setLowStockThreshold] = useState(editingProduct ? String(editingProduct.lowStockThreshold) : "5");
   const [imageAlt, setImageAlt] = useState(editingProduct?.imageAlt ?? "");
   const [imagePreview, setImagePreview] = useState<string | null>(editingProduct?.imageUrl ?? null);
+  const [image2Preview, setImage2Preview] = useState<string | null>(editingProduct?.image2Url ?? null);
+  const [image3Preview, setImage3Preview] = useState<string | null>(editingProduct?.image3Url ?? null);
   const [file, setFile] = useState<File | null>(null);
+  const [file2, setFile2] = useState<File | null>(null);
+  const [file3, setFile3] = useState<File | null>(null);
   const [dynamicFields, setDynamicFields] = useState<Record<string, string>>(() => {
     if (editingProduct?.attributes) {
       const attrs = typeof editingProduct.attributes === "string" ? JSON.parse(editingProduct.attributes) : editingProduct.attributes;
@@ -218,13 +226,16 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
   const [aiAnalyzed, setAiAnalyzed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function onFile(e: React.ChangeEvent<HTMLInputElement>, slot: 1 | 2 | 3 = 1) {
     const f = e.target.files?.[0];
     if (!f) return;
-    setFile(f);
-    setAiAnalyzed(false);
     const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
+    reader.onload = () => {
+      const result = reader.result as string;
+      if (slot === 1) { setFile(f); setImagePreview(result); setAiAnalyzed(false); }
+      else if (slot === 2) { setFile2(f); setImage2Preview(result); }
+      else if (slot === 3) { setFile3(f); setImage3Preview(result); }
+    };
     reader.readAsDataURL(f);
   }
 
@@ -249,6 +260,8 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
         if (v.trim()) fd.set(k, v.trim());
       }
       if (file) fd.set("image", file);
+      if (file2) fd.set("image2", file2);
+      if (file3) fd.set("image3", file3);
 
       const url = isEditing && editingProduct ? `/api/products/${editingProduct.id}` : "/api/products";
       const method = isEditing ? "PATCH" : "POST";
@@ -272,39 +285,68 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
           <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-ares-mist"><X className="h-4 w-4" /></button>
         </div>
         <form onSubmit={submit} className="space-y-4 p-6">
-          {/* Image upload */}
+          {/* Image upload — up to 3 images */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-ares-navy">Product image</label>
-            <div className="flex gap-3">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ares-line bg-ares-mist">
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
-                ) : (
-                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                )}
-              </div>
-              <div className="flex-1">
-                <input ref={fileRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
-                <button type="button" onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-lg border border-ares-line bg-white px-3 py-2 text-xs font-medium text-ares-navy hover:border-ares-sea/40">
-                  <Upload className="h-3.5 w-3.5" /> {file ? "Change image" : "Upload image"}
-                </button>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  {file && !aiAnalyzed && analyzing ? (
-                    <span className="inline-flex items-center gap-1 text-ares-sea-deep"><Loader2 className="h-3 w-3 animate-spin" /> {agentName} is analyzing the image…</span>
-                  ) : aiAnalyzed ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-600"><Sparkles className="h-3 w-3" /> {agentName} analyzed the image</span>
+            <label className="mb-1.5 block text-xs font-medium text-ares-navy">Product images (up to 3)</label>
+            <div className="flex gap-2">
+              {/* Image 1 (primary — gets AI analysis) */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-ares-line bg-ares-mist">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Primary" className="h-full w-full object-cover" />
                   ) : (
-                    <>PNG or JPG, max 5MB. {agentName} will analyze the image to recognize the product when customers describe it.</>
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
                   )}
-                </p>
-                <input
-                  value={imageAlt}
-                  onChange={(e) => setImageAlt(e.target.value)}
-                  placeholder="Describe this image (or leave blank for AI to analyze)"
-                  className="mt-2 w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-xs text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
-                />
+                </div>
+                <input ref={fileRef} type="file" accept="image/*" onChange={(e) => onFile(e, 1)} className="hidden" />
+                <button type="button" onClick={() => fileRef.current?.click()} className="text-[10px] font-medium text-ares-sea-deep hover:underline">
+                  {imagePreview ? "Change" : "Image 1"}
+                </button>
+              </div>
+              {/* Image 2 */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-dashed border-ares-line bg-ares-mist">
+                  {image2Preview ? (
+                    <img src={image2Preview} alt="Image 2" className="h-full w-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                  )}
+                </div>
+                <input ref={file2Ref} type="file" accept="image/*" onChange={(e) => onFile(e, 2)} className="hidden" />
+                <button type="button" onClick={() => file2Ref.current?.click()} className="text-[10px] font-medium text-ares-sea-deep hover:underline">
+                  {image2Preview ? "Change" : "Image 2"}
+                </button>
+              </div>
+              {/* Image 3 */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-dashed border-ares-line bg-ares-mist">
+                  {image3Preview ? (
+                    <img src={image3Preview} alt="Image 3" className="h-full w-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                  )}
+                </div>
+                <input ref={file3Ref} type="file" accept="image/*" onChange={(e) => onFile(e, 3)} className="hidden" />
+                <button type="button" onClick={() => file3Ref.current?.click()} className="text-[10px] font-medium text-ares-sea-deep hover:underline">
+                  {image3Preview ? "Change" : "Image 3"}
+                </button>
               </div>
             </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              {file && !aiAnalyzed && analyzing ? (
+                <span className="inline-flex items-center gap-1 text-ares-sea-deep"><Loader2 className="h-3 w-3 animate-spin" /> {agentName} is analyzing image 1…</span>
+              ) : aiAnalyzed ? (
+                <span className="inline-flex items-center gap-1 text-emerald-600"><Sparkles className="h-3 w-3" /> {agentName} analyzed image 1</span>
+              ) : (
+                <>PNG or JPG, max 2MB each. Image 1 is the main image — {agentName} will analyze it to recognize the product.</>
+              )}
+            </p>
+            <input
+              value={imageAlt}
+              onChange={(e) => setImageAlt(e.target.value)}
+              placeholder="Describe this product (or leave blank for AI to analyze image 1)"
+              className="mt-2 w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-xs text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none"
+            />
           </div>
 
           <div>

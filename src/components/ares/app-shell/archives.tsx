@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, TrendingUp, Users, Package, Loader2 } from "lucide-react";
+import { Calendar, TrendingUp, Users, Package, Loader2, RefreshCw } from "lucide-react";
 
 interface Archive {
   id: string;
@@ -20,8 +20,10 @@ interface Archive {
 export function AresArchives() {
   const [archives, setArchives] = useState<Archive[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
+  const loadArchives = () => {
+    setLoading(true);
     fetch("/api/weekly-archives")
       .then((r) => r.json())
       .then((data) => {
@@ -29,7 +31,24 @@ export function AresArchives() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadArchives();
   }, []);
+
+  async function createArchivesNow() {
+    setCreating(true);
+    try {
+      const res = await fetch("/api/weekly-archives/create", { method: "POST" });
+      const data = await res.json();
+      setArchives(data.archives ?? []);
+    } catch (e) {
+      console.error("Failed to create archives:", e);
+    } finally {
+      setCreating(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -50,8 +69,16 @@ export function AresArchives() {
           <Calendar className="mx-auto h-10 w-10 text-muted-foreground" />
           <h3 className="mt-3 text-sm font-semibold text-ares-navy">No archives yet</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Weekly archives are created automatically at the start of each week. Check back after your first week.
+            Archives are created automatically each week. You can also create one now for the current week.
           </p>
+          <button
+            onClick={createArchivesNow}
+            disabled={creating}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-4 py-2 text-xs font-semibold text-white hover:bg-ares-sea-deep disabled:opacity-50"
+          >
+            {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Create archive now
+          </button>
         </div>
       </div>
     );
@@ -59,9 +86,19 @@ export function AresArchives() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold text-ares-navy">Weekly Archives</h2>
-        <p className="text-xs text-muted-foreground">{archives.length} week{archives.length === 1 ? "" : "s"} of history</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-ares-navy">Weekly Archives</h2>
+          <p className="text-xs text-muted-foreground">{archives.length} week{archives.length === 1 ? "" : "s"} of history</p>
+        </div>
+        <button
+          onClick={createArchivesNow}
+          disabled={creating}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-ares-line bg-white px-3 py-1.5 text-xs font-medium text-ares-navy hover:border-ares-sea/40 disabled:opacity-50"
+        >
+          {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          Refresh
+        </button>
       </div>
 
       <div className="space-y-3">

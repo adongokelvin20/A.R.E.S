@@ -125,8 +125,10 @@ model Product {
   currency      String   @default("GHS")
   stock         Int      @default(0)
   lowStockThreshold Int  @default(5)
-  imageUrl      String?  // URL to serve the image (e.g. /api/image/[id])
-  imageData     String?  // base64-encoded image data (stored in DB for Vercel compatibility)
+  imageUrl      String?  // URL to serve the primary image (e.g. /api/image/[id])
+  imageData     String?  // base64-encoded primary image data (stored in DB for Vercel compatibility)
+  image2Data    String?  // base64-encoded second image (optional)
+  image3Data    String?  // base64-encoded third image (optional)
   imageAlt      String?  // AI-visible description of the image for matching
   attributes    String   @default("{}")
   status        String   @default("ACTIVE")
