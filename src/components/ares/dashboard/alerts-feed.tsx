@@ -30,7 +30,7 @@ export function AresAlertsFeed({ data }: { data: any }) {
       <div className="max-h-80 overflow-y-auto ares-scroll p-3">
         {alerts.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            No open alerts. A.R.E.S. is monitoring.
+            No open alerts. ChatBiz is monitoring.
           </div>
         ) : (
           <ul className="space-y-2">

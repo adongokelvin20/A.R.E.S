@@ -35,7 +35,6 @@ type View =
   | "orders"
   | "conversations"
   | "ai"
-  | "automations"
   | "integrations"
   | "pricing"
   | "archives"
@@ -50,7 +49,6 @@ const NAV: NavItem[] = [
   { id: "lookup", label: "Order Lookup", icon: "search" },
   { id: "conversations", label: "Conversations", icon: "message" },
   { id: "ai", label: "Ask my AI", icon: "sparkles" },
-  { id: "automations", label: "Automations", icon: "workflow" },
   { id: "integrations", label: "Integrations", icon: "plug" },
   { id: "pricing", label: "Plans", icon: "crown" },
   { id: "archives", label: "Archives", icon: "calendar" },
@@ -259,7 +257,7 @@ export function AresAppShell({
           </button>
           <div className="flex items-center gap-2">
             <AresLogo className="h-7 w-7" />
-            <span className="font-mono text-sm font-bold tracking-wider text-ares-navy">A.R.E.S.</span>
+            <span className="font-mono text-sm font-bold tracking-wider text-ares-navy">ChatBiz</span>
           </div>
           <div className="w-9" />
         </div>

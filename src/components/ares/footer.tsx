@@ -12,12 +12,12 @@ export function AresFooter() {
             <div className="flex items-center gap-2.5">
               <AresLogo className="h-9 w-9" />
               <div>
-                <div className="text-sm font-bold tracking-[0.14em] text-ares-navy">A.R.E.S.</div>
+                <div className="text-sm font-bold tracking-[0.14em] text-ares-navy">ChatBiz</div>
                 <div className="text-[9px] tracking-wide text-muted-foreground">A Kevtech Corporation product</div>
               </div>
             </div>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              The digital employee for your business. Founded by Kelvin Ayinbisa and built by Kevtech Corporation to give every business — not just the big ones — access to enterprise-grade operations technology.
+              The digital employee for your business. Built by Kelvin Ayinbisa & Jessy and built by Kevtech Corporation to give every business — not just the big ones — access to enterprise-grade operations technology.
             </p>
           </div>
 

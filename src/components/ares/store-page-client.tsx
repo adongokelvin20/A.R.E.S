@@ -21,6 +21,9 @@ export function StorePageClient({ slug }: { slug: string }) {
   const [business, setBusiness] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [paymentEnabled, setPaymentEnabled] = useState(true);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
@@ -61,6 +64,9 @@ export function StorePageClient({ slug }: { slug: string }) {
             }
             if (mounted) setBusiness(data.business);
             if (mounted) setProducts(data.products ?? []);
+            if (mounted) {
+              try { const config = JSON.parse(data.business?.configuration || "{}"); setPaymentEnabled(config.paymentEnabled !== false); } catch {}
+            }
           });
       })
       .catch((e) => {
@@ -116,24 +122,24 @@ export function StorePageClient({ slug }: { slug: string }) {
             This store doesn&apos;t exist or hasn&apos;t been set up yet. Check the link and try again.
           </p>
           <a href="/" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep">
-            Go to A.R.E.S.
+            Go to ChatBiz
           </a>
         </div>
       </main>
     );
   }
 
-  // Error
+  // Error state — show helpful message instead of "warming up"
   if (error || !business) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-ares-mist px-4">
         <div className="max-w-md text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-ares-foam text-ares-sea-deep">
             <AlertCircle className="h-7 w-7" />
           </div>
-          <h1 className="text-xl font-semibold text-ares-navy">Store is warming up</h1>
+          <h1 className="text-xl font-semibold text-ares-navy">Store unavailable</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            We&apos;re getting things ready. Please refresh in a moment.
+            We couldn&apos;t load this store. This might be a temporary issue — please refresh the page, or check the store link is correct.
           </p>
           <button onClick={() => window.location.reload()} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep">
             Try again
@@ -146,6 +152,18 @@ export function StorePageClient({ slug }: { slug: string }) {
   // Success — render the store
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))] as string[];
 
+  // Calculate price range from products
+  const prices = products.map((p) => p.price);
+  const minPrice = prices.length > 0 ? Math.floor(Math.min(...prices)) : 0;
+  const maxPossiblePrice = prices.length > 0 ? Math.ceil(Math.max(...prices)) : 100;
+
+  // Filter products by category and price
+  const filteredProducts = products.filter((p) => {
+    if (activeCategory && p.category !== activeCategory) return false;
+    if (maxPrice !== null && p.price > maxPrice) return false;
+    return true;
+  });
+
   return (
     <main className="min-h-screen bg-white">
       {/* Top bar */}
@@ -155,7 +173,7 @@ export function StorePageClient({ slug }: { slug: string }) {
             <AresLogo className="h-8 w-8" />
             <div>
               <div className="text-sm font-bold text-ares-navy">{business.name}</div>
-              <div className="text-[10px] text-muted-foreground">Online store · powered by A.R.E.S.</div>
+              <div className="text-[10px] text-muted-foreground">Online store · powered by ChatBiz</div>
             </div>
           </div>
           {business.phone && (
@@ -208,21 +226,66 @@ export function StorePageClient({ slug }: { slug: string }) {
         <section id="products" className="mx-auto max-w-5xl px-4 py-12">
           <h2 className="text-xl font-semibold text-ares-navy">Our products</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {products.length} item{products.length !== 1 ? "s" : ""} · Chat to order
+            {filteredProducts.length} item{filteredProducts.length !== 1 ? "s" : ""} · Chat to order
           </p>
 
-          {categories.length > 1 && (
+          {/* Category filter — clickable buttons */}
+          {categories.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setActiveCategory(null)}
+                className={`rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
+                  activeCategory === null
+                    ? "bg-ares-navy text-white"
+                    : "bg-ares-foam text-ares-sea-deep hover:bg-ares-mist"
+                }`}
+              >
+                All
+              </button>
               {categories.map((c) => (
-                <span key={c} className="rounded-full bg-ares-foam px-3 py-1 text-[11px] font-medium text-ares-sea-deep">
+                <button
+                  key={c}
+                  onClick={() => setActiveCategory(activeCategory === c ? null : c)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
+                    activeCategory === c
+                      ? "bg-ares-navy text-white"
+                      : "bg-ares-foam text-ares-sea-deep hover:bg-ares-mist"
+                  }`}
+                >
                   {c}
-                </span>
+                </button>
               ))}
             </div>
           )}
 
+          {/* Price range filter */}
+          {products.length > 0 && (
+            <div className="mt-4 flex items-center gap-3 rounded-xl border border-ares-line bg-ares-mist px-4 py-3">
+              <span className="text-xs font-medium text-ares-sea-deep">Max price:</span>
+              <input
+                type="range"
+                min={minPrice}
+                max={maxPossiblePrice}
+                value={maxPrice ?? maxPossiblePrice}
+                onChange={(e) => setMaxPrice(Number(e.target.value))}
+                className="flex-1 accent-ares-sea"
+              />
+              <span className="text-xs font-semibold text-ares-navy">
+                {maxPrice !== null ? `GHS ${maxPrice}` : "All"}
+              </span>
+              {maxPrice !== null && maxPrice < maxPossiblePrice && (
+                <button
+                  onClick={() => setMaxPrice(null)}
+                  className="text-[10px] text-muted-foreground hover:text-ares-sea-deep underline"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <article
                 key={p.id}
                 onClick={() => {
@@ -266,7 +329,7 @@ export function StorePageClient({ slug }: { slug: string }) {
         <div className="mx-auto max-w-5xl px-4 text-center">
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <AresLogo className="h-5 w-5" />
-            <span>Store powered by A.R.E.S. · {business.name}</span>
+            <span>Store powered by ChatBiz · {business.name}</span>
           </div>
         </div>
       </footer>
@@ -279,6 +342,7 @@ export function StorePageClient({ slug }: { slug: string }) {
         products={products}
         externalOpen={chatOpen}
         onOpenChange={setChatOpen}
+        paymentEnabled={paymentEnabled}
       />
     </main>
   );

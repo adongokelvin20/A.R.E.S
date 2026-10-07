@@ -37,7 +37,7 @@ export function AresActionCenter({ data }: { data: any }) {
               Action center
             </div>
             <div className="text-sm font-semibold text-ares-navy">
-              {queue.length} items A.R.E.S. surfaced
+              {queue.length} items ChatBiz surfaced
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function AresActionCenter({ data }: { data: any }) {
                     <div className="mt-0.5 text-xs text-muted-foreground">{item.detail}</div>
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       <button className="inline-flex items-center gap-1 rounded-lg bg-ares-sea-deep px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-ares-navy">
-                        Ask A.R.E.S.
+                        Ask ChatBiz
                       </button>
                       <button className="rounded-lg border border-ares-line bg-white px-2.5 py-1 text-[11px] font-medium text-ares-navy transition-colors hover:border-ares-sea/40">
                         Review
@@ -89,7 +89,7 @@ export function AresActionCenter({ data }: { data: any }) {
           })}
           {queue.length === 0 && (
             <li className="rounded-xl border border-dashed border-ares-line p-8 text-center text-sm text-muted-foreground">
-              Nothing needs attention right now. A.R.E.S. is monitoring.
+              Nothing needs attention right now. ChatBiz is monitoring.
             </li>
           )}
         </ul>

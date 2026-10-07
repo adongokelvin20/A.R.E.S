@@ -35,6 +35,9 @@ export const authOptions: NextAuthOptions = {
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
 
+        // Check if the business is suspended by CEO
+        if (user.business?.status === "SUSPENDED") return null;
+
         return {
           id: user.id,
           email: user.email,

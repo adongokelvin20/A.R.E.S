@@ -2,6 +2,9 @@ User-agent: *
 Allow: /
 Allow: /auth
 Allow: /legal/
+Allow: /store/
+Allow: /embed
 Disallow: /api/
+Disallow: /ceo
 
-Sitemap: https://ares-system.vercel.app/sitemap.xml
+Sitemap: https://ares-two-eta.vercel.app/sitemap.xml

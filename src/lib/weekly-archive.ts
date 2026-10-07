@@ -43,7 +43,10 @@ export async function checkAndArchiveWeek(businessId: string) {
       where: { businessId },
       select: { weekStart: true },
     });
-    const existingSet = new Set(existing.map((a) => a.weekStart.getTime()));
+    const existingSet = new Set(existing.map((a) => {
+      const d = a.weekStart instanceof Date ? a.weekStart : new Date(a.weekStart);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    }));
 
     // Loop from the business creation week to last week
     const thisWeekStart = getWeekStart(new Date());
@@ -53,7 +56,9 @@ export async function checkAndArchiveWeek(businessId: string) {
     let weekStart = creationWeekStart;
     let count = 0;
     while (weekStart < thisWeekStart && count < 52) {
-      if (!existingSet.has(weekStart.getTime())) {
+      // Check if this week has already been archived (compare date-only)
+      const weekStartKey = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate()).getTime();
+      if (!existingSet.has(weekStartKey)) {
         // This week hasn't been archived — archive it
         const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
         await archiveWeek(businessId, weekStart, weekEnd);
@@ -131,7 +136,7 @@ async function archiveWeek(businessId: string, weekStart: Date, weekEnd: Date) {
         topProducts: JSON.stringify(topProducts),
         channelBreakdown: JSON.stringify(channelMap),
         statusBreakdown: JSON.stringify(statusMap),
-        summary: `Week of ${weekStart.toLocaleDateString("en", { month: "short", day: "numeric" })} — ${weekEnd.toLocaleDateString("en", { month: "short", day: "numeric" })}: ${orderCount} order${orderCount === 1 ? "" : "s"}, GHC ${revenue.toFixed(2)} revenue, ${newCustomers} new customer${newCustomers === 1 ? "" : "s"}.`,
+        summary: `Week of ${weekStart.toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })} — ${weekEnd.toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })}: ${orderCount} order${orderCount === 1 ? "" : "s"}, GHC ${revenue.toFixed(2)} revenue, ${newCustomers} new customer${newCustomers === 1 ? "" : "s"}.`,
       },
     });
     console.log(`[weekly archive] Archived week of ${weekStart.toDateString()} for business ${businessId}`);

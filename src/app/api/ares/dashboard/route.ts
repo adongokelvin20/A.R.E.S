@@ -36,11 +36,7 @@ export async function GET(req: NextRequest) {
   // Ensure DB tables exist
   try { await ensureDatabase(); } catch {}
 
-  // Check if we need to archive the previous week (runs on dashboard load)
-  try { await checkAndArchiveWeek(businessId); } catch (e) {
-    console.error("[dashboard] weekly archive check failed:", e);
-  }
-
+  // Load business (check suspended status + full record)
   let business;
   try {
     business = await db.business.findUnique({ where: { id: businessId } });
@@ -49,6 +45,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
   if (!business) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (business.status === "SUSPENDED") return NextResponse.json({ error: "This account has been suspended. Please contact support.", suspended: true }, { status: 403 });
+
+  // Check if we need to archive the previous week (runs on dashboard load)
+  try { await checkAndArchiveWeek(businessId); } catch (e) {
+    console.error("[dashboard] weekly archive check failed:", e);
+  }
 
   // Resolve sector subtype from catalog (determines which widgets to show)
   const subtype = findSubtype(business.sectorCategory, business.sectorSubtype);

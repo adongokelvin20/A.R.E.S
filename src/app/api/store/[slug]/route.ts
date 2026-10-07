@@ -31,12 +31,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
         id: true, name: true, slug: true, type: true, description: true,
         currency: true, country: true, agentName: true,
         sectorCategory: true, sectorSubtype: true,
-        phone: true, email: true, logoUrl: true, createdAt: true,
+        phone: true, email: true, logoUrl: true, createdAt: true, status: true,
+        configuration: true,
       },
     });
 
     if (!business) {
       return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
+
+    // Check if business is suspended by CEO
+    if (business.status === "SUSPENDED") {
+      return NextResponse.json({ locked: true, business: { name: business.name, agentName: business.agentName || business.name } });
     }
 
     // ===== SUBSCRIPTION CHECK — lock the store if the owner's subscription is expired =====
@@ -89,6 +95,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
         name: business.name, slug: business.slug, description: business.description,
         currency: business.currency, agentName: business.agentName || business.name,
         phone: business.phone, email: business.email, logoUrl: business.logoUrl,
+        configuration: business.configuration || "{}",
       },
       products: products.map((p) => ({
         id: p.id, name: p.name, description: p.description, price: p.price,

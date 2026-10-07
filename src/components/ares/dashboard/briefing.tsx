@@ -14,7 +14,7 @@ export function AresBriefing({ data }: { data: any }) {
   const urgentAlerts = openAlerts.filter((a: any) => a.severity === "URGENT");
 
   const segments: string[] = [];
-  segments.push(`Good day. I'm A.R.E.S., your AI employee for ${businessName}.`);
+  segments.push(`Good day. I'm ChatBiz, your AI employee for ${businessName}.`);
   segments.push(
     `You've taken in ${symbol}${k.todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} today across ${k.todayOrderCount} orders — ${k.revenueDeltaPct >= 0 ? "up" : "down"} ${Math.abs(k.revenueDeltaPct)}% versus yesterday.`
   );
@@ -45,7 +45,7 @@ export function AresBriefing({ data }: { data: any }) {
           </div>
           <div>
             <div className="text-[11px] font-medium uppercase tracking-wider text-white/70">
-              A.R.E.S. daily briefing
+              ChatBiz daily briefing
             </div>
             <div className="text-sm font-semibold">Generated just now · from live data</div>
           </div>

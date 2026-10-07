@@ -40,20 +40,120 @@ export async function getZaiClient() {
     }
   }
 
-  // 2. On Vercel: try Z.ai Open API (if API key is set)
+  // 2. On Vercel: try Z.ai SDK first (uses internal token, always works)
+  try {
+    const ZAIModule = await import("z-ai-web-dev-sdk");
+    const ZAI = ZAIModule.default;
+    clientInstance = new ZAI(ZAI_CONFIG);
+    console.log("[ChatBiz AI] Using Z.ai SDK");
+    return clientInstance;
+  } catch (e) {
+    console.log("[ChatBiz AI] SDK failed, trying Open API");
+  }
+
+  // 3. Try Z.ai Open API (if API key is set)
   const openApiKey = process.env.ZAI_API_KEY;
   if (openApiKey) {
-    // Skip the test call — if the API fails, the actual chat call will throw and be caught.
-    // This saves ~1-2s on the first request after a cold start.
     clientInstance = createOpenApiClient(openApiKey);
-    console.log("[A.R.E.S. AI] Using Z.ai Open API");
+    console.log("[ChatBiz AI] Using Z.ai Open API");
     return clientInstance;
   }
 
-  // 3. Fallback: smart responses
+  // 4. Fallback: smart responses
   clientInstance = createSmartClient();
-  console.log("[A.R.E.S. AI] Using smart fallback mode");
+  console.log("[ChatBiz AI] Using smart fallback mode");
   return clientInstance;
+}
+
+export async function getChatClient() {
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  if (openRouterKey) return createOpenRouterChatClient(openRouterKey);
+  return getZaiClient();
+}
+
+/**
+ * Returns a chat client that falls back from OpenRouter → Z.ai.
+ * Use this in the store chat route so that when OpenRouter hits rate limits,
+ * the system automatically falls back to Z.ai instead of showing an error.
+ */
+export async function getChatClientWithFallback() {
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  if (openRouterKey) {
+    return {
+      _mode: "fallback",
+      _provider: "openrouter-with-zai-fallback",
+      chat: {
+        completions: {
+          create: async (body: any) => {
+            // Try OpenRouter first
+            try {
+              const client = createOpenRouterChatClient(openRouterKey);
+              return await client.chat.completions.create(body);
+            } catch (openRouterErr: any) {
+              console.warn("[ChatBiz AI] OpenRouter failed, falling back to Z.ai:", openRouterErr?.message?.slice(0, 100));
+              // Fall back to Z.ai
+              const zaiClient = await getZaiClient();
+              return await zaiClient.chat.completions.create(body);
+            }
+          },
+        },
+      },
+    };
+  }
+  return getZaiClient();
+}
+
+function createOpenRouterChatClient(apiKey: string) {
+  const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+  const MODELS = ["nvidia/nemotron-3-ultra-550b-a55b:free", "nvidia/nemotron-3-super-120b-a12b:free", "stealth/space-bunny-alpha"];
+  return { _mode: "openrouter", _provider: "openrouter", chat: { completions: { create: async (body: any) => {
+    let lastError: any = null;
+    for (const model of MODELS) {
+      try {
+        const response = await fetch(OPENROUTER_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}`, "HTTP-Referer": "https://ares-two-eta.vercel.app", "X-Title": "A.R.E.S." }, body: JSON.stringify({ model, messages: body.messages, temperature: body.temperature ?? 0.85, max_tokens: body.max_tokens ?? 700 }) });
+        if (!response.ok) { const text = await response.text(); lastError = new Error(`OpenRouter ${model} error ${response.status}: ${text.slice(0, 200)}`); if (response.status === 401) throw lastError; if (response.status === 429 || response.status === 402 || response.status === 404) continue; throw lastError; }
+        return await response.json();
+      } catch (e: any) { lastError = e; continue; }
+    }
+    throw lastError || new Error("All OpenRouter models failed");
+  }}}};
+}
+
+let visionClientInstance: any = null;
+
+export async function getVisionClient() {
+  if (visionClientInstance) return visionClientInstance;
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  if (openRouterKey) { visionClientInstance = createOpenRouterVisionClient(openRouterKey); return visionClientInstance; }
+  const zaiClient = await getZaiClient();
+  visionClientInstance = { _provider: "zai", analyze: async (imageBase64: string, prompt: string) => { const res = await zaiClient.chat.completions.createVision({ model: "glm-4v-flash", messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: imageBase64 } }] }] }); return (res as any)?.choices?.[0]?.message?.content?.toString().trim() ?? ""; } };
+  return visionClientInstance;
+}
+
+function createOpenRouterVisionClient(apiKey: string) {
+  const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+  const MODELS = ["stealth/space-bunny-alpha", "qwen/qwen3.8-27b:free", "google/gemma-4-31b-it:free", "openrouter/free"];
+  return { _provider: "openrouter", analyze: async (imageBase64: string, prompt: string): Promise<string> => {
+    let lastError: any = null;
+    for (const model of MODELS) {
+      try {
+        const response = await fetch(OPENROUTER_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}`, "HTTP-Referer": "https://ares-two-eta.vercel.app", "X-Title": "A.R.E.S." }, body: JSON.stringify({ model, messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: imageBase64 } }] }], temperature: 0.1, max_tokens: 1024 }) });
+        if (!response.ok) { const text = await response.text(); lastError = new Error(`OpenRouter ${model} error ${response.status}: ${text.slice(0, 300)}`); if (response.status === 401) throw lastError; if (response.status === 402 || response.status === 429 || response.status === 404) continue; throw lastError; }
+        const json = await response.json(); const text = json?.choices?.[0]?.message?.content?.toString().trim() ?? ""; if (text) return text;
+      } catch (e: any) { lastError = e; continue; }
+    }
+    throw lastError || new Error("All vision models failed");
+  }};
+}
+
+/**
+ * Convenience helper — returns both the chat client (getChatClient) and vision
+ * client (getVisionClient) in a single call. Used by routes that need both.
+ */
+export async function getClients() {
+  const chat = await getChatClient();
+  const vision = await getVisionClient();
+  return { chat, vision };
 }
 
 /**

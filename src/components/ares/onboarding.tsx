@@ -224,7 +224,16 @@ export function AresOnboarding({ businessId, ownerName, onComplete }: Onboarding
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  placeholder="What does your business do?"
+                  placeholder={selectedSectors.length > 0 ? (() => {
+                    const cat = selectedSectors[0].category;
+                    if (cat === "FOOD") return "e.g. Authentic Ghanaian dishes, delivery and pickup available";
+                    if (cat === "HEALTH") return "e.g. Pharmacy and clinic services, open daily";
+                    if (cat === "RETAIL") return "e.g. Quality clothing and accessories for all occasions";
+                    if (cat === "REAL_ESTATE") return "e.g. Property sales and rentals across Ghana";
+                    if (cat === "SERVICE") return "e.g. Professional hair and beauty services";
+                    if (cat === "EDUCATION") return "e.g. Quality education from nursery to JHS";
+                    return "What does your business do?";
+                  })() : "What does your business do?"}
                   className="w-full rounded-xl border border-ares-line bg-white px-3.5 py-2.5 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none"
                 />
               </div>

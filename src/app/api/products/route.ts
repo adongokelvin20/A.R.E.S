@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. products API
+ * ChatBiz products API
  *
  * GET  /api/products              -- list products
  * POST /api/products              -- create with dynamic fields + optional image
@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const name = formData.get("name")?.toString().trim();
-    const description = formData.get("description")?.toString().trim() || null;
-    const category = formData.get("category")?.toString().trim() || null;
+    let description = formData.get("description")?.toString().trim() || null;
+    let category = formData.get("category")?.toString().trim() || null;
     const sku = formData.get("sku")?.toString().trim() || null;
     const price = parseFloat(formData.get("price")?.toString() ?? "0");
     const stock = parseInt(formData.get("stock")?.toString() ?? "0", 10);
@@ -72,26 +72,24 @@ export async function POST(req: NextRequest) {
       // If no manual imageAlt provided, analyze the image with VLM
       if (!imageAlt) {
         try {
-          const { getZaiClient } = await import("@/lib/ai-client");
-          const zai = await getZaiClient();
-          const visionRes = await zai.chat.completions.createVision({
-            model: "glm-4v",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: `Describe this product image in one concise sentence suitable for matching against customer descriptions. Focus on: the product type, color, key visible features. Example: "black hoodie with kente pattern accents" or "plate of jollof rice with grilled chicken". Just the description, no preamble.` },
-                  { type: "image_url", image_url: { url: base64 } },
-                ],
-              },
-            ],
-          });
-          const aiDesc = (visionRes as any)?.choices?.[0]?.message?.content?.toString().trim();
-          if (aiDesc && aiDesc.length > 5 && aiDesc.length < 300) {
-            imageAlt = aiDesc;
-          }
-        } catch (e) {
-          console.error("[products] VLM analysis failed", e);
+          const { getVisionClient } = await import("@/lib/ai-client");
+          const vision = await getVisionClient();
+          const analysis = await vision.analyze(base64, `Analyze this product image. Extract: DESCRIPTION (1-2 sentences), CATEGORY (Male/Female/Kids/General/Unisex), COLOR, TYPE, MATCHING_TAGS (comma-separated).\n\nFormat:\nDESCRIPTION: <text>\nCATEGORY: <text>\nCOLOR: <text>\nTYPE: <text>\nMATCHING_TAGS: <text>`);
+          const descMatch = analysis.match(/^DESCRIPTION:\s*(.+?)$/im);
+          const catMatch = analysis.match(/^CATEGORY:\s*(.+?)$/im);
+          const colorMatch = analysis.match(/^COLOR:\s*(.+?)$/im);
+          const typeMatch = analysis.match(/^TYPE:\s*(.+?)$/im);
+          const tagsMatch = analysis.match(/^MATCHING_TAGS:\s*(.+?)$/im);
+          const parts = [];
+          if (typeMatch?.[1]) parts.push(typeMatch[1].trim());
+          if (colorMatch?.[1]) parts.push(colorMatch[1].trim());
+          if (descMatch?.[1]) parts.push(descMatch[1].trim());
+          if (tagsMatch?.[1]) parts.push(`tags: ${tagsMatch[1].trim()}`);
+          if (parts.length > 0) imageAlt = parts.join(" | ");
+          if (catMatch?.[1] && /^(Male|Female|Kids|General|Unisex)$/i.test(catMatch[1].trim()) && !category) category = catMatch[1].trim();
+          if (descMatch?.[1] && descMatch[1].trim().length > 5 && !description) description = descMatch[1].trim();
+        } catch (e: any) {
+          console.error("[products] VLM analysis failed:", e?.message);
         }
       }
     }

@@ -42,7 +42,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* A.R.E.S. refined palette */
+  /* ChatBiz refined palette */
   --color-ares-sea: var(--ares-sea);
   --color-ares-sea-deep: var(--ares-sea-deep);
   --color-ares-navy: var(--ares-navy);
@@ -53,7 +53,7 @@
 :root {
   --radius: 0.625rem;
 
-  /* A.R.E.S. refined palette — deeper, more sophisticated */
+  /* ChatBiz refined palette — deeper, more sophisticated */
   --ares-sea: #0284A6;
   --ares-sea-deep: #024E6E;
   --ares-navy: #0A1626;
@@ -80,11 +80,13 @@
   --border: #E4ECF1;
   --input: #E4ECF1;
   --ring: #0284A6;
+
   --chart-1: #0284A6;
   --chart-2: #024E6E;
   --chart-3: #7AB8CC;
   --chart-4: #0A1626;
   --chart-5: #C8A86B;
+
   --sidebar: #FFFFFF;
   --sidebar-foreground: #0A1626;
   --sidebar-primary: #0284A6;

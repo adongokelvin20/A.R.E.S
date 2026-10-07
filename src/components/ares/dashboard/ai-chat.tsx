@@ -39,12 +39,12 @@ const SUGGESTIONS: Record<string, string[]> = {
 export function AresAiChat({ data }: { data: any }) {
   const businessId = data?.business?.id;
   const sector = data?.business?.type ?? "SERVICE";
-  const businessName = data?.business?.name ?? "A.R.E.S.";
+  const businessName = data?.business?.name ?? "ChatBiz";
 
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      content: `Hi — I'm A.R.E.S., the AI for ${businessName}. I'm bound to your business sector (${sector.replace(/_/g, " ").toLowerCase()}) and only reference real data from your catalog and knowledge base. Ask me anything a customer would ask.`,
+      content: `Hi — I'm ChatBiz, the AI for ${businessName}. I'm bound to your business sector (${sector.replace(/_/g, " ").toLowerCase()}) and only reference real data from your catalog and knowledge base. Ask me anything a customer would ask.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -108,7 +108,7 @@ export function AresAiChat({ data }: { data: any }) {
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ares-navy bg-emerald-400" />
           </div>
           <div>
-            <div className="text-sm font-semibold">Ask A.R.E.S.</div>
+            <div className="text-sm font-semibold">Ask ChatBiz</div>
             <div className="text-[11px] text-white/70">
               Sector-bound · {businessName}
             </div>
@@ -188,7 +188,7 @@ export function AresAiChat({ data }: { data: any }) {
                 send();
               }
             }}
-            placeholder="Ask A.R.E.S. anything a customer would…"
+            placeholder="Ask ChatBiz anything a customer would…"
             className="flex-1 rounded-xl border border-ares-line bg-white px-3.5 py-2.5 text-sm text-ares-navy placeholder:text-muted-foreground focus:border-ares-sea/40 focus:outline-none focus:ring-2 focus:ring-ares-sea/15"
             disabled={loading}
           />
@@ -208,7 +208,7 @@ export function AresAiChat({ data }: { data: any }) {
           </div>
         )}
         <div className="mt-2 text-[10px] text-muted-foreground">
-          A.R.E.S. only answers using your business data. If it doesn't know, it says so — never
+          ChatBiz only answers using your business data. If it doesn't know, it says so — never
           fabricates.
         </div>
       </div>

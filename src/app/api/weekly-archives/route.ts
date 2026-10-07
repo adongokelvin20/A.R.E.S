@@ -46,12 +46,12 @@ export async function GET() {
   return NextResponse.json({
     archives: archives.map((a) => ({
       id: a.id,
-      weekStart: a.weekStart,
-      weekEnd: a.weekEnd,
-      revenue: a.revenue,
-      orderCount: a.orderCount,
-      customerCount: a.customerCount,
-      newCustomers: a.newCustomers,
+      weekStart: a.weekStart instanceof Date ? a.weekStart.toISOString() : a.weekStart,
+      weekEnd: a.weekEnd instanceof Date ? a.weekEnd.toISOString() : a.weekEnd,
+      revenue: a.revenue || 0,
+      orderCount: a.orderCount || 0,
+      customerCount: a.customerCount || 0,
+      newCustomers: a.newCustomers || 0,
       topProducts: JSON.parse(a.topProducts || "[]"),
       channelBreakdown: JSON.parse(a.channelBreakdown || "{}"),
       statusBreakdown: JSON.parse(a.statusBreakdown || "{}"),

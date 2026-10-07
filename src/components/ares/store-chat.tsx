@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical, Paperclip, History } from "lucide-react";
+import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical, Paperclip, History, Mic } from "lucide-react";
 
 interface Product {
   id: string;
@@ -23,6 +23,7 @@ interface StoreChatProps {
   products: Product[];
   externalOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  paymentEnabled?: boolean;
 }
 
 interface Msg {
@@ -89,7 +90,7 @@ function sym(cur: string) {
   return CURRENCY_SYMBOL[cur] ?? cur + " ";
 }
 
-export function StoreChat({ slug, businessName, agentName, products, externalOpen, onOpenChange }: StoreChatProps) {
+export function StoreChat({ slug, businessName, agentName, products, externalOpen, onOpenChange, paymentEnabled = true }: StoreChatProps) {
   const [chatId] = useState(() => genChatId());
   // Start fresh each time — new chat
   const [messages, setMessages] = useState<Msg[]>(() => [
@@ -105,6 +106,9 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
   const [showHistory, setShowHistory] = useState(false);
   const [savedChats, setSavedChats] = useState<{ id: string; messages: Msg[]; createdAt: string }[]>([]);
   const [viewingOldChat, setViewingOldChat] = useState<Msg[] | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Notify parent when open state changes
   const handleSetOpen = (val: boolean) => {
@@ -140,6 +144,86 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
     }
   }, [messages, loading]);
 
+  // Voice note recording
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = reader.result as string;
+          // Add voice note to chat
+          setMessages((m) => [...m, { role: "user", content: "🎤 Voice note", createdAt: new Date().toISOString() }]);
+          setLoading(true);
+          try {
+            const res = await fetch("/api/store/transcribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ audio: base64 }),
+            });
+            const data = await res.json();
+            if (data.text && data.text.trim()) {
+              // Replace the "Voice note" placeholder with the transcribed text
+              setMessages((m) => {
+                const updated = [...m];
+                updated[updated.length - 1] = { role: "user", content: data.text, createdAt: new Date().toISOString() };
+                return updated;
+              });
+              // Now send the transcribed text to the chat API
+              // We need to call the send function with the transcribed text
+              // But we can't call send directly from here — use a workaround
+              // by setting the input and triggering send
+              // Actually, let's just call the chat API directly
+              const chatRes = await fetch("/api/store/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  slug,
+                  message: data.text,
+                  sessionId,
+                  history: messages.slice(-100).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+                }),
+              });
+              const chatJson = await chatRes.json();
+              if (chatJson.reply) {
+                setMessages((m) => [...m, { role: "assistant", content: chatJson.reply, images: chatJson.images ?? [], createdAt: new Date().toISOString() }]);
+              }
+            } else {
+              setMessages((m) => [...m, { role: "assistant", content: "I couldn't hear that clearly. Could you type it instead?", createdAt: new Date().toISOString() }]);
+            }
+          } catch {
+            setMessages((m) => [...m, { role: "assistant", content: "I couldn't process that voice note. Please type your message.", createdAt: new Date().toISOString() }]);
+          } finally {
+            setLoading(false);
+          }
+        };
+        reader.readAsDataURL(audioBlob);
+        stream.getTracks().forEach((t) => t.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (e) {
+      console.error("Recording failed:", e);
+    }
+  }, [slug, sessionId, messages]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, [isRecording]);
+
   const send = useCallback(
     async (text?: string) => {
       const msg = (text ?? input).trim();
@@ -160,7 +244,8 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
               slug,
               message: msg,
               sessionId,
-              history: messages.slice(-8).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+              // Send up to 100 messages of history
+              history: messages.slice(-100).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
             }),
           });
           const j = await res.json();
@@ -382,9 +467,10 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
               </div>
             )}
 
-            {/* Input bar — WhatsApp style with screenshot upload */}
+            {/* Input bar — WhatsApp style with screenshot upload + voice */}
             <div className="flex items-center gap-2 bg-[#F0F2F5] px-3 py-2.5">
-              {/* Screenshot upload button */}
+              {/* Screenshot upload button — only shown when payment is enabled */}
+              {paymentEnabled && (
               <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-[#075E54] hover:bg-ares-mist" title="Upload payment screenshot">
                 <Paperclip className="h-5 w-5" />
                 <input
@@ -430,6 +516,7 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
                   }}
                 />
               </label>
+              )}
               <div className="flex flex-1 items-center rounded-full bg-white px-4 py-2">
                 <input
                   value={input}
@@ -439,6 +526,16 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
                   className="flex-1 bg-transparent text-sm text-[#075E54] placeholder:text-muted-foreground focus:outline-none"
                 />
               </div>
+              {/* Voice note button */}
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={loading}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition-transform hover:scale-105 disabled:opacity-40 ${isRecording ? "bg-red-500 animate-pulse" : "bg-[#075E54]"}`}
+                aria-label={isRecording ? "Stop recording" : "Record voice note"}
+                title={isRecording ? "Tap to stop recording" : "Hold to record voice note"}
+              >
+                <Mic className="h-4 w-4" />
+              </button>
               <button
                 onClick={() => send()}
                 disabled={loading || !input.trim()}

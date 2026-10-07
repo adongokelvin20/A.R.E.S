@@ -392,7 +392,7 @@ function WhatsAppConnectModal({ onClose, onConnected }: { onClose: () => void; o
             <div>
               <p className="text-sm font-semibold text-ares-navy">One click. Zero technical setup.</p>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Click connect and approve on Meta. A.R.E.S. handles everything behind the scenes.
+                Click connect and approve on Meta. ChatBiz handles everything behind the scenes.
               </p>
             </div>
           </div>

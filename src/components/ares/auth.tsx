@@ -8,7 +8,7 @@ import { AresLogo } from "./logo";
 
 type Mode = "login" | "signup";
 
-export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
+export function AresAuth({ initialMode = "signup", suspended = false }: { initialMode?: Mode; suspended?: boolean }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +18,7 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(suspended ? "This account has been suspended. Please contact support." : null);
 
   // After successful auth, the server will redirect to "/" which renders the app shell.
   // We use a full-page redirect (not reload) so the URL is clean.
@@ -77,10 +77,13 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
       redirect: false,
     });
     if (res?.error) {
-      setError("Invalid email or password.");
+      // Check if the account is suspended — if so, show the suspended page
+      setError("Invalid email or password. If your account is suspended, please contact support.");
       setLoading(false);
       return;
     }
+    // After login, the server will check if the business is suspended.
+    // If it is, the auth page will render the "Account Suspended" message.
     window.location.href = "/";
   }
 
@@ -100,7 +103,7 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
           className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-ares-sea-deep"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to A.R.E.S.
+          Back to ChatBiz
         </a>
 
         <div className="overflow-hidden rounded-3xl border border-ares-line bg-white shadow-[0_30px_80px_-40px_rgba(11,31,51,0.25)]">
@@ -111,7 +114,7 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
             <div className="flex flex-col items-center text-center">
               <AresLogo className="h-14 w-14" />
               <div className="mt-3">
-                <div className="font-mono text-lg font-bold tracking-[0.18em] text-ares-navy">A.R.E.S.</div>
+                <div className="font-mono text-lg font-bold tracking-[0.18em] text-ares-navy">ChatBiz</div>
                 <div className="text-[10px] tracking-wide text-muted-foreground">
                   AUTOMATED ROUTING &amp; EXECUTION SYSTEM
                 </div>
@@ -250,7 +253,7 @@ export function AresAuth({ initialMode = "signup" }: { initialMode?: Mode }) {
               {mode === "signup" ? (
                 <>Already have an account? <button onClick={() => setMode("login")} className="font-semibold text-ares-sea-deep hover:underline">Log in</button></>
               ) : (
-                <>New to A.R.E.S.? <button onClick={() => setMode("signup")} className="font-semibold text-ares-sea-deep hover:underline">Create a workspace</button></>
+                <>New to ChatBiz? <button onClick={() => setMode("signup")} className="font-semibold text-ares-sea-deep hover:underline">Create a workspace</button></>
               )}
             </p>
           </div>

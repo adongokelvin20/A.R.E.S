@@ -21,7 +21,7 @@ export function AresAiInsights({ data }: { data: any }) {
           </div>
           <div>
             <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              A.R.E.S. AI insights
+              ChatBiz AI insights
             </div>
             <div className="text-sm font-semibold text-ares-navy">
               {insights.length} findings from monitoring
@@ -32,7 +32,7 @@ export function AresAiInsights({ data }: { data: any }) {
       <div className="max-h-80 overflow-y-auto ares-scroll p-3">
         {insights.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            No active insights. A.R.E.S. is monitoring business activity.
+            No active insights. ChatBiz is monitoring business activity.
           </div>
         ) : (
           <ul className="space-y-2">

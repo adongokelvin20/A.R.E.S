@@ -13,7 +13,7 @@ const STEPS = [
   },
   {
     label: "You're live",
-    detail: "A.R.E.S. configures everything behind the scenes. You land back in your dashboard with WhatsApp connected.",
+    detail: "ChatBiz configures everything behind the scenes. You land back in your dashboard with WhatsApp connected.",
   },
 ];
 

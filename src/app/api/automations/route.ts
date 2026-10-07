@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. automations API
+ * ChatBiz automations API
  *
  * GET  /api/automations  -- list automations for the business
  * POST /api/automations  -- create a new automation

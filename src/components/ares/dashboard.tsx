@@ -60,7 +60,7 @@ export function AresDashboard() {
           </h2>
           <p className="mt-5 text-balance text-base text-muted-foreground sm:text-lg">
             Every chart, KPI, alert, and insight below is computed from a real seeded business
-            database. Switch sectors to see A.R.E.S. reconfigure itself for each business type.
+            database. Switch sectors to see ChatBiz reconfigure itself for each business type.
           </p>
         </div>
 
@@ -117,7 +117,7 @@ export function AresDashboard() {
           <div className="flex items-center gap-1 border-b border-ares-line bg-white px-3 sm:px-5">
             {[
               { id: "overview", label: "Overview" },
-              { id: "ai", label: "Ask A.R.E.S." },
+              { id: "ai", label: "Ask ChatBiz" },
               { id: "ops", label: "Operations" },
               { id: "audit", label: "Audit log" },
             ].map((t) => (

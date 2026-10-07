@@ -185,6 +185,16 @@ export function AresProducts({ data, onChanged }: { data: any; onChanged: () => 
 }
 
 function ProductForm({ agentName, productFields, editingProduct, onClose, onSaved, sectorCategory, sectorSubtype }: { agentName: string; productFields: ProductField[]; editingProduct: Product | null; onClose: () => void; onSaved: () => void; sectorCategory: string; sectorSubtype: string }) {
+  // Sector-specific placeholders
+  const isFood = sectorCategory === "FOOD" || sectorSubtype === "RESTAURANT";
+  const isHealth = sectorCategory === "HEALTH";
+  const isRetail = sectorCategory === "RETAIL" || sectorSubtype === "CLOTHING_STORE";
+  const isRealEstate = sectorCategory === "REAL_ESTATE";
+  const isService = sectorCategory === "SERVICE";
+
+  const namePlaceholder = isFood ? "e.g. Jollof Rice & Chicken" : isHealth ? "e.g. Paracetamol 500mg" : isRetail ? "e.g. Blue Slim Fit Suit" : isRealEstate ? "e.g. 2 Bedroom Apartment" : isService ? "e.g. Haircut & Style" : "e.g. Product Name";
+  const descPlaceholder = isFood ? "Ingredients, portion size, spice level" : isHealth ? "Dosage, side effects, usage instructions" : isRetail ? "Material, fit, care instructions" : isRealEstate ? "Location, size, amenities" : isService ? "Duration, what's included" : "Describe this product";
+  const categoryPlaceholder = isFood ? "e.g. Main Dish" : isHealth ? "e.g. Pain Relief" : isRealEstate ? "e.g. Apartment" : isService ? "e.g. Hair" : "e.g. Category";
   const fileRef = useRef<HTMLInputElement>(null);
   const isEditing = !!editingProduct;
   const [name, setName] = useState(editingProduct?.name ?? "");
@@ -299,12 +309,12 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
 
           <div>
             <label className="mb-1 block text-xs font-medium text-ares-navy">Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Jollof Rice & Chicken" className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={namePlaceholder} className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none" />
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-medium text-ares-navy">Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="What is this product?" className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder={descPlaceholder} className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -324,7 +334,7 @@ function ProductForm({ agentName, productFields, editingProduct, onClose, onSave
                   <option value="Accessories">Accessories</option>
                 </select>
               ) : (
-                <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Main" className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none" />
+                <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={categoryPlaceholder} className="w-full rounded-lg border border-ares-line bg-white px-3 py-2 text-sm text-ares-navy focus:border-ares-sea/40 focus:outline-none" />
               )}
             </div>
           </div>

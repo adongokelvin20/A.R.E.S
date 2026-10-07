@@ -28,7 +28,7 @@ function successHtml(businessName: string, phoneNumber: string) {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>WhatsApp connected — A.R.E.S.</title>
+<title>WhatsApp connected — ChatBiz</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0A1626;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -46,10 +46,10 @@ function successHtml(businessName: string, phoneNumber: string) {
 <div class="card">
   <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
   <h1>WhatsApp is connected</h1>
-  <p>Your WhatsApp Business number is now linked to A.R.E.S.</p>
+  <p>Your WhatsApp Business number is now linked to ChatBiz</p>
   <span class="biz">${businessName}</span>
   <div class="phone">${phoneNumber}</div>
-  <p class="hint">You can close this tab and return to your A.R.E.S. dashboard.<br/>Your assistant will start handling WhatsApp messages automatically.</p>
+  <p class="hint">You can close this tab and return to your ChatBiz dashboard.<br/>Your assistant will start handling WhatsApp messages automatically.</p>
 </div>
 </body>
 </html>`;
@@ -61,7 +61,7 @@ function errorHtml(message: string) {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Connection issue — A.R.E.S.</title>
+<title>Connection issue — ChatBiz</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0A1626;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -80,7 +80,7 @@ function errorHtml(message: string) {
   <h1>Couldn't connect WhatsApp</h1>
   <p>Something went wrong during the connection.</p>
   <span class="msg">${message}</span>
-  <p class="hint">Close this tab, return to your A.R.E.S. dashboard, and try again.<br/>If the problem persists, make sure your WhatsApp Business Account has at least one phone number.</p>
+  <p class="hint">Close this tab, return to your ChatBiz dashboard, and try again.<br/>If the problem persists, make sure your WhatsApp Business Account has at least one phone number.</p>
 </div>
 </body>
 </html>`;
@@ -92,7 +92,7 @@ function notConfiguredHtml() {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Setup required — A.R.E.S.</title>
+<title>Setup required — ChatBiz</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0A1626;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}

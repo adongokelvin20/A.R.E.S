@@ -15,35 +15,39 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "A.R.E.S. — The Digital Employee for Your Business | Kevtech Corporation",
+  title: "ChatBiz — The Digital Employee for Your Business | Kevtech Corporation",
   description:
-    "A.R.E.S. by Kevtech Corporation is a digital employee for your business. It talks to customers on your store link, takes orders, manages inventory, and runs operations — so you can focus on what matters. Founded by Kelvin Ayinbisa.",
+    "ChatBiz by Kevtech Corporation is a digital employee for your business. It talks to customers on your store link, takes orders, manages inventory, and runs operations — so you can focus on what matters. Built by Kelvin Ayinbisa & Jessy in partnership.",
   keywords: [
-    "A.R.E.S.",
+    "ChatBiz",
     "Kevtech",
     "Kevtech Corporation",
     "Kelvin Ayinbisa",
+    "Jessy",
     "Business Operating System",
     "Digital Employee",
     "Business Automation",
     "Ghana Business",
   ],
-  authors: [{ name: "Kelvin Ayinbisa" }],
+  authors: [{ name: "Kelvin Ayinbisa & Jessy" }],
   icons: {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "A.R.E.S. — The Digital Employee for Your Business | Kevtech Corporation",
+    title: "ChatBiz — The Digital Employee for Your Business | Kevtech Corporation",
     description:
-      "The digital employee that talks to customers, takes orders, and runs your business. Founded by Kelvin Ayinbisa. Built by Kevtech Corporation.",
-    siteName: "A.R.E.S.",
+      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jessy in partnership.",
+    siteName: "ChatBiz",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "A.R.E.S. — The Digital Employee for Your Business",
+    title: "ChatBiz — The Digital Employee for Your Business",
     description:
-      "The digital employee that talks to customers, takes orders, and runs your business. Founded by Kelvin Ayinbisa.",
+      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jessy.",
+  },
+  verification: {
+    google: "PvZ3IyZSp1P7oEExJ8BTg3aha6VV6laEEYO-slzlRs8",
   },
 };
 

@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     const encodedMessages = searchParams.get("messages");
     
     if (!encodedMessages) {
-      return NextResponse.json({ status: "ok", service: "A.R.E.S. AI Proxy" });
+      return NextResponse.json({ status: "ok", service: "ChatBiz AI Proxy" });
     }
 
     // Decode base64 -> JSON
