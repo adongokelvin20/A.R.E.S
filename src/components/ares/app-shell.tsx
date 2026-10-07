@@ -203,7 +203,20 @@ export function AresAppShell({
         window.location.reload();
         return;
       }
-      const json = await res.json();
+      const text = await res.text();
+      if (!text) {
+        setLoadError("The dashboard returned an empty response. Please try refreshing.");
+        setData(null);
+        return;
+      }
+      let json: any;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        setLoadError("Couldn't parse the dashboard response. Please refresh the page.");
+        setData(null);
+        return;
+      }
       if (json?.error) {
         setLoadError(json.error);
         setData(null);

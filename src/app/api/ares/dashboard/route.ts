@@ -25,6 +25,13 @@ import { checkAndArchiveWeek } from "@/lib/weekly-archive";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
+// Safe JSON parse — never throws, returns fallback on error
+function safeJsonParse<T>(str: string | null | undefined, fallback: T): T {
+  if (!str) return fallback;
+  try { return JSON.parse(str) as T; } catch { return fallback; }
+}
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -42,9 +49,9 @@ export async function GET(req: NextRequest) {
     business = await db.business.findUnique({ where: { id: businessId } });
   } catch (e) {
     console.error("[dashboard] business lookup failed:", e);
-    return NextResponse.json({ error: "Database error" }, { status: 500 });
+    return NextResponse.json({ error: "Database error. Please try refreshing the page." }, { status: 500 });
   }
-  if (!business) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!business) return NextResponse.json({ error: "Business not found" }, { status: 404 });
   if (business.status === "SUSPENDED") return NextResponse.json({ error: "This account has been suspended. Please contact support.", suspended: true }, { status: 403 });
 
   // Check if we need to archive the previous week (runs on dashboard load)
@@ -73,32 +80,56 @@ export async function GET(req: NextRequest) {
   const productFields = getCombinedProductFields(allSectors);
 
   // Parse learnings
-  let learnings: string[] = [];
-  try { learnings = JSON.parse(business.agentLearnings || "[]"); } catch {}
+  let learnings: string[] = safeJsonParse(business.agentLearnings, []);
 
-  const [
-    orders,
-    customers,
-    products,
-    auditLogs,
-    alerts,
-    insights,
-    automations,
-    integrations,
-    conversations,
-  ] = await Promise.all([
-    db.order.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 500 }),
-    db.customer.findMany({ where: { businessId } }),
-    db.product.findMany({ where: { businessId, status: "ACTIVE" } }),
-    db.auditLog.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 25 }),
-    db.alert.findMany({ where: { businessId, status: "OPEN" }, orderBy: { createdAt: "desc" }, take: 12 }),
-    db.insight.findMany({ where: { businessId, status: "OPEN" }, orderBy: { createdAt: "desc" }, take: 8 }),
-    db.automation.findMany({ where: { businessId } }),
-    db.integration.findMany({ where: { businessId }, orderBy: { type: "asc" } }),
-    db.conversation.findMany({ where: { businessId }, orderBy: { lastMessageAt: "desc" }, take: 8, include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } } }),
-  ]);
+  let orders: any[] = [], customers: any[] = [], products: any[] = [], auditLogs: any[] = [], alerts: any[] = [], insights: any[] = [], automations: any[] = [], integrations: any[] = [], conversations: any[] = [];
+  try {
+    [
+      orders,
+      customers,
+      products,
+      auditLogs,
+      alerts,
+      insights,
+      automations,
+      integrations,
+      conversations,
+    ] = await Promise.all([
+      db.order.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 500 }),
+      db.customer.findMany({ where: { businessId } }),
+      db.product.findMany({ where: { businessId, status: "ACTIVE" } }),
+      db.auditLog.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 25 }),
+      db.alert.findMany({ where: { businessId, status: "OPEN" }, orderBy: { createdAt: "desc" }, take: 12 }),
+      db.insight.findMany({ where: { businessId, status: "OPEN" }, orderBy: { createdAt: "desc" }, take: 8 }),
+      db.automation.findMany({ where: { businessId } }),
+      db.integration.findMany({ where: { businessId }, orderBy: { type: "asc" } }),
+      db.conversation.findMany({ where: { businessId }, orderBy: { lastMessageAt: "desc" }, take: 8, include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } } }),
+    ]);
+  } catch (e: any) {
+    console.error("[dashboard] DB query failed:", e?.message);
+    // Return minimal data so the dashboard still renders
+    return NextResponse.json({
+      business: {
+        id: business.id, name: business.name, type: business.type, slug: business.slug,
+        currency: business.currency, country: business.country, plan: business.plan,
+        agentName: business.agentName, agentPersonality: business.agentPersonality,
+        agentInstructions: business.agentInstructions, ownerFirstName: business.ownerFirstName,
+        modules: safeJsonParse(business.enabledModules, []),
+        configuration: business.configuration || "{}",
+        sectorCategory: business.sectorCategory, sectorSubtype: business.sectorSubtype,
+        sectorLabel: subtype?.label ?? business.type, sectorDescription: subtype?.description ?? "",
+        categoryLabel: category?.label ?? "",
+        widgets, learnings, productFields: [], allSectors, paymentInfo,
+      },
+      kpis: { todayRevenue: 0, yesterdayRevenue: 0, revenueDeltaPct: 0, todayOrderCount: 0, pendingOrders: 0, customerCount: 0, newCustomersToday: 0, avgResponseSec: 0, totalProducts: 0, lowStockCount: 0, openConversations: 0 },
+      series: [], channelBreakdown: [], statusBreakdown: [], topProducts: [], lowStock: [],
+      products: [], activity: [], alerts: [], insights: [], automations: [], integrations: [], conversations: [],
+      error: "Some data failed to load. Please refresh to try again.",
+    });
+  }
 
   // ===== KPI derivation =====
+  try {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfYesterday = new Date(startOfToday.getTime() - 86400000);
@@ -167,7 +198,7 @@ export async function GET(req: NextRequest) {
       agentPersonality: business.agentPersonality,
       agentInstructions: business.agentInstructions,
       ownerFirstName: business.ownerFirstName,
-      modules: JSON.parse(business.enabledModules),
+      modules: safeJsonParse(business.enabledModules, []),
       configuration: business.configuration || "{}",
       sectorCategory: business.sectorCategory,
       sectorSubtype: business.sectorSubtype,
@@ -200,18 +231,18 @@ export async function GET(req: NextRequest) {
     lowStock,
     products: products.map((p) => ({
       ...p,
-      attributes: JSON.parse(p.attributes),
+      attributes: safeJsonParse(p.attributes, {}),
     })),
     activity: auditLogs,
     alerts,
     insights,
-    automations: automations.map((a) => ({ ...a, actions: JSON.parse(a.actions) })),
+    automations: automations.map((a) => ({ ...a, actions: safeJsonParse(a.actions, []) })),
     integrations: integrations.map((i) => ({
       id: i.id,
       type: i.type,
       name: i.name,
       status: i.status,
-      config: JSON.parse(i.config),
+      config: safeJsonParse(i.config, {}),
     })),
     conversations: conversations.map((c) => ({
       id: c.id,
@@ -223,4 +254,21 @@ export async function GET(req: NextRequest) {
       lastMessageRole: c.messages[0]?.role ?? null,
     })),
   });
+  } catch (e: any) {
+    console.error("[dashboard] response build failed:", e?.message);
+    return NextResponse.json({
+      business: {
+        id: business.id, name: business.name, type: business.type, slug: business.slug,
+        currency: business.currency, agentName: business.agentName,
+        configuration: business.configuration || "{}",
+        modules: safeJsonParse(business.enabledModules, []),
+        sectorCategory: business.sectorCategory, sectorSubtype: business.sectorSubtype,
+        widgets, learnings: [], productFields: [], allSectors: [], paymentInfo: "",
+      },
+      kpis: { todayRevenue: 0, yesterdayRevenue: 0, revenueDeltaPct: 0, todayOrderCount: 0, pendingOrders: 0, customerCount: 0, newCustomersToday: 0, avgResponseSec: 0, totalProducts: 0, lowStockCount: 0, openConversations: 0 },
+      series: [], channelBreakdown: [], statusBreakdown: [], topProducts: [], lowStock: [],
+      products: [], activity: [], alerts: [], insights: [], automations: [], integrations: [], conversations: [],
+      error: "Dashboard data could not be fully loaded. Please refresh to try again.",
+    });
+  }
 }
