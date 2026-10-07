@@ -60,27 +60,18 @@ export async function POST(req: NextRequest) {
   let reply = "";
   try {
     const client = await getChatClient();
+    console.log("[store chat] client provider:", (client as any)?._provider || "unknown");
     const completion = await client.chat.completions.create({ messages, temperature: 0.85, max_tokens: 600 });
     const msg = (completion as any)?.choices?.[0]?.message;
     reply = msg?.content ?? msg?.reasoning ?? (completion as any)?.content ?? "";
-    if (!reply && msg) {
-      // Some models return content in reasoning_details
-      const details = msg?.reasoning_details;
-      if (Array.isArray(details) && details.length > 0) {
-        reply = details.map((d: any) => d.text || "").join("").trim();
-      }
+    console.log("[store chat] reply length:", reply?.length || 0, "content:", msg?.content?.slice(0, 50) || "NULL", "reasoning:", msg?.reasoning?.slice(0, 50) || "NULL");
+    if (!reply && msg?.reasoning_details) {
+      reply = msg.reasoning_details.map((d: any) => d.text || "").join("").trim();
     }
   } catch (e: any) {
-    console.error("[store chat] AI failed:", e?.message);
-    try {
-      const { getZaiClient } = await import("@/lib/ai-client");
-      const zai = await getZaiClient();
-      const completion = await zai.chat.completions.create({ messages, temperature: 0.85, max_tokens: 600 });
-      const msg = (completion as any)?.choices?.[0]?.message;
-      reply = msg?.content ?? msg?.reasoning ?? "";
-    } catch {
-      reply = `Sorry about that — the network seems a bit slow right now. Could you send that again?`;
-    }
+    console.error("[store chat] Primary AI failed:", e?.message?.slice(0, 200));
+    // Don't try Z.ai — its token is expired. Just use the error message.
+    reply = `Sorry about that — the network seems a bit slow right now. Could you send that again?`;
   }
   if (!reply?.trim()) reply = `Sorry, the network seems to be acting up. Could you try sending that again?`;
 
