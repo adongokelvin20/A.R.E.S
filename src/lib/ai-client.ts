@@ -59,14 +59,16 @@ let visionClientInstance: any = null;
 
 /**
  * Returns a chat client with built-in fallback:
- * Cloudflare → Z.ai → OpenRouter → smart.
+ * Z.ai → Cloudflare → OpenRouter → smart.
  *
- * Used by /api/store/chat (the storefront agent).
+ * Z.ai is primary (GLM-4.5-flash is the smartest free model — follows
+ * personality instructions, uses emojis, understands context).
+ * Cloudflare is fallback (Llama 3.1 8B — smaller but very fast on edge).
  */
 export async function getChatClientWithFallback() {
   return {
     _mode: "fallback",
-    _provider: "cloudflare-with-fallbacks",
+    _provider: "zai-with-fallbacks",
     chat: {
       completions: {
         create: async (body: any) => {
@@ -74,21 +76,21 @@ export async function getChatClientWithFallback() {
           const temperature = body.temperature ?? 0.85;
           const maxTokens = body.max_tokens ?? 700;
 
-          // 1. Try Cloudflare first (fastest — runs on edge, ~300 cities)
-          if (CLOUDFLARE_API_TOKEN && CLOUDFLARE_ACCOUNT_ID) {
-            try {
-              return await callCloudflareChat(messages, temperature, maxTokens);
-            } catch (cfErr: any) {
-              console.warn("[ChatBiz AI] Cloudflare failed, falling back to Z.ai:", cfErr?.message?.slice(0, 150));
-            }
-          }
-
-          // 2. Fall back to Z.ai
+          // 1. Try Z.ai first (smartest — follows personality, emojis, context)
           if (ZAI_API_KEY) {
             try {
               return await callZaiChat(messages, temperature, maxTokens);
             } catch (zaiErr: any) {
-              console.warn("[ChatBiz AI] Z.ai failed, falling back to OpenRouter:", zaiErr?.message?.slice(0, 150));
+              console.warn("[ChatBiz AI] Z.ai failed, falling back to Cloudflare:", zaiErr?.message?.slice(0, 150));
+            }
+          }
+
+          // 2. Fall back to Cloudflare (fast edge inference)
+          if (CLOUDFLARE_API_TOKEN && CLOUDFLARE_ACCOUNT_ID) {
+            try {
+              return await callCloudflareChat(messages, temperature, maxTokens);
+            } catch (cfErr: any) {
+              console.warn("[ChatBiz AI] Cloudflare failed, falling back to OpenRouter:", cfErr?.message?.slice(0, 150));
             }
           }
 
