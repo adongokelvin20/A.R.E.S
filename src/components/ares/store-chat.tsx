@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical, Paperclip, History, Mic } from "lucide-react";
+import { MessageCircle, Send, Loader2, ShoppingBag, X, ArrowLeft, Check, CheckCheck, Phone, MoreVertical, Paperclip, History, Mic, Volume2 } from "lucide-react";
 
 interface Product {
   id: string;
@@ -108,6 +108,7 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
   const [viewingOldChat, setViewingOldChat] = useState<Msg[] | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [viewingImage, setViewingImage] = useState<any>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -237,6 +238,31 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
       setIsRecording(false);
     }
   }, [isRecording]);
+
+  // Speak the agent's reply using Cloudflare TTS
+  const speakReply = useCallback(async (text: string, msgId?: string) => {
+    const id = msgId || `temp-${Date.now()}`;
+    setSpeakingId(id);
+    try {
+      const res = await fetch("/api/store/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, language: "en" }),
+      });
+      const data = await res.json();
+      if (data.audio) {
+        const audio = new Audio(data.audio);
+        audio.onended = () => setSpeakingId(null);
+        audio.onerror = () => setSpeakingId(null);
+        await audio.play();
+      } else {
+        setSpeakingId(null);
+      }
+    } catch (e) {
+      console.error("TTS failed:", e);
+      setSpeakingId(null);
+    }
+  }, []);
 
   const send = useCallback(
     async (text?: string) => {
@@ -421,8 +447,18 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
                         }`}
                       >
                         {!isUser && (
-                          <div className="mb-0.5 text-[10px] font-semibold text-[#075E54]">
-                            {agentName}
+                          <div className="mb-0.5 flex items-center justify-between">
+                            <div className="text-[10px] font-semibold text-[#075E54]">
+                              {agentName}
+                            </div>
+                            <button
+                              onClick={() => speakReply(m.content, m.id)}
+                              disabled={speakingId === m.id}
+                              className="ml-2 flex h-5 w-5 items-center justify-center rounded-full text-[#075E54]/60 hover:bg-ares-foam hover:text-[#075E54] disabled:opacity-30"
+                              title="Listen to this reply"
+                            >
+                              {speakingId === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Volume2 className="h-3 w-3" />}
+                            </button>
                           </div>
                         )}
                         <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
