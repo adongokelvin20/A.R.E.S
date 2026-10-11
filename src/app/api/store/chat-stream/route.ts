@@ -171,7 +171,93 @@ export async function POST(req: NextRequest) {
               let orderCreated = null;
 
               if (orderMatch) {
+                // Extract the JSON from the ORDER_CONFIRMED marker
+                const marker = orderMatch[0];
+                const jsonPart = marker.replace(/^ORDER_CONFIRMED:?\s*/i, "").trim();
+                let orderData: any = null;
+                try {
+                  // Try to extract balanced JSON
+                  const start = jsonPart.indexOf("{");
+                  const end = jsonPart.lastIndexOf("}");
+                  if (start >= 0 && end > start) {
+                    orderData = JSON.parse(jsonPart.slice(start, end + 1));
+                  }
+                } catch {}
+
+                // Strip the ORDER_CONFIRMED marker from the reply
                 fullReply = fullReply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*?\}/gi, "").replace(/\n{3,}/g, "\n\n").trim();
+
+                // If we have order data with items, create the order
+                if (orderData?.items?.length > 0) {
+                  try {
+                    // Generate unique order code
+                    const orderCode = Math.random().toString(36).slice(2, 6).toUpperCase();
+
+                    // Match items to actual products in the catalog
+                    for (const item of orderData.items) {
+                      const pn = String(item.productName || "").toLowerCase();
+                      const mp = context.products.find((p: any) =>
+                        p.name.toLowerCase() === pn ||
+                        p.name.toLowerCase().includes(pn) ||
+                        pn.includes(p.name.toLowerCase())
+                      );
+                      if (mp) {
+                        item.productName = mp.name;
+                        item.unitPrice = mp.price;
+                      }
+                    }
+                    orderData.items = orderData.items.filter((i: any) => i.unitPrice > 0);
+
+                    if (orderData.items.length > 0) {
+                      // Create the order in the database
+                      const total = orderData.items.reduce((s: number, i: any) => s + (i.unitPrice * i.quantity), 0);
+                      const customerName = orderData.customerName || returningCustomerName || "Store customer";
+
+                      const order = await db.order.create({
+                        data: {
+                          businessId,
+                          customerName,
+                          customerPhone: orderData.customerPhone || customerPhone || null,
+                          status: "PENDING",
+                          channel: "WEB",
+                          total,
+                          currency: business.currency,
+                          notes: `Order code: ${orderCode}\nCustomer: ${customerName}\nFulfillment: ${orderData.fulfillmentType || "PICKUP"}`,
+                          fulfillmentType: orderData.fulfillmentType || "PICKUP",
+                          deliveryLocation: orderData.deliveryLocation || null,
+                          deliveryTime: orderData.deliveryTime || null,
+                          deliveryPhone: orderData.deliveryPhone || null,
+                          items: {
+                            create: orderData.items.map((i: any) => ({
+                              name: i.productName,
+                              quantity: i.quantity || 1,
+                              unitPrice: i.unitPrice,
+                              total: i.unitPrice * (i.quantity || 1),
+                            })),
+                          },
+                        },
+                      });
+
+                      orderCreated = { id: order.id, orderCode };
+
+                      // Append order code + payment info to the reply
+                      let config: any = {};
+                      try { config = JSON.parse(business.configuration || "{}"); } catch {}
+                      const paymentInfo = config.paymentInfo || "";
+                      const momoAccountName = config.momoAccountName || "";
+                      const paymentEnabled = config.paymentEnabled !== false;
+
+                      if (paymentEnabled && paymentInfo) {
+                        const accountNameLine = momoAccountName ? `\nAccount Name: ${momoAccountName}` : "";
+                        fullReply += `\n\nYour order code is [${orderCode}]. Use this as your payment reference.\n\nPAYMENT METHODS\n${paymentInfo}${accountNameLine}\n\nSend a screenshot of your payment when you're done. We'll confirm once your payment comes through!`;
+                      } else {
+                        fullReply += `\n\nYour order code is [${orderCode}]. Your order has been placed! We'll get that ready for you.`;
+                      }
+                    }
+                  } catch (e: any) {
+                    console.error("[chat-stream] Order creation failed:", e?.message);
+                  }
+                }
               }
 
               // Detect mentioned products and attach their images
