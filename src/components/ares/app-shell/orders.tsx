@@ -10,6 +10,7 @@ interface OrderItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  imageUrl?: string | null;
 }
 
 interface Order {
@@ -292,10 +293,22 @@ export function AresOrders({ data, onChanged }: { data: any; onChanged: () => vo
                       {/* Items */}
                       <div>
                         <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Items</div>
-                        <div className="mt-1.5 space-y-1">
+                        <div className="mt-1.5 space-y-2">
                           {o.items.map((it) => (
-                            <div key={it.id} className="flex items-center justify-between text-xs">
-                              <span className="text-ares-navy">{it.quantity}× {it.name}</span>
+                            <div key={it.id} className="flex items-center gap-3 text-xs">
+                              {/* Product image thumbnail */}
+                              {it.imageUrl ? (
+                                <img
+                                  src={it.imageUrl}
+                                  alt={it.name}
+                                  className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ares-foam">
+                                  <ShoppingBag className="h-4 w-4 text-ares-sea-deep" />
+                                </div>
+                              )}
+                              <span className="flex-1 text-ares-navy">{it.quantity}× {it.name}</span>
                               <span className="font-mono text-muted-foreground">{o.currency === "GHS" ? "GH₵" : o.currency} {it.total.toFixed(2)}</span>
                             </div>
                           ))}

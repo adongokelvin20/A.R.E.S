@@ -297,11 +297,10 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
                     usedFallback = true;
                   } else if (parsed.reply) {
                     fullReply = parsed.reply;
+                    // The reply already includes order code + payment info (appended by backend)
                     setMessages((m) => m.map((msg) => msg.id === assistantMsgId ? { ...msg, content: fullReply, images: parsed.images || [] } : msg));
                   }
-                  if (parsed.orderCreated) {
-                    setMessages((m) => m.map((msg) => msg.id === assistantMsgId ? { ...msg, content: fullReply + (fullReply ? "\n\n" : "") + `Your order code is [${parsed.orderCreated.orderCode}]. Use this as your payment reference.` } : msg));
-                  }
+                  // Don't append order code again — it's already in the reply from the backend
                 } else if (parsed.type === "error") {
                   throw new Error(parsed.error || "Stream error");
                 }

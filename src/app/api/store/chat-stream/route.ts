@@ -147,7 +147,13 @@ export async function POST(req: NextRequest) {
                       const chunk = parsed.choices?.[0]?.delta?.content;
                       if (chunk) {
                         fullReply += chunk;
-                        send({ type: "chunk", text: chunk });
+                        // Don't stream ORDER_CONFIRMED JSON or markers to the customer.
+                        // Once ORDER_CONFIRMED is detected, suppress all further chunks.
+                        // The order code + payment info will be sent in the 'done' event.
+                        const orderConfirmedSeen = /ORDER_CONFIRMED/i.test(fullReply);
+                        if (!orderConfirmedSeen && !/ORDER_CONFIRMED/i.test(chunk)) {
+                          send({ type: "chunk", text: chunk });
+                        }
                       }
                     } catch {}
                   }
@@ -226,6 +232,7 @@ export async function POST(req: NextRequest) {
                       if (mp) {
                         item.productName = mp.name;
                         item.unitPrice = mp.price;
+                        item.productId = mp.id; // Link to product for image display
                       }
                     }
                     orderData.items = orderData.items.filter((i: any) => i.unitPrice > 0);
@@ -255,6 +262,7 @@ export async function POST(req: NextRequest) {
                               quantity: i.quantity || 1,
                               unitPrice: i.unitPrice,
                               total: i.unitPrice * (i.quantity || 1),
+                              productId: i.productId || null,
                             })),
                           },
                         },
@@ -348,7 +356,13 @@ export async function POST(req: NextRequest) {
                       const chunk = parsed.choices?.[0]?.delta?.content;
                       if (chunk) {
                         fullReply += chunk;
-                        send({ type: "chunk", text: chunk });
+                        // Don't stream ORDER_CONFIRMED JSON or markers to the customer.
+                        // Once ORDER_CONFIRMED is detected, suppress all further chunks.
+                        // The order code + payment info will be sent in the 'done' event.
+                        const orderConfirmedSeen = /ORDER_CONFIRMED/i.test(fullReply);
+                        if (!orderConfirmedSeen && !/ORDER_CONFIRMED/i.test(chunk)) {
+                          send({ type: "chunk", text: chunk });
+                        }
                       }
                     } catch {}
                   }

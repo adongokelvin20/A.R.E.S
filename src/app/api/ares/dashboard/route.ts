@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
       integrations,
       conversations,
     ] = await Promise.all([
-      db.order.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 500 }),
+      db.order.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 500, include: { items: true } }),
       db.customer.findMany({ where: { businessId } }),
       // Use select to avoid querying image2Data/image3Data columns which may not exist
       // on the production DB yet (ALTER TABLE only runs on cold starts)

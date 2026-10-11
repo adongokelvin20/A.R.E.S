@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const orders = await db.order.findMany({
     where: { businessId: session.user.businessId },
     orderBy: { createdAt: "desc" },
-    include: { items: true },
+    include: { items: { include: { product: { select: { imageUrl: true } } } } },
     take: 100,
   });
   // If searching by order code, filter by notes containing the code
@@ -33,7 +33,16 @@ export async function GET(req: NextRequest) {
     const filtered = orders.filter((o) => (o.notes ?? "").toUpperCase().includes(search.toUpperCase()));
     return NextResponse.json({ orders: filtered });
   }
-  return NextResponse.json({ orders });
+  // Map items to include imageUrl at top level (for frontend)
+  const ordersWithImages = orders.map((o) => ({
+    ...o,
+    items: o.items.map((it) => ({
+      ...it,
+      imageUrl: it.product?.imageUrl || null,
+      product: undefined, // Don't send nested product
+    })),
+  }));
+  return NextResponse.json({ orders: ordersWithImages });
 }
 
 export async function POST(req: NextRequest) {
