@@ -161,6 +161,9 @@ export async function POST(req: NextRequest) {
                 .replace(/^NAME_LEARNED:\s*.+$/gim, "")
                 .replace(/\bNAME_LEARNED:\s*[A-Za-z][A-Za-z'\- ]{0,40}/gi, "")
                 .replace(/\b(ARNED|NAME_LEARNED|BRAIN_LEARNED|LEARNED)\b:?\s*[^\n]{0,50}/gi, "")
+                .replace(/\*\*(.+?)\*\*/g, "$1")
+                .replace(/`([^`\n]+?)`/g, "$1")
+                .replace(/^#{1,6}\s+/gm, "")
                 .trim();
 
               // Check for ORDER_CONFIRMED
@@ -171,7 +174,23 @@ export async function POST(req: NextRequest) {
                 fullReply = fullReply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*?\}/gi, "").replace(/\n{3,}/g, "\n\n").trim();
               }
 
-              send({ type: "done", reply: fullReply, agentName, orderCreated });
+              // Detect mentioned products and attach their images
+              const mentionedImages: any[] = [];
+              const replyLower = fullReply.toLowerCase();
+              for (const p of context.products) {
+                if (p.imageUrl && p.name && replyLower.includes(p.name.toLowerCase())) {
+                  mentionedImages.push({
+                    productId: p.id,
+                    name: p.name,
+                    imageUrl: p.imageUrl,
+                    price: p.price,
+                    currency: p.currency,
+                  });
+                  if (mentionedImages.length >= 3) break;
+                }
+              }
+
+              send({ type: "done", reply: fullReply, agentName, orderCreated, images: mentionedImages });
               controller.close();
               return;
             }
@@ -232,9 +251,28 @@ export async function POST(req: NextRequest) {
                 .replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*?\}/gi, "")
                 .replace(/^NAME_LEARNED:.+$/gim, "")
                 .replace(/\b(ARNED|NAME_LEARNED|BRAIN_LEARNED|LEARNED)\b:?\s*[^\n]{0,50}/gi, "")
+                .replace(/\*\*(.+?)\*\*/g, "$1")
+                .replace(/`([^`\n]+?)`/g, "$1")
+                .replace(/^#{1,6}\s+/gm, "")
                 .trim();
 
-              send({ type: "done", reply: fullReply, agentName, orderCreated: null });
+              // Detect mentioned products and attach their images
+              const mentionedImages: any[] = [];
+              const replyLower = fullReply.toLowerCase();
+              for (const p of context.products) {
+                if (p.imageUrl && p.name && replyLower.includes(p.name.toLowerCase())) {
+                  mentionedImages.push({
+                    productId: p.id,
+                    name: p.name,
+                    imageUrl: p.imageUrl,
+                    price: p.price,
+                    currency: p.currency,
+                  });
+                  if (mentionedImages.length >= 3) break;
+                }
+              }
+
+              send({ type: "done", reply: fullReply, agentName, orderCreated: null, images: mentionedImages });
               controller.close();
               return;
             }

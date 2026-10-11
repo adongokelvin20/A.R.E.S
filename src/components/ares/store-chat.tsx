@@ -323,7 +323,7 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
                     usedFallback = true;
                   } else if (parsed.reply) {
                     fullReply = parsed.reply;
-                    setMessages((m) => m.map((msg) => msg.id === assistantMsgId ? { ...msg, content: fullReply } : msg));
+                    setMessages((m) => m.map((msg) => msg.id === assistantMsgId ? { ...msg, content: fullReply, images: parsed.images || [] } : msg));
                   }
                   if (parsed.orderCreated) {
                     setMessages((m) => m.map((msg) => msg.id === assistantMsgId ? { ...msg, content: fullReply + (fullReply ? "\n\n" : "") + `Your order code is [${parsed.orderCreated.orderCode}]. Use this as your payment reference.` } : msg));
