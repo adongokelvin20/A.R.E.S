@@ -1,7 +1,7 @@
 "use client";
 
 import { AresLogo } from "../logo";
-import { LayoutDashboard, Package, ShoppingBag, MessageSquare, Sparkles, Plug, ScrollText, Settings, LogOut, X, Workflow, Crown, Calendar, Search } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, MessageSquare, Sparkles, Plug, ScrollText, Settings, LogOut, X, Workflow, Crown, Calendar, Search, Image } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
@@ -22,6 +22,7 @@ const ICONS: Record<string, any> = {
   calendar: Calendar,
   search: Search,
   scroll: ScrollText,
+  image: Image,
   settings: Settings,
 };
 

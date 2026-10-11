@@ -138,6 +138,7 @@ model Product {
   business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   orderItems    OrderItem[]
 
+  @@index([businessId, status])
   @@index([businessId, sku])
   @@index([businessId])
 }
@@ -436,3 +437,29 @@ model Subscription {
   @@index([businessId, status])
 }
 
+
+// ============================================================
+// PAYMENT SCREENSHOTS — all payment screenshots uploaded by customers
+// Owner can review them anytime in the dashboard
+// ============================================================
+
+model PaymentScreenshot {
+  id            String   @id @default(cuid())
+  businessId    String
+  orderId       String?  // linked order (if found)
+  orderCode     String?  // the 4-char code customer used as reference
+  customerName  String?
+  customerPhone String?
+  imageData     String   // base64-encoded screenshot
+  vlmAnalysis   String?  // VLM extraction result (IS_PAYMENT, AMOUNT, etc.)
+  vlmVerified   Boolean  @default(false) // did VLM verify it?
+  verified      Boolean  @default(false) // did the owner manually verify?
+  amount        Float?   // amount found in screenshot
+  status        String   @default("PENDING") // PENDING | VERIFIED | REJECTED
+  createdAt     DateTime @default(now())
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, status])
+  @@index([businessId, createdAt])
+}

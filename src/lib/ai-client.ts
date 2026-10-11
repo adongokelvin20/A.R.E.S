@@ -226,6 +226,7 @@ async function callCloudflareChat(messages: any[], temperature: number, maxToken
 
 /**
  * Cloudflare TTS — converts text to speech. Returns base64 audio (WAV format).
+ * Uses male voice for a more authentic, natural sound.
  */
 export async function cloudflareTTS(text: string, language: string = "en"): Promise<string | null> {
   if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID) return null;
@@ -237,7 +238,7 @@ export async function cloudflareTTS(text: string, language: string = "en"): Prom
         "Content-Type": "application/json",
         Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
       },
-      body: JSON.stringify({ prompt: text, language }),
+      body: JSON.stringify({ prompt: text, language, voice: "male" }),
     });
 
     if (!response.ok) {

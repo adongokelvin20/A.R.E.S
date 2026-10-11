@@ -15,6 +15,7 @@ import { AresAudit } from "./app-shell/audit";
 import { AresPricing as AresDashboardPricing } from "./app-shell/pricing";
 import { AresArchives } from "./app-shell/archives";
 import { AresOrderLookup } from "./app-shell/order-lookup";
+import { AresPaymentScreenshots } from "./app-shell/payment-screenshots";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "next-auth/react";
 import { AlertCircle } from "lucide-react";
@@ -39,6 +40,7 @@ type View =
   | "integrations"
   | "pricing"
   | "archives"
+  | "payments"
   | "lookup"
   | "audit"
   | "settings";
@@ -48,6 +50,7 @@ const NAV: NavItem[] = [
   { id: "products", label: "Products", icon: "package" },
   { id: "orders", label: "Orders", icon: "shopping-bag" },
   { id: "lookup", label: "Order Lookup", icon: "search" },
+  { id: "payments", label: "Payments", icon: "image" },
   { id: "conversations", label: "Conversations", icon: "message" },
   { id: "ai", label: "Ask my AI", icon: "sparkles" },
   { id: "integrations", label: "Integrations", icon: "plug" },
@@ -330,6 +333,7 @@ export function AresAppShell({
               {view === "integrations" && <AresIntegrations data={data} onChanged={load} />}
               {view === "pricing" && <AresDashboardPricing data={data} onChanged={load} />}
               {view === "lookup" && <AresOrderLookup data={data} />}
+              {view === "payments" && <AresPaymentScreenshots />}
               {view === "archives" && <AresArchives />}
               {view === "audit" && <AresAudit data={data} />}
               {view === "settings" && <AresSettings data={data} onChanged={load} />}

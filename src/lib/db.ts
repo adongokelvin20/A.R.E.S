@@ -45,6 +45,10 @@ export async function ensureDatabase() {
     // the table was added. CREATE TABLE IF NOT EXISTS is idempotent.
     `CREATE TABLE IF NOT EXISTS "WeeklyArchive" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "weekStart" TIMESTAMP(3) NOT NULL, "weekEnd" TIMESTAMP(3) NOT NULL, "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0, "orderCount" INTEGER NOT NULL DEFAULT 0, "customerCount" INTEGER NOT NULL DEFAULT 0, "newCustomers" INTEGER NOT NULL DEFAULT 0, "topProducts" TEXT NOT NULL DEFAULT '[]', "channelBreakdown" TEXT NOT NULL DEFAULT '{}', "statusBreakdown" TEXT NOT NULL DEFAULT '{}', "summary" TEXT NOT NULL DEFAULT '', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "WeeklyArchive_pkey" PRIMARY KEY ("id"))`,
     `CREATE INDEX IF NOT EXISTS "WeeklyArchive_businessId_weekStart_idx" ON "WeeklyArchive"("businessId", "weekStart")`,
+    // PaymentScreenshot table — for logging all payment screenshots
+    `CREATE TABLE IF NOT EXISTS "PaymentScreenshot" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "orderId" TEXT, "orderCode" TEXT, "customerName" TEXT, "customerPhone" TEXT, "imageData" TEXT NOT NULL, "vlmAnalysis" TEXT, "vlmVerified" BOOLEAN NOT NULL DEFAULT false, "verified" BOOLEAN NOT NULL DEFAULT false, "amount" DOUBLE PRECISION, "status" TEXT NOT NULL DEFAULT 'PENDING', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "PaymentScreenshot_pkey" PRIMARY KEY ("id"))`,
+    `CREATE INDEX IF NOT EXISTS "PaymentScreenshot_businessId_status_idx" ON "PaymentScreenshot"("businessId", "status")`,
+    `CREATE INDEX IF NOT EXISTS "PaymentScreenshot_businessId_createdAt_idx" ON "PaymentScreenshot"("businessId", "createdAt")`,
   ]
   for (const sql of migrations) {
     try { await db.$executeRawUnsafe(sql) } catch {}

@@ -107,7 +107,43 @@ DATE: <the payment date in YYYY-MM-DD format if parseable, otherwise the raw tex
 REFERENCE: <the full reference/note/message field verbatim — or NOT_FOUND>`);
     } catch (e: any) {
       console.error("[verify-payment] VLM failed:", e?.message);
+      // Still save the screenshot even if VLM fails
+      try {
+        await db.paymentScreenshot.create({
+          data: {
+            businessId: business.id,
+            orderCode: orderCode?.trim() || null,
+            imageData: imageBase64,
+            vlmAnalysis: "",
+            vlmVerified: false,
+            status: "PENDING",
+          },
+        });
+      } catch {}
       return NextResponse.json({ verified: false, pendingManual: true, reason: "Thanks for uploading! The store owner will verify your payment shortly." });
+    }
+
+    // ===== SAVE SCREENSHOT to PaymentScreenshot table (for owner review) =====
+    try {
+      // Parse VLM analysis for the screenshot record
+      const isPaymentYes = /IS_PAYMENT[:\s]*\s*YES/im.test(analysis);
+      const amountMatch = analysis.match(/AMOUNT[:\s]*\s*([\d.,]+)/im);
+      const foundAmount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, "")) : null;
+
+      await db.paymentScreenshot.create({
+        data: {
+          businessId: business.id,
+          orderCode: orderCode?.trim() || null,
+          imageData: imageBase64,
+          vlmAnalysis: analysis,
+          vlmVerified: isPaymentYes,
+          amount: foundAmount,
+          status: "PENDING",
+        },
+      });
+      console.log("[verify-payment] Screenshot saved to PaymentScreenshot table");
+    } catch (e: any) {
+      console.error("[verify-payment] Failed to save screenshot:", e?.message);
     }
 
     // If VLM returned empty analysis (model broken / no vision support), treat as manual review
