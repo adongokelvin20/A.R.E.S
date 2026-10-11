@@ -31,6 +31,7 @@ interface Msg {
   content: string;
   images?: any[];
   createdAt: string;
+  id?: string;
 }
 
 function genId() {
@@ -273,9 +274,97 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
       setInput("");
       setLoading(true);
 
-      // Try the request up to 2 times — if the first fails, retry once
-      let lastError = "";
-      for (let attempt = 0; attempt < 2; attempt++) {
+      // Create a placeholder message for streaming
+      const assistantMsgId = `streaming-${Date.now()}`;
+      setMessages((m) => [...m, { role: "assistant", content: "", createdAt: new Date().toISOString(), id: assistantMsgId }]);
+
+      try {
+        const res = await fetch("/api/store/chat-stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug,
+            message: msg,
+            sessionId,
+            history: messages.slice(-100).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+          }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("No stream body");
+
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let fullReply = "";
+        let usedFallback = false;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6).trim();
+              if (!data) continue;
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.type === "chunk" && parsed.text) {
+                  fullReply += parsed.text;
+                  // Update the streaming message
+                  setMessages((m) => m.map((msg) => msg.id === assistantMsgId ? { ...msg, content: fullReply } : msg));
+                } else if (parsed.type === "done") {
+                  if (parsed.fallback) {
+                    usedFallback = true;
+                  } else if (parsed.reply) {
+                    fullReply = parsed.reply;
+                    setMessages((m) => m.map((msg) => msg.id === assistantMsgId ? { ...msg, content: fullReply } : msg));
+                  }
+                  if (parsed.orderCreated) {
+                    setMessages((m) => m.map((msg) => msg.id === assistantMsgId ? { ...msg, content: fullReply + (fullReply ? "\n\n" : "") + `Your order code is [${parsed.orderCreated.orderCode}]. Use this as your payment reference.` } : msg));
+                  }
+                } else if (parsed.type === "error") {
+                  throw new Error(parsed.error || "Stream error");
+                }
+              } catch (e) {
+                // Ignore parse errors for partial chunks
+              }
+            }
+          }
+        }
+
+        // If streaming returned empty or fallback, use the non-streaming endpoint
+        if (!fullReply || usedFallback) {
+          setMessages((m) => m.filter((msg) => msg.id !== assistantMsgId));
+          // Fall back to non-streaming
+          const res2 = await fetch("/api/store/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              slug,
+              message: msg,
+              sessionId,
+              history: messages.slice(-100).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+            }),
+          });
+          const j = await res2.json();
+          if (j.reply) {
+            setMessages((m) => [...m, { role: "assistant", content: j.reply, images: j.images ?? [], createdAt: new Date().toISOString() }]);
+          } else {
+            setMessages((m) => [...m, { role: "assistant", content: "I'm having trouble responding right now. Please try again.", createdAt: new Date().toISOString() }]);
+          }
+        }
+
+        setLoading(false);
+        return;
+      } catch (e) {
+        // Remove the streaming placeholder and fall back to non-streaming
+        setMessages((m) => m.filter((msg) => msg.id !== assistantMsgId));
         try {
           const res = await fetch("/api/store/chat", {
             method: "POST",
@@ -284,7 +373,6 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
               slug,
               message: msg,
               sessionId,
-              // Send up to 100 messages of history
               history: messages.slice(-100).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
             }),
           });
@@ -293,31 +381,16 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
             setMessages((m) => [...m, { role: "assistant", content: j.reply, images: j.images ?? [], createdAt: new Date().toISOString() }]);
             setLoading(false);
             return;
-          } else if (j.error) {
-            lastError = j.error;
-          } else {
-            lastError = "No reply received";
           }
-        } catch (e) {
-          lastError = "Network error";
-        }
-        // Wait 1s before retrying
-        if (attempt === 0) await new Promise((r) => setTimeout(r, 1000));
+        } catch {}
+        setMessages((m) => [...m, { role: "assistant", content: "I'm having trouble responding right now. Please try again.", createdAt: new Date().toISOString() }]);
       }
 
-      // Both attempts failed — show a helpful message
-      setMessages((m) => [
-        ...m,
-        {
-          role: "assistant",
-          content: `I'm having trouble responding right now — our server might be warming up. Please try sending your message again in a few seconds.`,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
       setLoading(false);
     },
     [input, loading, slug, sessionId, messages]
   );
+
 
   // Listen for product clicks from the store page — opens the chat and sends an interest message
   useEffect(() => {
