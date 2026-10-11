@@ -268,6 +268,22 @@ REFERENCE: <the full reference/note/message field verbatim — or NOT_FOUND>`);
     // ===== ALL CHECKS PASSED — mark order as paid =====
     await db.order.update({ where: { id: order.id }, data: { status: "CONFIRMED" } });
 
+    // Update the PaymentScreenshot record to VERIFIED + link the order
+    try {
+      await db.paymentScreenshot.updateMany({
+        where: { businessId: business.id, orderCode: codeUpper, status: "PENDING" },
+        data: {
+          orderId: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          verified: true,
+          status: "VERIFIED",
+        },
+      });
+    } catch (e: any) {
+      console.error("[verify-payment] Failed to update screenshot record:", e?.message);
+    }
+
     try {
       await db.auditLog.create({
         data: {
