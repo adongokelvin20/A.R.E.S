@@ -166,26 +166,48 @@ export async function POST(req: NextRequest) {
                 .replace(/^#{1,6}\s+/gm, "")
                 .trim();
 
-              // Check for ORDER_CONFIRMED
-              const orderMatch = fullReply.match(/ORDER_CONFIRMED:?\s*\{[\s\S]*?\}/i);
+              // Check for ORDER_CONFIRMED — use balanced brace extraction
+              const orderMarkerMatch = fullReply.match(/ORDER_CONFIRMED:?\s*\{/i);
               let orderCreated = null;
 
-              if (orderMatch) {
-                // Extract the JSON from the ORDER_CONFIRMED marker
-                const marker = orderMatch[0];
-                const jsonPart = marker.replace(/^ORDER_CONFIRMED:?\s*/i, "").trim();
-                let orderData: any = null;
-                try {
-                  // Try to extract balanced JSON
-                  const start = jsonPart.indexOf("{");
-                  const end = jsonPart.lastIndexOf("}");
-                  if (start >= 0 && end > start) {
-                    orderData = JSON.parse(jsonPart.slice(start, end + 1));
+              if (orderMarkerMatch) {
+                const markerStart = fullReply.search(/ORDER_CONFIRMED:?\s*\{/i);
+                const afterMarker = fullReply.slice(markerStart).replace(/^ORDER_CONFIRMED:?\s*/i, "");
+
+                // Extract balanced JSON (handles nested braces)
+                let jsonStr: string | null = null;
+                let braceCount = 0;
+                let jsonStart = -1;
+                for (let i = 0; i < afterMarker.length; i++) {
+                  if (afterMarker[i] === "{") {
+                    if (braceCount === 0) jsonStart = i;
+                    braceCount++;
+                  } else if (afterMarker[i] === "}") {
+                    braceCount--;
+                    if (braceCount === 0 && jsonStart >= 0) {
+                      jsonStr = afterMarker.slice(jsonStart, i + 1);
+                      break;
+                    }
                   }
-                } catch {}
+                }
+
+                let orderData: any = null;
+                if (jsonStr) {
+                  try {
+                    orderData = JSON.parse(jsonStr);
+                  } catch {
+                    console.warn("[chat-stream] Failed to parse ORDER_CONFIRMED JSON:", jsonStr.slice(0, 200));
+                  }
+                }
 
                 // Strip the ORDER_CONFIRMED marker from the reply
-                fullReply = fullReply.replace(/ORDER_CONFIRMED:?\s*\{[\s\S]*?\}/gi, "").replace(/\n{3,}/g, "\n\n").trim();
+                if (jsonStr) {
+                  const fullMarker = fullReply.slice(markerStart, markerStart + afterMarker.indexOf(jsonStr) + jsonStr.length);
+                  fullReply = fullReply.replace(fullMarker, "").replace(/\n{3,}/g, "\n\n").trim();
+                } else {
+                  // Fallback: strip everything from the marker to the end
+                  fullReply = fullReply.slice(0, markerStart).trim();
+                }
 
                 // If we have order data with items, create the order
                 if (orderData?.items?.length > 0) {
