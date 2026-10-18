@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. Global Brain
+ * ChatBiz Global Brain
  *
  * A shared, evolving knowledge base that spans ALL businesses on the platform.
  * Every conversation teaches the brain something about how to be more
@@ -23,7 +23,7 @@
 import { db } from "@/lib/db";
 
 // Curated patterns seeded on first run. These are the "DNA" of the
-// A.R.E.S. personality — how a real, warm, competent employee talks.
+// ChatBiz personality — how a real, warm, competent employee talks.
 const CURATED_PATTERNS: { pattern: string; category: string }[] = [
   // Conversation patterns — how to be naturally human
   { category: "conversation", pattern: "Use the customer's name once you know it, but not every sentence — once every 2-3 messages feels natural, not robotic." },

@@ -28,7 +28,7 @@ export function AresHero() {
             <span className="font-semibold text-white/80">Kevtech</span>
             <span>Corporation</span>
             <span className="text-white/30">·</span>
-            <span>Built by Kelvin Ayinbisa & Jessy</span>
+            <span>Built by Kelvin Ayinbisa & Jesse</span>
           </div>
 
           {/* Brand */}

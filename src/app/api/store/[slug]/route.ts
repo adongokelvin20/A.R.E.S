@@ -13,7 +13,7 @@ import { getOrCreateSubscription, hasAccess } from "@/lib/paystack";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     // ===== SUBSCRIPTION CHECK — lock the store if the owner's subscription is expired =====
     // Calculate business age FIRST (doesn't need DB)
     const businessAge = business.createdAt ? Date.now() - new Date(business.createdAt).getTime() : 0;
-    const isOlderThan7Days = businessAge > SEVEN_DAYS_MS;
+    const isOlderThan14Days = businessAge > FOURTEEN_DAYS_MS;
 
     let storeLocked = false;
     let sub: any = null;
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     if (!access) storeLocked = true;
 
     // Age check override — if older than 7 days and no ACTIVE/valid TRIAL, lock
-    if (isOlderThan7Days) {
+    if (isOlderThan14Days) {
       const hasValidSub = sub && (
         sub.status === "ACTIVE" ||
         (sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date())
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     }
 
     // If subscription check completely failed (sub is null) and account is older than 7 days, DEFINITELY lock
-    if (!sub && isOlderThan7Days) storeLocked = true;
+    if (!sub && isOlderThan14Days) storeLocked = true;
 
     if (storeLocked) {
       return NextResponse.json({

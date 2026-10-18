@@ -162,7 +162,7 @@ export function AresSettings({ data, onChanged }: { data: any; onChanged: () => 
       <div className="rounded-2xl border border-ares-line bg-gradient-to-br from-emerald-50/50 to-white p-5">
         <div className="flex items-center gap-2">
           <Code2 className="h-4 w-4 text-emerald-600" />
-          <h3 className="text-sm font-semibold text-ares-navy">Embed ARES on your website</h3>
+          <h3 className="text-sm font-semibold text-ares-navy">Embed ChatBiz on your website</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">Add the AI assistant to any external website.</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">

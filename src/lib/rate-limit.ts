@@ -1,5 +1,5 @@
 /**
- * Rate limiting middleware for A.R.E.S.
+ * Rate limiting middleware for ChatBiz
  * Prevents abuse by limiting requests per IP address.
  * Uses in-memory store (sufficient for Vercel serverless functions).
  */

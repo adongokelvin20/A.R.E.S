@@ -7,10 +7,10 @@ const PLANS = [
   {
     name: "Free Trial",
     price: "GHC 0",
-    period: "7 days",
-    description: "Try everything free for a week. No card needed.",
+    period: "14 days",
+    description: "Try everything free for 14 days. No card needed.",
     features: [
-      "Full AI assistant for 7 days",
+      "Full AI assistant for 14 days",
       "Unlimited customer chats",
       "Store link + WhatsApp",
       "All features unlocked",
@@ -67,7 +67,7 @@ export function AresPricing() {
             Simple, honest pricing.
           </h2>
           <p className="mt-4 text-base text-muted-foreground">
-            Start free for 7 days. Then choose a plan that works for you. No credit card needed to start.
+            Start free for 14 days. Then choose a plan that works for you. No credit card needed to start.
           </p>
         </div>
 

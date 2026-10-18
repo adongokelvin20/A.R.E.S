@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. AI chat endpoint.
+ * ChatBiz AI chat endpoint.
  *
  * POST /api/ares/chat
  *   { message, history?, conversationId? }
@@ -147,7 +147,7 @@ When you notice a business insight pattern, add: BRAIN_LEARNED: <pattern>`;
       null;
 
     if (!reply) {
-      console.error("[A.R.E.S. chat] No reply in completion:", JSON.stringify(completion).slice(0, 500));
+      console.error("[ChatBiz chat] No reply in completion:", JSON.stringify(completion).slice(0, 500));
       // Fallback response instead of crashing
       reply = "I'm having a bit of trouble right now -- mind repeating that?";
     }
@@ -305,11 +305,11 @@ When you notice a business insight pattern, add: BRAIN_LEARNED: <pattern>`;
       images: mentionedImages,
     });
   } catch (err: any) {
-    console.error("[A.R.E.S. chat] error:", err?.message ?? err);
+    console.error("[ChatBiz chat] error:", err?.message ?? err);
     // Return a graceful fallback instead of an error
     return NextResponse.json({
       reply: "Sorry, I'm having trouble connecting right now. Give me a moment and try again.",
-      agentName: "A.R.E.S.",
+      agentName: "ChatBiz",
       sectorLabel: "business",
       businessName: "your business",
       conversationId: null,

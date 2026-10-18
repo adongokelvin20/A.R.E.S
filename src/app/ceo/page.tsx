@@ -59,7 +59,7 @@ export default function CEOLoginPage() {
               </button>
             </form>
           </div>
-          <p className="mt-6 text-center text-xs text-slate-300">ChatBiz by Kevtech Corporation · Built by Kelvin Ayinbisa & Jessy</p>
+          <p className="mt-6 text-center text-xs text-slate-300">ChatBiz by Kevtech Corporation · Built by Kelvin Ayinbisa & Jesse</p>
         </div>
       </main>
     );

@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. seed — creates one demo business per sector so the dashboard
+ * ChatBiz seed — creates one demo business per sector so the dashboard
  * preview and AI chat can run on real data, not hardcoded mock values.
  */
 import { db } from "@/lib/db";
@@ -122,7 +122,7 @@ const SECTORS = [
 
 const AUTOMATIONS = [
   { name: "Low Stock Alert", trigger: "LOW_INVENTORY", description: "When any product drops below its threshold, notify the owner and create a restock task.", actions: ["notify_owner", "create_restock_task"] },
-  { name: "Unanswered Customer Follow-up", trigger: "CUSTOMER_WAIT", description: "If a customer message is unanswered for 15 minutes during business hours, A.R.E.S. responds with an acknowledgment.", actions: ["auto_acknowledge", "alert_owner"] },
+  { name: "Unanswered Customer Follow-up", trigger: "CUSTOMER_WAIT", description: "If a customer message is unanswered for 15 minutes during business hours, ChatBiz responds with an acknowledgment.", actions: ["auto_acknowledge", "alert_owner"] },
   { name: "Order Confirmation", trigger: "NEW_ORDER", description: "When a new order is created, send the customer a WhatsApp confirmation and update inventory.", actions: ["send_whatsapp_confirmation", "update_inventory", "notify_fulfillment"] },
   { name: "Payment Receipt", trigger: "PAYMENT_RECEIVED", description: "On payment confirmation, mark the order as paid and send the customer a digital receipt.", actions: ["mark_order_paid", "send_receipt"] },
 ];
@@ -130,7 +130,7 @@ const AUTOMATIONS = [
 const ALERTS = [
   { severity: "URGENT", source: "SYSTEM", type: "LOW_STOCK", title: "Kente Hoodie — Black (XL) almost out", message: "Only 4 units left. Restock threshold is 5.", payload: { productId: "p1" } },
   { severity: "URGENT", source: "SYSTEM", type: "UNANSWERED_CUSTOMER", title: "3 WhatsApp customers waiting > 10 min", message: "Akosua, Michael, and Fatima are awaiting replies.", payload: {} },
-  { severity: "ATTENTION", source: "AI", type: "SALES_ANOMALY", title: "Sales dipped 22% vs. yesterday", message: "A.R.E.S. detected a drop in conversion after 4pm. Possible cause: restock delay on top-selling hoodie.", payload: {} },
+  { severity: "ATTENTION", source: "AI", type: "SALES_ANOMALY", title: "Sales dipped 22% vs. yesterday", message: "ChatBiz detected a drop in conversion after 4pm. Possible cause: restock delay on top-selling hoodie.", payload: {} },
   { severity: "ATTENTION", source: "AUTOMATION", type: "PENDING_APPROVAL", title: "Refund request needs your approval", message: "Order #10283 — customer requested GHS 320 refund. Risk level: HIGH.", payload: {} },
   { severity: "INFO", source: "SYSTEM", type: "NEW_REVIEW", title: "New 5★ review from Akosua M.", message: "“Fast delivery and the hoodie quality is amazing.”", payload: {} },
 ];
@@ -161,7 +161,7 @@ const INSIGHTS = [
     severity: "INFO",
     category: "OPERATIONS",
     title: "Average first-response time: 1m 42s",
-    body: "A.R.E.S. is responding to WhatsApp inquiries in under 2 minutes during business hours. After-hours responses average 11 minutes. Consider enabling after-hours auto-acknowledgment.",
+    body: "ChatBiz is responding to WhatsApp inquiries in under 2 minutes during business hours. After-hours responses average 11 minutes. Consider enabling after-hours auto-acknowledgment.",
     suggestedActions: ["enable_after_hours_auto_ack"],
   },
 ];
@@ -341,12 +341,12 @@ export async function seedAresData() {
 
     // Audit log entries (real actions, real timestamps)
     const auditActions = [
-      { actorType: "AI", actorName: "A.R.E.S.", action: "ANSWER_CUSTOMER_QUERY", tool: "search_product", result: "SUCCESS", risk: "LOW" },
-      { actorType: "AI", actorName: "A.R.E.S.", action: "CREATE_ORDER", tool: "create_order", result: "SUCCESS", risk: "MEDIUM" },
-      { actorType: "AI", actorName: "A.R.E.S.", action: "CHECK_INVENTORY", tool: "check_inventory", result: "SUCCESS", risk: "LOW" },
-      { actorType: "AI", actorName: "A.R.E.S.", action: "REQUEST_REFUND_APPROVAL", tool: "refund_order", result: "PENDING_APPROVAL", risk: "HIGH" },
+      { actorType: "AI", actorName: "ChatBiz", action: "ANSWER_CUSTOMER_QUERY", tool: "search_product", result: "SUCCESS", risk: "LOW" },
+      { actorType: "AI", actorName: "ChatBiz", action: "CREATE_ORDER", tool: "create_order", result: "SUCCESS", risk: "MEDIUM" },
+      { actorType: "AI", actorName: "ChatBiz", action: "CHECK_INVENTORY", tool: "check_inventory", result: "SUCCESS", risk: "LOW" },
+      { actorType: "AI", actorName: "ChatBiz", action: "REQUEST_REFUND_APPROVAL", tool: "refund_order", result: "PENDING_APPROVAL", risk: "HIGH" },
       { actorType: "USER", actorName: "Sarah Mensah", action: "APPROVE_REFUND", tool: null, result: "SUCCESS", risk: "HIGH" },
-      { actorType: "AI", actorName: "A.R.E.S.", action: "SEND_WHATSAPP_CONFIRMATION", tool: "send_whatsapp_message", result: "SUCCESS", risk: "LOW" },
+      { actorType: "AI", actorName: "ChatBiz", action: "SEND_WHATSAPP_CONFIRMATION", tool: "send_whatsapp_message", result: "SUCCESS", risk: "LOW" },
       { actorType: "SYSTEM", actorName: "Automation Engine", action: "TRIGGER_LOW_STOCK_ALERT", tool: null, result: "SUCCESS", risk: "LOW" },
     ];
     for (let i = 0; i < auditActions.length; i++) {

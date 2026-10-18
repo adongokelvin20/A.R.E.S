@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. AI Core -- human, personalized, learning, sector-bound.
+ * ChatBiz AI Core -- human, personalized, learning, sector-bound.
  *
  * The AI:
  * - Uses the owner's custom instructions as its personality
@@ -31,7 +31,7 @@ export async function buildBusinessContext(businessId: string, customerPhone?: s
   const sectorPrompt = subtype?.systemPrompt ?? "You work at a business. Help customers with their questions.";
   const sectorLabel = subtype?.label ?? business.type ?? "business";
 
-  const agentName = business.agentName || "A.R.E.S.";
+  const agentName = business.agentName || "ChatBiz";
   const ownerName = business.ownerFirstName || "the owner";
   const customInstructions = (business.agentInstructions || "").trim();
 
@@ -119,18 +119,18 @@ ${learnings.map((l, i) => `${i + 1}. ${l}`).join("\n")}
 Use these learnings to give better, more informed answers. They represent real things that have come up in conversations with this business's customers.`
     : "";
 
-  // Global brain — shared human-like patterns learned across ALL A.R.E.S. businesses
+  // Global brain — shared human-like patterns learned across ALL ChatBiz businesses
   let brainPatterns: string[] = [];
   try {
     brainPatterns = await getBrainPatterns();
   } catch (e) {
-    console.error("[A.R.E.S. AI] brain patterns failed:", e);
+    console.error("[ChatBiz AI] brain patterns failed:", e);
   }
   const brainSection = brainPatterns.length > 0
-    ? `===== A.R.E.S. BRAIN — HOW TO BE HUMAN (learned from millions of conversations) =====
+    ? `===== ChatBiz BRAIN — HOW TO BE HUMAN (learned from millions of conversations) =====
 ${brainPatterns.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 
-These are behavioral patterns the entire A.R.E.S. system has learned. Follow them naturally — they make you sound like a real person, not a chatbot.`
+These are behavioral patterns the entire ChatBiz system has learned. Follow them naturally — they make you sound like a real person, not a chatbot.`
     : "";
 
   const systemPrompt = `You are ${agentName}, a real person who works at ${business.name}. You are NOT an AI assistant, a chatbot, or a virtual assistant -- you are a human employee.
@@ -214,7 +214,7 @@ If the customer tells you something useful about the business that you didn't kn
 LEARNED: <one sentence describing what you learned about THIS business>
 Only use this when you genuinely learned something new and factual about this specific business. Don't use it for opinions or small talk.
 
-===== GLOBAL BRAIN LEARNING (helps all A.R.E.S. assistants) =====
+===== GLOBAL BRAIN LEARNING (helps all ChatBiz assistants) =====
 If you notice something about how to be MORE HUMAN-LIKE in conversation -- a phrasing that worked well, a way to handle a question that felt natural, a pattern that made the customer respond positively -- add this marker at the end of your reply (the system saves it to the shared brain; the customer never sees it):
 BRAIN_LEARNED: <one sentence describing a conversational pattern that made this exchange feel human>
 Examples of good brain learnings:
@@ -240,7 +240,7 @@ export async function generateOwnerGreeting(businessId: string): Promise<string>
   });
   if (!business) return "Welcome back.";
 
-  const agentName = business.agentName || "A.R.E.S.";
+  const agentName = business.agentName || "ChatBiz";
   const ownerFirst = business.ownerFirstName || "there";
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";

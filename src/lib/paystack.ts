@@ -2,30 +2,23 @@
  * Paystack Payment Integration
  *
  * Pricing:
- *   - 1-week free trial
+ *   - 14-day free trial
  *   - GHC 1300/year (standard)
  *   - ~GHC 115/month (calculated from annual: 1300/12 ≈ 108, rounded to 115)
- *   - Promo code "Kelvin" = GHC 600/year
  *
  * Money goes to the merchant MoMo number 0206646970 (configured in Paystack dashboard).
  *
  * Flow:
- *   1. Customer signs up → gets 1-week free trial (status=TRIAL)
+ *   1. Customer signs up → gets 14-day free trial (status=TRIAL)
  *   2. Trial ends → dashboard gated, customer sees pricing page
  *   3. Customer selects plan → Paystack checkout
  *   4. Payment successful → subscription activated
  */
 
 export const PRICING = {
-  TRIAL_DAYS: 7,
+  TRIAL_DAYS: 14,
   ANNUAL: { amount: 130000, label: "GHC 1,300/year", plan: "ANNUAL" }, // amount in kobo (100 = GHC 1)
   MONTHLY: { amount: 11500, label: "GHC 115/month", plan: "MONTHLY" },
-  PROMO: {
-    code: "kelvin5544",
-    annualAmount: 60000, // GHC 600/year
-    label: "GHC 600/year (promo)",
-    plan: "ANNUAL",
-  },
   // Secret promo — gives the system for free. Not shown publicly.
   FREE_PROMO: {
     code: "kratos5544",
@@ -151,17 +144,6 @@ export function validatePromoCode(code: string): { valid: boolean; amount: numbe
       plan: PRICING.FREE_PROMO.plan,
       label: PRICING.FREE_PROMO.label,
       free: true,
-    };
-  }
-
-  // Kelvin promo — GHC 600/year
-  if (normalized === PRICING.PROMO.code.toLowerCase()) {
-    return {
-      valid: true,
-      amount: PRICING.PROMO.annualAmount,
-      plan: PRICING.PROMO.plan,
-      label: PRICING.PROMO.label,
-      free: false,
     };
   }
 

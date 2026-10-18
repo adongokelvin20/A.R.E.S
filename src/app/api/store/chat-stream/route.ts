@@ -222,6 +222,8 @@ export async function POST(req: NextRequest) {
                     const orderCode = Math.random().toString(36).slice(2, 6).toUpperCase();
 
                     // Match items to actual products in the catalog
+                    // Use the AI's negotiated price if it's a valid positive number,
+                    // otherwise fall back to the catalog price
                     for (const item of orderData.items) {
                       const pn = String(item.productName || "").toLowerCase();
                       const mp = context.products.find((p: any) =>
@@ -231,8 +233,14 @@ export async function POST(req: NextRequest) {
                       );
                       if (mp) {
                         item.productName = mp.name;
-                        item.unitPrice = mp.price;
-                        item.productId = mp.id; // Link to product for image display
+                        // Only use catalog price as fallback — respect the AI's
+                        // negotiated price if the customer bargained for a discount
+                        const aiPrice = Number(item.unitPrice);
+                        if (!Number.isFinite(aiPrice) || aiPrice <= 0) {
+                          item.unitPrice = mp.price;
+                        }
+                        // If the AI provided a price, use it (negotiated/discounted price)
+                        item.productId = mp.id;
                       }
                     }
                     orderData.items = orderData.items.filter((i: any) => i.unitPrice > 0);

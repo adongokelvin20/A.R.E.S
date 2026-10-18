@@ -111,6 +111,9 @@ ORDER_CONFIRMED FORMAT:
 ORDER_CONFIRMED: {"items":[{"productName":"Item Name","quantity":1,"unitPrice":25.00}],"fulfillmentType":"PICKUP","deliveryLocation":"","deliveryTime":"","deliveryPhone":"","customerName":"Their Name"}
 - fulfillmentType must be "PICKUP" or "DELIVERY" (whichever they chose)
 - If DELIVERY, include deliveryLocation, deliveryTime, deliveryPhone
+- unitPrice MUST be the actual price the customer is paying — if you negotiated a
+  discount or agreed on a different price, use THAT price (not the catalog price).
+  Example: If catalog price is GHS 800 but you agreed on GHS 750, emit unitPrice: 750.00
 - Use ACTUAL product prices (NEVER 0)
 - customerName must be the name they told you
 

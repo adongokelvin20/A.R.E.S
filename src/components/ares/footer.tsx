@@ -17,7 +17,7 @@ export function AresFooter() {
               </div>
             </div>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              The digital employee for your business. Built by Kelvin Ayinbisa & Jessy and built by Kevtech Corporation to give every business — not just the big ones — access to enterprise-grade operations technology.
+              The digital employee for your business. Built by Kelvin Ayinbisa & Jesse and built by Kevtech Corporation to give every business — not just the big ones — access to enterprise-grade operations technology.
             </p>
           </div>
 

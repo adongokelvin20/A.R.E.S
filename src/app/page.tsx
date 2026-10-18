@@ -7,7 +7,7 @@ import { getOrCreateSubscription, hasAccess } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
 export default async function Home() {
   try {
@@ -59,7 +59,7 @@ export default async function Home() {
 
         // Step 1: Check the business age — if older than 7 days, they MUST have a subscription
         const businessAge = business.createdAt ? Date.now() - new Date(business.createdAt).getTime() : 0;
-        const isOlderThan7Days = businessAge > SEVEN_DAYS_MS;
+        const isOlderThan14Days = businessAge > FOURTEEN_DAYS_MS;
 
         // Step 2: Check subscription status
         let sub: any = null;
@@ -77,12 +77,12 @@ export default async function Home() {
           // No subscription record (DB error or table doesn't exist)
           // If the account is older than 7 days, LOCK THEM OUT
           // If newer than 7 days, give them the benefit of the doubt (trial)
-          accessGranted = !isOlderThan7Days;
+          accessGranted = !isOlderThan14Days;
         }
 
         // Step 4: Final override — if the account is older than 7 days and
         // the subscription is not ACTIVE (or TRIAL with days left), lock them
-        if (isOlderThan7Days) {
+        if (isOlderThan14Days) {
           if (!sub || (sub.status !== "ACTIVE" && !(sub.status === "TRIAL" && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date()))) {
             accessGranted = false;
           }

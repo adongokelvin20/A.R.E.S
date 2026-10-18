@@ -1,5 +1,5 @@
 /**
- * A.R.E.S. Embed Widget
+ * ChatBiz Embed Widget
  *
  * Drop this on any external website to embed the ARES chat assistant.
  *

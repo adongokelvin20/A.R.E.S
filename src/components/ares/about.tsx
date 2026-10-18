@@ -13,7 +13,7 @@ export function AresAbout() {
               The story
             </div>
             <h2 className="text-balance text-3xl font-semibold leading-tight tracking-tight text-ares-navy sm:text-4xl ares-serif">
-              Kelvin Ayinbisa & Jessy founded ChatBiz to give every business a digital employee.
+              Kelvin Ayinbisa & Jesse founded ChatBiz to give every business a digital employee.
             </h2>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>

@@ -329,7 +329,7 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
           if (j.reply) {
             setMessages((m) => [...m, { role: "assistant", content: j.reply, images: j.images ?? [], createdAt: new Date().toISOString() }]);
           } else {
-            setMessages((m) => [...m, { role: "assistant", content: "I'm having trouble responding right now. Please try again.", createdAt: new Date().toISOString() }]);
+            setMessages((m) => [...m, { role: "assistant", content: "Network problem, please check your connection.", createdAt: new Date().toISOString() }]);
           }
         }
 
@@ -356,7 +356,7 @@ export function StoreChat({ slug, businessName, agentName, products, externalOpe
             return;
           }
         } catch {}
-        setMessages((m) => [...m, { role: "assistant", content: "I'm having trouble responding right now. Please try again.", createdAt: new Date().toISOString() }]);
+        setMessages((m) => [...m, { role: "assistant", content: "Network problem, please check your connection.", createdAt: new Date().toISOString() }]);
       }
 
       setLoading(false);

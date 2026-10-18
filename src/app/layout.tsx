@@ -18,26 +18,26 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.chattbiz.com"),
   title: "ChatBiz — The Digital Employee for Your Business | Kevtech Corporation",
   description:
-    "ChatBiz by Kevtech Corporation is a digital employee for your business. It talks to customers on your store link, takes orders, manages inventory, and runs operations — so you can focus on what matters. Built by Kelvin Ayinbisa & Jessy in partnership.",
+    "ChatBiz by Kevtech Corporation is a digital employee for your business. It talks to customers on your store link, takes orders, manages inventory, and runs operations — so you can focus on what matters. Built by Kelvin Ayinbisa & Jesse in partnership.",
   keywords: [
     "ChatBiz",
     "Kevtech",
     "Kevtech Corporation",
     "Kelvin Ayinbisa",
-    "Jessy",
+    "Jesse",
     "Business Operating System",
     "Digital Employee",
     "Business Automation",
     "Ghana Business",
   ],
-  authors: [{ name: "Kelvin Ayinbisa & Jessy" }],
+  authors: [{ name: "Kelvin Ayinbisa & Jesse" }],
   icons: {
     icon: "/icon.svg",
   },
   openGraph: {
     title: "ChatBiz — The Digital Employee for Your Business | Kevtech Corporation",
     description:
-      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jessy in partnership.",
+      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jesse in partnership.",
     siteName: "ChatBiz",
     type: "website",
     url: "https://www.chattbiz.com",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ChatBiz — The Digital Employee for Your Business",
     description:
-      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jessy.",
+      "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jesse.",
   },
   verification: {
     google: "l6VHaDt8q5dJAirgzITnhp5CyChGRp12Tt3vsVWMjyQ",
