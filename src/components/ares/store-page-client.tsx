@@ -175,7 +175,7 @@ export function StorePageClient({ slug }: { slug: string }) {
             <AresLogo className="h-8 w-8" />
             <div>
               <div className="text-sm font-bold text-ares-navy">{business.name}</div>
-              <div className="text-[10px] text-muted-foreground">Online store · powered by ChattBiz · v6.1 (onboarding guide)</div>
+              <div className="text-[10px] text-muted-foreground">Online store · powered by ChattBiz · v6.2 (logo + nav + VLM fix)</div>
             </div>
           </div>
           {business.phone && (
@@ -392,7 +392,7 @@ export function StorePageClient({ slug }: { slug: string }) {
             <span>Store powered by ChattBiz · {business.name}</span>
           </div>
           <div className="mt-2 text-[10px] text-muted-foreground/60">
-            ChattBiz v6.1 · Built by Kelvin Ayinbisa &amp; Jesse · Onboarding guide
+            ChattBiz v6.2 · Built by Kelvin Ayinbisa &amp; Jesse · Logo + nav + VLM fix
           </div>
         </div>
       </footer>

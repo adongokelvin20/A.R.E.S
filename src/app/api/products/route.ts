@@ -116,11 +116,13 @@ export async function POST(req: NextRequest) {
           const { getVisionClient } = await import("@/lib/ai-client");
           const vision = await getVisionClient();
           const analysis = await vision.analyze(imageData, `Analyze this product image. Extract: DESCRIPTION (1-2 sentences), CATEGORY (Male/Female/Kids/General/Unisex), COLOR, TYPE, MATCHING_TAGS (comma-separated).\n\nFormat:\nDESCRIPTION: <text>\nCATEGORY: <text>\nCOLOR: <text>\nTYPE: <text>\nMATCHING_TAGS: <text>`);
-          const descMatch = analysis.match(/^DESCRIPTION:\s*(.+?)$/im);
-          const catMatch = analysis.match(/^CATEGORY:\s*(.+?)$/im);
-          const colorMatch = analysis.match(/^COLOR:\s*(.+?)$/im);
-          const typeMatch = analysis.match(/^TYPE:\s*(.+?)$/im);
-          const tagsMatch = analysis.match(/^MATCHING_TAGS:\s*(.+?)$/im);
+          console.log("[products] VLM analysis:", analysis.slice(0, 200));
+          // Be flexible about formatting — the VLM may not always start at line beginning
+          const descMatch = analysis.match(/DESCRIPTION[:\s]*\s*(.+?)$/im);
+          const catMatch = analysis.match(/CATEGORY[:\s]*\s*(.+?)$/im);
+          const colorMatch = analysis.match(/COLOR[:\s]*\s*(.+?)$/im);
+          const typeMatch = analysis.match(/TYPE[:\s]*\s*(.+?)$/im);
+          const tagsMatch = analysis.match(/MATCHING_TAGS[:\s]*\s*(.+?)$/im);
           const parts = [];
           if (typeMatch?.[1]) parts.push(typeMatch[1].trim());
           if (colorMatch?.[1]) parts.push(colorMatch[1].trim());
@@ -129,6 +131,10 @@ export async function POST(req: NextRequest) {
           if (parts.length > 0) imageAlt = parts.join(" | ");
           if (catMatch?.[1] && /^(Male|Female|Kids|General|Unisex)$/i.test(catMatch[1].trim()) && !category) category = catMatch[1].trim();
           if (descMatch?.[1] && descMatch[1].trim().length > 5 && !description) description = descMatch[1].trim();
+          // If VLM returned empty or garbage, set a fallback imageAlt
+          if (!imageAlt && analysis.length > 10) {
+            imageAlt = analysis.slice(0, 100).trim();
+          }
         } catch (e: any) {
           console.error("[products] VLM analysis failed:", e?.message);
         }

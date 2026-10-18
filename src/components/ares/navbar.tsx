@@ -32,21 +32,22 @@ export function AresNavbar() {
         <Link href="/" className="flex items-center gap-2.5">
           <AresLogo className="h-8 w-8" />
           <div className="flex flex-col leading-none">
-            <span className="text-sm font-bold tracking-[0.14em] text-ares-navy">ChattBiz</span>
-            <span className="text-[9px] tracking-wide text-muted-foreground">by Kevtech Corporation</span>
+            {/* When NOT scrolled (over dark hero), text is white. When scrolled (glass bg), text is navy */}
+            <span className={cn("text-sm font-bold tracking-[0.14em] transition-colors", scrolled ? "text-ares-navy" : "text-white")}>ChattBiz</span>
+            <span className={cn("text-[9px] tracking-wide transition-colors", scrolled ? "text-muted-foreground" : "text-white/60")}>by Kevtech Corporation</span>
           </div>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
           {NAV_LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="rounded-lg px-3 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:text-ares-navy">
+            <a key={l.href} href={l.href} className={cn("rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:text-ares-sea", scrolled ? "text-muted-foreground hover:text-ares-navy" : "text-white/80 hover:text-white")}>
               {l.label}
             </a>
           ))}
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link href="/auth" className="rounded-lg px-3 py-2 text-[13px] font-medium text-ares-navy transition-colors hover:text-ares-sea-deep">
+          <Link href="/auth" className={cn("rounded-lg px-3 py-2 text-[13px] font-medium transition-colors", scrolled ? "text-ares-navy hover:text-ares-sea-deep" : "text-white hover:text-white/80")}>
             Sign in
           </Link>
           <Link href="/auth" className="rounded-lg bg-ares-navy px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-ares-sea-deep">
@@ -54,7 +55,7 @@ export function AresNavbar() {
           </Link>
         </div>
 
-        <button aria-label="Toggle menu" onClick={() => setOpen((v) => !v)} className="rounded-lg p-2 text-ares-navy lg:hidden">
+        <button aria-label="Toggle menu" onClick={() => setOpen((v) => !v)} className={cn("rounded-lg p-2 lg:hidden", scrolled ? "text-ares-navy" : "text-white")}>
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
