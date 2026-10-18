@@ -314,6 +314,90 @@ export async function POST(req: NextRequest) {
                 }
               }
 
+              // ===== SAVE CONVERSATION + MESSAGE (background, don't block response) =====
+              const extractedNameMatch = fullReply.match(/NAME_LEARNED:\s*([A-Za-z][A-Za-z'\- ]{1,40})/);
+              const extractedName = extractedNameMatch?.[1]?.trim() || customerName || returningCustomerName || null;
+              const finalCustomerName = customerName || extractedName || returningCustomerName || null;
+
+              // Save conversation in background (non-blocking)
+              (async () => {
+                try {
+                  let conversation = sessionId
+                    ? await db.conversation.findFirst({ where: { businessId, externalId: sessionId, channel: "WEB", status: "OPEN" } })
+                    : null;
+
+                  if (!conversation) {
+                    const startOfToday = new Date();
+                    startOfToday.setHours(0, 0, 0, 0);
+                    const todayCount = await db.conversation.count({ where: { businessId, channel: "WEB", createdAt: { gte: startOfToday } } });
+                    const customerNumber = todayCount + 1;
+                    const ordinal = customerNumber === 1 ? "1st" : customerNumber === 2 ? "2nd" : customerNumber === 3 ? "3rd" : `${customerNumber}th`;
+                    conversation = await db.conversation.create({
+                      data: {
+                        businessId,
+                        channel: "WEB",
+                        externalId: sessionId,
+                        customerName: finalCustomerName || `${ordinal} Customer`,
+                        customerPhone: customerPhone || null,
+                        status: "OPEN",
+                      },
+                    });
+                  }
+
+                  // Save the customer's message
+                  await db.message.create({
+                    data: {
+                      conversationId: conversation.id,
+                      role: "user",
+                      content: message,
+                    },
+                  });
+
+                  // Save the agent's reply
+                  await db.message.create({
+                    data: {
+                      conversationId: conversation.id,
+                      role: "AI",
+                      content: fullReply,
+                      metadata: JSON.stringify({ agentName, images: mentionedImages }),
+                    },
+                  });
+
+                  // Update conversation name if we extracted one
+                  if (finalCustomerName && conversation.customerName && /Customer$/.test(conversation.customerName)) {
+                    await db.conversation.update({
+                      where: { id: conversation.id },
+                      data: { customerName: finalCustomerName, customerPhone: customerPhone || conversation.customerPhone || null, lastMessageAt: new Date() },
+                    });
+                  } else {
+                    await db.conversation.update({
+                      where: { id: conversation.id },
+                      data: { lastMessageAt: new Date() },
+                    });
+                  }
+
+                  // Create/update customer record
+                  if (finalCustomerName) {
+                    try {
+                      let customer = await db.customer.findFirst({ where: { businessId, name: { equals: finalCustomerName, mode: "insensitive" } } });
+                      if (!customer && customerPhone) customer = await db.customer.findFirst({ where: { businessId, phone: customerPhone } });
+                      if (!customer) {
+                        customer = await db.customer.create({
+                          data: { businessId, name: finalCustomerName, phone: customerPhone || null, whatsappId: customerPhone || null, status: "LEAD" },
+                        });
+                      }
+                      if (!conversation.customerId) {
+                        await db.conversation.update({ where: { id: conversation.id }, data: { customerId: customer.id } });
+                      }
+                    } catch {}
+                  }
+
+                  console.log(`[chat-stream] Conversation saved: ${conversation.id}, messages: 2`);
+                } catch (e: any) {
+                  console.error("[chat-stream] Conversation save failed:", e?.message);
+                }
+              })().catch(() => {});
+
               send({ type: "done", reply: fullReply, agentName, orderCreated, images: mentionedImages });
               controller.close();
               return;

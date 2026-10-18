@@ -110,35 +110,9 @@ export async function POST(req: NextRequest) {
     if (file && file.size > 0) {
       imageData = await processImage(file);
 
-      // If no manual imageAlt provided, analyze the image with VLM
-      if (imageData && !imageAlt) {
-        try {
-          const { getVisionClient } = await import("@/lib/ai-client");
-          const vision = await getVisionClient();
-          const analysis = await vision.analyze(imageData, `Analyze this product image. Extract: DESCRIPTION (1-2 sentences), CATEGORY (Male/Female/Kids/General/Unisex), COLOR, TYPE, MATCHING_TAGS (comma-separated).\n\nFormat:\nDESCRIPTION: <text>\nCATEGORY: <text>\nCOLOR: <text>\nTYPE: <text>\nMATCHING_TAGS: <text>`);
-          console.log("[products] VLM analysis:", analysis.slice(0, 200));
-          // Be flexible about formatting — the VLM may not always start at line beginning
-          const descMatch = analysis.match(/DESCRIPTION[:\s]*\s*(.+?)$/im);
-          const catMatch = analysis.match(/CATEGORY[:\s]*\s*(.+?)$/im);
-          const colorMatch = analysis.match(/COLOR[:\s]*\s*(.+?)$/im);
-          const typeMatch = analysis.match(/TYPE[:\s]*\s*(.+?)$/im);
-          const tagsMatch = analysis.match(/MATCHING_TAGS[:\s]*\s*(.+?)$/im);
-          const parts = [];
-          if (typeMatch?.[1]) parts.push(typeMatch[1].trim());
-          if (colorMatch?.[1]) parts.push(colorMatch[1].trim());
-          if (descMatch?.[1]) parts.push(descMatch[1].trim());
-          if (tagsMatch?.[1]) parts.push(`tags: ${tagsMatch[1].trim()}`);
-          if (parts.length > 0) imageAlt = parts.join(" | ");
-          if (catMatch?.[1] && /^(Male|Female|Kids|General|Unisex)$/i.test(catMatch[1].trim()) && !category) category = catMatch[1].trim();
-          if (descMatch?.[1] && descMatch[1].trim().length > 5 && !description) description = descMatch[1].trim();
-          // If VLM returned empty or garbage, set a fallback imageAlt
-          if (!imageAlt && analysis.length > 10) {
-            imageAlt = analysis.slice(0, 100).trim();
-          }
-        } catch (e: any) {
-          console.error("[products] VLM analysis failed:", e?.message);
-        }
-      }
+      // VLM analysis is now done AFTER the product is saved (non-blocking)
+      // This makes product creation instant — the AI analysis happens in the background
+      // and updates the product when it's done.
     }
 
     // Process additional images (no VLM analysis needed — just store them)
@@ -176,6 +150,55 @@ export async function POST(req: NextRequest) {
         where: { id: product.id },
         data: { imageUrl: `/api/image/${product.id}` },
       });
+    }
+
+    // ===== BACKGROUND VLM ANALYSIS (non-blocking) =====
+    // If no manual imageAlt was provided, analyze the image in the background
+    // This doesn't block the product creation response — it happens after
+    if (imageData && !imageAlt && product.id) {
+      (async () => {
+        try {
+          const { getVisionClient } = await import("@/lib/ai-client");
+          const vision = await getVisionClient();
+          const analysis = await vision.analyze(imageData, `Analyze this product image. Extract: DESCRIPTION (1-2 sentences), CATEGORY (Male/Female/Kids/General/Unisex), COLOR, TYPE, MATCHING_TAGS (comma-separated).\n\nFormat:\nDESCRIPTION: <text>\nCATEGORY: <text>\nCOLOR: <text>\nTYPE: <text>\nMATCHING_TAGS: <text>`);
+          console.log("[products] VLM background analysis:", analysis.slice(0, 200));
+
+          // Be flexible about formatting
+          const descMatch = analysis.match(/DESCRIPTION[:\s]*\s*(.+?)$/im);
+          const catMatch = analysis.match(/CATEGORY[:\s]*\s*(.+?)$/im);
+          const colorMatch = analysis.match(/COLOR[:\s]*\s*(.+?)$/im);
+          const typeMatch = analysis.match(/TYPE[:\s]*\s*(.+?)$/im);
+          const tagsMatch = analysis.match(/MATCHING_TAGS[:\s]*\s*(.+?)$/im);
+          const parts = [];
+          if (typeMatch?.[1]) parts.push(typeMatch[1].trim());
+          if (colorMatch?.[1]) parts.push(colorMatch[1].trim());
+          if (descMatch?.[1]) parts.push(descMatch[1].trim());
+          if (tagsMatch?.[1]) parts.push(`tags: ${tagsMatch[1].trim()}`);
+          let newImageAlt = parts.length > 0 ? parts.join(" | ") : "";
+          if (!newImageAlt && analysis.length > 10) {
+            newImageAlt = analysis.slice(0, 100).trim();
+          }
+
+          // Update the product with the VLM analysis
+          const updateData: any = {};
+          if (newImageAlt) updateData.imageAlt = newImageAlt;
+          if (catMatch?.[1] && /^(Male|Female|Kids|General|Unisex)$/i.test(catMatch[1].trim())) updateData.category = catMatch[1].trim();
+          if (descMatch?.[1] && descMatch[1].trim().length > 5) updateData.description = descMatch[1].trim();
+
+          if (Object.keys(updateData).length > 0) {
+            await db.product.update({ where: { id: product.id }, data: updateData });
+            console.log("[products] VLM analysis saved to product:", product.id);
+
+            // Clear the chat context cache so the new analysis shows up
+            try {
+              const { clearContextCache } = await import("@/lib/store-chat-context");
+              clearContextCache(businessId);
+            } catch {}
+          }
+        } catch (e: any) {
+          console.error("[products] VLM background analysis failed:", e?.message);
+        }
+      })().catch(() => {});
     }
 
     // Clear the store chat context cache so the new product shows up in the AI's context

@@ -61,10 +61,10 @@ export function AresNavbar() {
       </div>
 
       {open && (
-        <div className="mx-4 mt-2 ares-glass rounded-2xl p-4 lg:hidden">
+        <div className="mx-4 mt-2 rounded-2xl border border-ares-line bg-white p-4 shadow-lg lg:hidden">
           <nav className="flex flex-col gap-1">
             {NAV_LINKS.map((l) => (
-              <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-ares-foam hover:text-ares-sea-deep">
+              <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-ares-navy hover:bg-ares-foam hover:text-ares-sea-deep">
                 {l.label}
               </a>
             ))}
