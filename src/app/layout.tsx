@@ -32,10 +32,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Kelvin Ayinbisa & Jesse" }],
   icons: {
-    icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
+    icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
