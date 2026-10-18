@@ -35,7 +35,7 @@ export function AresHero() {
           <div className="ares-fade-up mb-8 flex items-center gap-3" style={{ animationDelay: "60ms" }}>
             <AresLogo className="h-12 w-12" />
             <div>
-              <div className="text-lg font-bold tracking-[0.14em] text-white">ChatBiz</div>
+              <div className="text-lg font-bold tracking-[0.14em] text-white">ChattBiz</div>
               <div className="text-[10px] tracking-wide text-white/40">AUTOMATED ROUTING & EXECUTION SYSTEM</div>
             </div>
           </div>
@@ -46,7 +46,7 @@ export function AresHero() {
           </h1>
 
           <p className="ares-fade-up mt-6 max-w-lg text-balance text-base leading-relaxed text-white/70 sm:text-lg" style={{ animationDelay: "240ms" }}>
-            From Kevtech Corporation — ChatBiz learns your business, talks to your customers on your store link, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
+            From Kevtech Corporation — ChattBiz learns your business, talks to your customers on your store link, takes orders, manages inventory, and handles the daily grind so you can focus on what matters.
           </p>
 
           {/* CTAs */}

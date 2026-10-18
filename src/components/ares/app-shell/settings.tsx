@@ -162,7 +162,7 @@ export function AresSettings({ data, onChanged }: { data: any; onChanged: () => 
       <div className="rounded-2xl border border-ares-line bg-gradient-to-br from-emerald-50/50 to-white p-5">
         <div className="flex items-center gap-2">
           <Code2 className="h-4 w-4 text-emerald-600" />
-          <h3 className="text-sm font-semibold text-ares-navy">Embed ChatBiz on your website</h3>
+          <h3 className="text-sm font-semibold text-ares-navy">Embed ChattBiz on your website</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">Add the AI assistant to any external website.</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -216,7 +216,7 @@ function PaymentAccounts({ business }: { business: any }) {
   async function savePayment(e: React.FormEvent) {
     e.preventDefault(); setLoading(true);
     try {
-      const res = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agentName: business.agentName || "ChatBiz", agentInstructions: business.agentInstructions || "", paymentInfo, momoAccountName, paymentEnabled }) });
+      const res = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agentName: business.agentName || "ChattBiz", agentInstructions: business.agentInstructions || "", paymentInfo, momoAccountName, paymentEnabled }) });
       if (!res.ok) { const errData = await res.json().catch(() => ({})); throw new Error(errData.error || `HTTP ${res.status}`); }
       setSaved(true); toast({ title: "Payment info saved", description: paymentEnabled ? "Payment enforcement is ON" : "Payment enforcement is OFF" }); setTimeout(() => setSaved(false), 2500);
     } catch (e: any) { toast({ title: "Failed to save", description: e?.message, variant: "destructive" }); } finally { setLoading(false); }

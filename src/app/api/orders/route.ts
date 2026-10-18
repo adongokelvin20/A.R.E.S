@@ -1,5 +1,5 @@
 /**
- * ChatBiz orders API
+ * ChattBiz orders API
  *
  * GET  /api/orders  -- list orders for the authenticated business
  * POST /api/orders  -- create an order with fulfillment type + delivery details

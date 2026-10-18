@@ -1,5 +1,5 @@
 /**
- * ChatBiz products API
+ * ChattBiz products API
  *
  * GET  /api/products              -- list products
  * POST /api/products              -- create with dynamic fields + optional image

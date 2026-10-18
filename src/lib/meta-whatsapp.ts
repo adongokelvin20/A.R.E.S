@@ -2,14 +2,14 @@
  * Meta WhatsApp Cloud API — Embedded Signup helpers.
  *
  * This module implements the OFFICIAL Meta Embedded Signup flow:
- *   1. Customer clicks "Connect WhatsApp" in ChatBiz.
- *   2. ChatBiz opens Meta's OAuth dialog (FB SDK popup, or redirect-based for QR/mobile).
+ *   1. Customer clicks "Connect WhatsApp" in ChattBiz.
+ *   2. ChattBiz opens Meta's OAuth dialog (FB SDK popup, or redirect-based for QR/mobile).
  *   3. Customer logs into Facebook, picks their WhatsApp Business number, approves.
- *   4. Meta redirects back to ChatBiz with a `code`.
- *   5. ChatBiz exchanges the code for a long-lived access token.
- *   6. ChatBiz fetches the WABA ID + Phone Number ID from the token's debug info.
- *   7. ChatBiz registers the webhook subscription on the WABA.
- *   8. ChatBiz stores everything in the Integration row — the customer never sees it.
+ *   4. Meta redirects back to ChattBiz with a `code`.
+ *   5. ChattBiz exchanges the code for a long-lived access token.
+ *   6. ChattBiz fetches the WABA ID + Phone Number ID from the token's debug info.
+ *   7. ChattBiz registers the webhook subscription on the WABA.
+ *   8. ChattBiz stores everything in the Integration row — the customer never sees it.
  *
  * Environment variables (set in .env / Vercel):
  *   META_APP_ID            — Meta app ID (numerical)
@@ -171,8 +171,8 @@ export async function getWabaPhoneNumber(wabaId: string, accessToken: string): P
 }
 
 /**
- * Register the webhook subscription on the WABA so ChatBiz receives inbound messages.
- * This subscribes the WABA to the ChatBiz app's webhook for WhatsApp fields.
+ * Register the webhook subscription on the WABA so ChattBiz receives inbound messages.
+ * This subscribes the WABA to the ChattBiz app's webhook for WhatsApp fields.
  */
 export async function registerWebhook(wabaId: string, accessToken: string): Promise<{ ok: boolean; message: string }> {
   try {

@@ -1,5 +1,5 @@
 /**
- * ChatBiz dashboard data endpoint (auth-aware, no demo seeding).
+ * ChattBiz dashboard data endpoint (auth-aware, no demo seeding).
  *
  * GET /api/ares/dashboard
  *

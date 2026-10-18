@@ -12,7 +12,7 @@ export function AresFooter() {
             <div className="flex items-center gap-2.5">
               <AresLogo className="h-9 w-9" />
               <div>
-                <div className="text-sm font-bold tracking-[0.14em] text-ares-navy">ChatBiz</div>
+                <div className="text-sm font-bold tracking-[0.14em] text-ares-navy">ChattBiz</div>
                 <div className="text-[9px] tracking-wide text-muted-foreground">A Kevtech Corporation product</div>
               </div>
             </div>

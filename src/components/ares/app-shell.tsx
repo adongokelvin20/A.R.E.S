@@ -16,6 +16,7 @@ import { AresPricing as AresDashboardPricing } from "./app-shell/pricing";
 import { AresArchives } from "./app-shell/archives";
 import { AresOrderLookup } from "./app-shell/order-lookup";
 import { AresPaymentScreenshots } from "./app-shell/payment-screenshots";
+import { OnboardingGuide } from "./onboarding-guide";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "next-auth/react";
 import { AlertCircle } from "lucide-react";
@@ -75,6 +76,18 @@ export function AresAppShell({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show onboarding guide on first visit (stored in localStorage)
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem("chattbiz_onboarding_seen");
+      if (!seen) {
+        setShowOnboarding(true);
+        localStorage.setItem("chattbiz_onboarding_seen", "true");
+      }
+    } catch {}
+  }, []);
   const [showPricing, setShowPricing] = useState(locked); // if locked server-side, show pricing immediately
 
   // Check subscription status on mount
@@ -282,7 +295,7 @@ export function AresAppShell({
           </button>
           <div className="flex items-center gap-2">
             <AresLogo className="h-7 w-7" />
-            <span className="font-mono text-sm font-bold tracking-wider text-ares-navy">ChatBiz</span>
+            <span className="font-mono text-sm font-bold tracking-wider text-ares-navy">ChattBiz</span>
           </div>
           <div className="w-9" />
         </div>
@@ -370,6 +383,9 @@ export function AresAppShell({
           }}
         />
       )}
+
+      {/* Onboarding guide — shows on first visit, swipeable */}
+      <OnboardingGuide open={showOnboarding} onClose={() => setShowOnboarding(false)} />
     </div>
   );
 }

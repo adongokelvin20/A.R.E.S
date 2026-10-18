@@ -21,7 +21,7 @@ export default function StoreNotFound() {
           href="/"
           className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep"
         >
-          Go to ChatBiz
+          Go to ChattBiz
         </Link>
       </div>
     </main>

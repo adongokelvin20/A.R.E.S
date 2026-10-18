@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate a unique reference
-    const reference = `ChatBiz-${businessId.slice(-8)}-${Date.now()}`;
+    const reference = `ChattBiz-${businessId.slice(-8)}-${Date.now()}`;
 
     // Get the app URL for the callback
     const appUrl = process.env.NEXTAUTH_URL?.replace(/\/$/, "") ?? "https://ares-two-eta.vercel.app";

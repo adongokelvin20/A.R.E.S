@@ -1,5 +1,5 @@
 /**
- * ChatBiz signup -- creates the owner + business shell.
+ * ChattBiz signup -- creates the owner + business shell.
  * Onboarding (sector, agent name, etc.) is a separate step.
  *
  * POST /api/auth/signup
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         enabledModules: JSON.stringify(["customers", "orders", "products"]),
         plan: "STARTER",
         status: "ACTIVE",
-        agentName: "ChatBiz",
+        agentName: "ChattBiz",
         agentPersonality: "professional",
         ownerFirstName: ownerName.trim().split(" ")[0],
       },

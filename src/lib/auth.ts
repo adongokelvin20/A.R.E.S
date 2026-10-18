@@ -1,5 +1,5 @@
 /**
- * ChatBiz authentication -- NextAuth credentials provider.
+ * ChattBiz authentication -- NextAuth credentials provider.
  * Tenant is ALWAYS resolved from the authenticated session, never from
  * a client-supplied business_id.
  */

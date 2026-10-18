@@ -41,7 +41,7 @@ export default function CEOLoginPage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50">
             <div className="mb-8 text-center">
               <AresLogo className="mx-auto h-16 w-16" />
-              <h1 className="mt-4 text-xl font-bold text-slate-900">ChatBiz Admin</h1>
+              <h1 className="mt-4 text-xl font-bold text-slate-900">ChattBiz Admin</h1>
               <p className="mt-1 text-sm text-slate-400">Control Center · System Administrator</p>
             </div>
             <form onSubmit={login} className="space-y-5">
@@ -59,7 +59,7 @@ export default function CEOLoginPage() {
               </button>
             </form>
           </div>
-          <p className="mt-6 text-center text-xs text-slate-300">ChatBiz by Kevtech Corporation · Built by Kelvin Ayinbisa & Jesse</p>
+          <p className="mt-6 text-center text-xs text-slate-300">ChattBiz by Kevtech Corporation · Built by Kelvin Ayinbisa & Jesse</p>
         </div>
       </main>
     );
@@ -88,7 +88,7 @@ export default function CEOLoginPage() {
           <div className="flex items-center gap-3">
             <AresLogo className="h-9 w-9" />
             <div>
-              <h1 className="text-sm font-bold text-slate-900">ChatBiz Control Center</h1>
+              <h1 className="text-sm font-bold text-slate-900">ChattBiz Control Center</h1>
               <p className="text-[10px] text-slate-400">{new Date().toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })}</p>
             </div>
           </div>

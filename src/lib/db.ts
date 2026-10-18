@@ -60,10 +60,10 @@ export async function ensureDatabase() {
     await db.user.findFirst({ select: { id: true } })
     tablesEnsured = true
   } catch (e) {
-    console.log('[ChatBiz] Creating database tables...')
+    console.log('[ChattBiz] Creating database tables...')
 
     const statements = [
-      `CREATE TABLE IF NOT EXISTS "Business" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "slug" TEXT NOT NULL, "type" TEXT NOT NULL, "industry" TEXT, "description" TEXT, "country" TEXT NOT NULL DEFAULT 'GH', "currency" TEXT NOT NULL DEFAULT 'GHS', "timezone" TEXT NOT NULL DEFAULT 'Africa/Accra', "language" TEXT NOT NULL DEFAULT 'en', "phone" TEXT, "email" TEXT, "address" TEXT, "logoUrl" TEXT, "configuration" TEXT NOT NULL DEFAULT '{}', "enabledModules" TEXT NOT NULL DEFAULT '[]', "plan" TEXT NOT NULL DEFAULT 'STARTER', "status" TEXT NOT NULL DEFAULT 'ACTIVE', "agentName" TEXT NOT NULL DEFAULT 'ChatBiz', "agentPersonality" TEXT NOT NULL DEFAULT 'professional', "agentInstructions" TEXT NOT NULL DEFAULT '', "agentLearnings" TEXT NOT NULL DEFAULT '[]', "ownerFirstName" TEXT, "sectorCategory" TEXT, "sectorSubtype" TEXT, "onboardedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Business_pkey" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "Business" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "slug" TEXT NOT NULL, "type" TEXT NOT NULL, "industry" TEXT, "description" TEXT, "country" TEXT NOT NULL DEFAULT 'GH', "currency" TEXT NOT NULL DEFAULT 'GHS', "timezone" TEXT NOT NULL DEFAULT 'Africa/Accra', "language" TEXT NOT NULL DEFAULT 'en', "phone" TEXT, "email" TEXT, "address" TEXT, "logoUrl" TEXT, "configuration" TEXT NOT NULL DEFAULT '{}', "enabledModules" TEXT NOT NULL DEFAULT '[]', "plan" TEXT NOT NULL DEFAULT 'STARTER', "status" TEXT NOT NULL DEFAULT 'ACTIVE', "agentName" TEXT NOT NULL DEFAULT 'ChattBiz', "agentPersonality" TEXT NOT NULL DEFAULT 'professional', "agentInstructions" TEXT NOT NULL DEFAULT '', "agentLearnings" TEXT NOT NULL DEFAULT '[]', "ownerFirstName" TEXT, "sectorCategory" TEXT, "sectorSubtype" TEXT, "onboardedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Business_pkey" PRIMARY KEY ("id"))`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "Business_slug_key" ON "Business"("slug")`,
       `CREATE TABLE IF NOT EXISTS "User" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "email" TEXT NOT NULL, "name" TEXT NOT NULL, "passwordHash" TEXT, "role" TEXT NOT NULL DEFAULT 'OWNER', "status" TEXT NOT NULL DEFAULT 'ACTIVE', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "User_pkey" PRIMARY KEY ("id"))`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "User_businessId_email_key" ON "User"("businessId", "email")`,
@@ -98,7 +98,7 @@ export async function ensureDatabase() {
       `CREATE INDEX IF NOT EXISTS "Integration_businessId_idx" ON "Integration"("businessId")`,
       `CREATE TABLE IF NOT EXISTS "KnowledgeEntry" ("id" TEXT NOT NULL, "businessId" TEXT NOT NULL, "category" TEXT NOT NULL, "question" TEXT, "answer" TEXT NOT NULL, "tags" TEXT NOT NULL DEFAULT '[]', "status" TEXT NOT NULL DEFAULT 'ACTIVE', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "KnowledgeEntry_pkey" PRIMARY KEY ("id"))`,
       `CREATE INDEX IF NOT EXISTS "KnowledgeEntry_businessId_category_idx" ON "KnowledgeEntry"("businessId", "category")`,
-      // ChatBiz Global Brain — shared learnings across all businesses
+      // ChattBiz Global Brain — shared learnings across all businesses
       `CREATE TABLE IF NOT EXISTS "GlobalBrain" ("id" TEXT NOT NULL, "pattern" TEXT NOT NULL, "category" TEXT NOT NULL DEFAULT 'conversation', "source" TEXT NOT NULL DEFAULT 'auto', "weight" INTEGER NOT NULL DEFAULT 1, "status" TEXT NOT NULL DEFAULT 'ACTIVE', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "GlobalBrain_pkey" PRIMARY KEY ("id"))`,
       `CREATE INDEX IF NOT EXISTS "GlobalBrain_category_status_idx" ON "GlobalBrain"("category", "status")`,
       `CREATE INDEX IF NOT EXISTS "GlobalBrain_status_idx" ON "GlobalBrain"("status")`,
@@ -123,10 +123,10 @@ export async function ensureDatabase() {
 
     if (success) {
       tablesEnsured = true
-      console.log('[ChatBiz] Database tables created successfully')
+      console.log('[ChattBiz] Database tables created successfully')
     } else {
       // Don't set tablesEnsured so it retries next time
-      console.log('[ChatBiz] Some table creation failed — will retry next time')
+      console.log('[ChattBiz] Some table creation failed — will retry next time')
     }
   }
 }

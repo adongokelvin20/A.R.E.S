@@ -1,5 +1,5 @@
 /**
- * ChatBiz WhatsApp inbound webhook (real, per-tenant).
+ * ChattBiz WhatsApp inbound webhook (real, per-tenant).
  *
  * Supports BOTH Meta WhatsApp Cloud API and WAAPI.io.
  *
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     }
     return NextResponse.json({ error: "Invalid verify token" }, { status: 403 });
   }
-  return NextResponse.json({ ok: true, service: "ChatBiz WhatsApp webhook" });
+  return NextResponse.json({ ok: true, service: "ChattBiz WhatsApp webhook" });
 }
 
 export async function POST(req: NextRequest) {

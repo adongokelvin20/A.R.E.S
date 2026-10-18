@@ -24,7 +24,7 @@ const PLANS = [
     name: "Annual",
     price: "GHC 1,300",
     period: "per year",
-    description: "Best value — save 2 months vs monthly. Promo code Kelvin gets you GHC 600/year.",
+    description: "Best value — save 2 months vs monthly.",
     features: [
       "Everything in trial, forever",
       "Weekly performance archives",

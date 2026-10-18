@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Extract businessId from the reference (ChatBiz-{businessId}-{timestamp})
+    // Extract businessId from the reference (ChattBiz-{businessId}-{timestamp})
     const parts = reference.split("-");
     if (parts.length < 3) {
       return NextResponse.redirect(new URL("/auth?payment=failed", req.url));

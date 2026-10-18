@@ -17,10 +17,10 @@ const REELS: FeatureReel[] = [
   {
     video: "/videos/feature-ai.mp4",
     poster: "/images/ai-2.jpg",
-    kicker: "ChatBiz AI Core",
+    kicker: "ChattBiz AI Core",
     title: "An intelligence layer that thinks before it acts",
     description:
-      "Every customer message flows through an orchestration pipeline: intent detection, business context, memory retrieval, available-tool resolution, reasoning, action, and a natural-language response. ChatBiz only executes actions it is authorized to take — and never invents results.",
+      "Every customer message flows through an orchestration pipeline: intent detection, business context, memory retrieval, available-tool resolution, reasoning, action, and a natural-language response. ChattBiz only executes actions it is authorized to take — and never invents results.",
     bullets: [
       "Intent → context → tools → action → response",
       "Sector-specific prompt bound to your business",
@@ -60,7 +60,7 @@ export function AresFeatureReels() {
             Intelligence you can watch working
           </h2>
           <p className="mt-5 text-balance text-base text-muted-foreground sm:text-lg">
-            ChatBiz orchestrates intent, knowledge, tools, and channels in real time. The two
+            ChattBiz orchestrates intent, knowledge, tools, and channels in real time. The two
             reels below visualize that pipeline — from inbound message to authorized action.
           </p>
         </div>
@@ -106,7 +106,7 @@ function FeatureReelCard({ reel, flip }: { reel: FeatureReel; flip: boolean }) {
               {playing ? "Live" : "Loading"}
             </div>
             <div className="rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-              4K · ChatBiz capture
+              4K · ChattBiz capture
             </div>
           </div>
           {/* Bottom gradient + caption */}

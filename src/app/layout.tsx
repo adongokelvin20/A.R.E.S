@@ -16,11 +16,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.chattbiz.com"),
-  title: "ChatBiz — The Digital Employee for Your Business | Kevtech Corporation",
+  title: "ChattBiz — The Digital Employee for Your Business | Kevtech Corporation",
   description:
-    "ChatBiz by Kevtech Corporation is a digital employee for your business. It talks to customers on your store link, takes orders, manages inventory, and runs operations — so you can focus on what matters. Built by Kelvin Ayinbisa & Jesse in partnership.",
+    "ChattBiz by Kevtech Corporation is a digital employee for your business. It talks to customers on your store link, takes orders, manages inventory, and runs operations — so you can focus on what matters. Built by Kelvin Ayinbisa & Jesse in partnership.",
   keywords: [
-    "ChatBiz",
+    "ChattBiz",
     "Kevtech",
     "Kevtech Corporation",
     "Kelvin Ayinbisa",
@@ -35,16 +35,16 @@ export const metadata: Metadata = {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "ChatBiz — The Digital Employee for Your Business | Kevtech Corporation",
+    title: "ChattBiz — The Digital Employee for Your Business | Kevtech Corporation",
     description:
       "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jesse in partnership.",
-    siteName: "ChatBiz",
+    siteName: "ChattBiz",
     type: "website",
     url: "https://www.chattbiz.com",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ChatBiz — The Digital Employee for Your Business",
+    title: "ChattBiz — The Digital Employee for Your Business",
     description:
       "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jesse.",
   },

@@ -27,12 +27,12 @@ export default async function AuthPage({
           <h1 className="text-2xl font-bold text-slate-900">Account Suspended</h1>
           <p className="mt-3 text-sm text-slate-500">
             This account has been suspended by the system administrator.
-            If you believe this is an error, please contact ChatBiz support.
+            If you believe this is an error, please contact ChattBiz support.
           </p>
           <a href="/auth" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
             Try different account
           </a>
-          <p className="mt-8 text-xs text-slate-300">ChatBiz by Kevtech Corporation</p>
+          <p className="mt-8 text-xs text-slate-300">ChattBiz by Kevtech Corporation</p>
         </div>
       </main>
     );
@@ -61,7 +61,7 @@ export default async function AuthPage({
             <h1 className="text-2xl font-bold text-slate-900">Account Suspended</h1>
             <p className="mt-3 text-sm text-slate-500">
               {business.name} has been suspended by the system administrator.
-              Please contact ChatBiz support to resolve this.
+              Please contact ChattBiz support to resolve this.
             </p>
             <a href="/auth?suspended=1" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
               Sign out

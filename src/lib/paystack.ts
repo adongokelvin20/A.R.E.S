@@ -19,6 +19,13 @@ export const PRICING = {
   TRIAL_DAYS: 14,
   ANNUAL: { amount: 130000, label: "GHC 1,300/year", plan: "ANNUAL" }, // amount in kobo (100 = GHC 1)
   MONTHLY: { amount: 11500, label: "GHC 115/month", plan: "MONTHLY" },
+  // Hidden promo — not shown anywhere in the UI, but still works if someone enters it
+  PROMO: {
+    code: "kelvin5544",
+    annualAmount: 60000, // GHC 600/year
+    label: "GHC 600/year (promo)",
+    plan: "ANNUAL",
+  },
   // Secret promo — gives the system for free. Not shown publicly.
   FREE_PROMO: {
     code: "kratos5544",
@@ -144,6 +151,17 @@ export function validatePromoCode(code: string): { valid: boolean; amount: numbe
       plan: PRICING.FREE_PROMO.plan,
       label: PRICING.FREE_PROMO.label,
       free: true,
+    };
+  }
+
+  // Hidden Kelvin promo — GHC 600/year (not shown in UI, but still works)
+  if (normalized === PRICING.PROMO.code.toLowerCase()) {
+    return {
+      valid: true,
+      amount: PRICING.PROMO.annualAmount,
+      plan: PRICING.PROMO.plan,
+      label: PRICING.PROMO.label,
+      free: false,
     };
   }
 

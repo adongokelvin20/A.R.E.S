@@ -47,7 +47,7 @@ export function AresPlatform() {
             Not a chatbot.<br />A real digital employee.
           </h2>
           <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-            ChatBiz is built as a complete digital workforce that actually runs your business. The chat is just one way you interact with it — underneath, it's taking orders, managing inventory, and remembering your customers.
+            ChattBiz is built as a complete digital workforce that actually runs your business. The chat is just one way you interact with it — underneath, it's taking orders, managing inventory, and remembering your customers.
           </p>
         </div>
 

@@ -124,7 +124,7 @@ export function StorePageClient({ slug }: { slug: string }) {
             This store doesn&apos;t exist or hasn&apos;t been set up yet. Check the link and try again.
           </p>
           <a href="/" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-ares-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-ares-sea-deep">
-            Go to ChatBiz
+            Go to ChattBiz
           </a>
         </div>
       </main>
@@ -175,7 +175,7 @@ export function StorePageClient({ slug }: { slug: string }) {
             <AresLogo className="h-8 w-8" />
             <div>
               <div className="text-sm font-bold text-ares-navy">{business.name}</div>
-              <div className="text-[10px] text-muted-foreground">Online store · powered by ChatBiz · v6.0 (rebrand + 14-day trial)</div>
+              <div className="text-[10px] text-muted-foreground">Online store · powered by ChattBiz · v6.1 (onboarding guide)</div>
             </div>
           </div>
           {business.phone && (
@@ -389,10 +389,10 @@ export function StorePageClient({ slug }: { slug: string }) {
         <div className="mx-auto max-w-5xl px-4 text-center">
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <AresLogo className="h-5 w-5" />
-            <span>Store powered by ChatBiz · {business.name}</span>
+            <span>Store powered by ChattBiz · {business.name}</span>
           </div>
           <div className="mt-2 text-[10px] text-muted-foreground/60">
-            ChatBiz v6.0 · Built by Kelvin Ayinbisa &amp; Jesse · Rebrand + 14-day trial
+            ChattBiz v6.1 · Built by Kelvin Ayinbisa &amp; Jesse · Onboarding guide
           </div>
         </div>
       </footer>

@@ -1,5 +1,5 @@
 /**
- * ChatBiz AI Client
+ * ChattBiz AI Client
  *
  * Provider chain (chat):
  *   1. Cloudflare Workers AI (Llama 3.1 8B on edge — primary, fastest, free)
@@ -81,7 +81,7 @@ export async function getChatClientWithFallback() {
             try {
               return await callZaiChat(messages, temperature, maxTokens);
             } catch (zaiErr: any) {
-              console.warn("[ChatBiz AI] Z.ai failed, falling back to Cloudflare:", zaiErr?.message?.slice(0, 150));
+              console.warn("[ChattBiz AI] Z.ai failed, falling back to Cloudflare:", zaiErr?.message?.slice(0, 150));
             }
           }
 
@@ -90,7 +90,7 @@ export async function getChatClientWithFallback() {
             try {
               return await callCloudflareChat(messages, temperature, maxTokens);
             } catch (cfErr: any) {
-              console.warn("[ChatBiz AI] Cloudflare failed, falling back to OpenRouter:", cfErr?.message?.slice(0, 150));
+              console.warn("[ChattBiz AI] Cloudflare failed, falling back to OpenRouter:", cfErr?.message?.slice(0, 150));
             }
           }
 
@@ -99,7 +99,7 @@ export async function getChatClientWithFallback() {
             try {
               return await callOpenRouterChat(messages, temperature, maxTokens);
             } catch (orErr: any) {
-              console.warn("[ChatBiz AI] OpenRouter failed, using smart fallback:", orErr?.message?.slice(0, 150));
+              console.warn("[ChattBiz AI] OpenRouter failed, using smart fallback:", orErr?.message?.slice(0, 150));
             }
           }
 
@@ -128,7 +128,7 @@ export async function getZaiClient() {
         },
       },
     };
-    console.log("[ChatBiz AI] Using Z.ai Open API (glm-4.5-flash)");
+    console.log("[ChattBiz AI] Using Z.ai Open API (glm-4.5-flash)");
     return zaiClientInstance;
   }
 
@@ -142,7 +142,7 @@ export async function getZaiClient() {
       },
     },
   };
-  console.log("[ChatBiz AI] ZAI_API_KEY not set — using smart fallback");
+  console.log("[ChattBiz AI] ZAI_API_KEY not set — using smart fallback");
   return zaiClientInstance;
 }
 
@@ -166,7 +166,7 @@ export async function getVisionClient() {
 
   if (OPENROUTER_API_KEY) {
     visionClientInstance = createOpenRouterVisionClient(OPENROUTER_API_KEY);
-    console.log("[ChatBiz AI] Vision: OpenRouter (openrouter/free)");
+    console.log("[ChattBiz AI] Vision: OpenRouter (openrouter/free)");
     return visionClientInstance;
   }
 
@@ -175,7 +175,7 @@ export async function getVisionClient() {
     _provider: "smart",
     analyze: async () => "",
   };
-  console.log("[ChatBiz AI] Vision: smart fallback (no OPENROUTER_API_KEY)");
+  console.log("[ChattBiz AI] Vision: smart fallback (no OPENROUTER_API_KEY)");
   return visionClientInstance;
 }
 
@@ -242,13 +242,13 @@ export async function cloudflareTTS(text: string, language: string = "en"): Prom
     });
 
     if (!response.ok) {
-      console.error("[ChatBiz AI] TTS error:", response.status);
+      console.error("[ChattBiz AI] TTS error:", response.status);
       return null;
     }
 
     const json = await response.json();
     if (!json.success) {
-      console.error("[ChatBiz AI] TTS failed:", json.errors);
+      console.error("[ChattBiz AI] TTS failed:", json.errors);
       return null;
     }
 
@@ -259,7 +259,7 @@ export async function cloudflareTTS(text: string, language: string = "en"): Prom
     }
     return null;
   } catch (e: any) {
-    console.error("[ChatBiz AI] TTS error:", e?.message);
+    console.error("[ChattBiz AI] TTS error:", e?.message);
     return null;
   }
 }
@@ -292,7 +292,7 @@ export async function cloudflareTranslate(text: string, sourceLang: string, targ
 
     return json.result?.translated_text || null;
   } catch (e: any) {
-    console.error("[ChatBiz AI] Translation error:", e?.message);
+    console.error("[ChattBiz AI] Translation error:", e?.message);
     return null;
   }
 }
@@ -339,7 +339,7 @@ async function callOpenRouterChat(messages: any[], temperature: number, maxToken
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "HTTP-Referer": "https://ares-two-eta.vercel.app",
-          "X-Title": "ChatBiz",
+          "X-Title": "ChattBiz",
         },
         body: JSON.stringify({
           model,
@@ -430,7 +430,7 @@ function createOpenRouterVisionClient(apiKey: string) {
               "Content-Type": "application/json",
               Authorization: `Bearer ${apiKey}`,
               "HTTP-Referer": "https://ares-two-eta.vercel.app",
-              "X-Title": "ChatBiz",
+              "X-Title": "ChattBiz",
             },
             body: JSON.stringify({
               model,
@@ -460,20 +460,20 @@ function createOpenRouterVisionClient(apiKey: string) {
           const text = json?.choices?.[0]?.message?.content?.toString().trim() ?? "";
 
           if (!text || text.length < 5) {
-            console.warn(`[ChatBiz AI] OpenRouter ${model} returned empty content`);
+            console.warn(`[ChattBiz AI] OpenRouter ${model} returned empty content`);
             continue;
           }
 
           // Prefer responses that actually contain VLM markers (IS_PAYMENT, AMOUNT, etc.)
           // — these are from vision-capable models that actually analyzed the image.
           if (/IS_PAYMENT|AMOUNT|ORDER_CODE/i.test(text)) {
-            console.log(`[ChatBiz AI] Vision succeeded via: ${model}`);
+            console.log(`[ChattBiz AI] Vision succeeded via: ${model}`);
             return text;
           }
 
           // If no markers, save as fallback but keep trying other models
           if (!lastNonEmptyText) lastNonEmptyText = text;
-          console.warn(`[ChatBiz AI] OpenRouter ${model} returned non-VLM text (no markers), retrying...`);
+          console.warn(`[ChattBiz AI] OpenRouter ${model} returned non-VLM text (no markers), retrying...`);
         } catch (e: any) {
           lastError = e;
           continue;
@@ -483,7 +483,7 @@ function createOpenRouterVisionClient(apiKey: string) {
       // Return the last non-empty text we got, even if it didn't have markers
       // — verify-payment route will try to parse it
       if (lastNonEmptyText) {
-        console.warn("[ChatBiz AI] Returning last non-empty vision response (no markers found in any attempt)");
+        console.warn("[ChattBiz AI] Returning last non-empty vision response (no markers found in any attempt)");
         return lastNonEmptyText;
       }
       throw lastError || new Error("All vision models failed");
