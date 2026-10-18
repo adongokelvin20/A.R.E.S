@@ -49,7 +49,7 @@ export const metadata: Metadata = {
       "The digital employee that talks to customers, takes orders, and runs your business. Built by Kelvin Ayinbisa & Jessy.",
   },
   verification: {
-    google: "PvZ3IyZSp1P7oEExJ8BTg3aha6VV6laEEYO-slzlRs8",
+    google: "l6VHaDt8q5dJAirgzITnhp5CyChGRp12Tt3vsVWMjyQ",
   },
 };
 
