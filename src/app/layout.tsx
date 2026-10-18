@@ -31,10 +31,6 @@ export const metadata: Metadata = {
     "Ghana Business",
   ],
   authors: [{ name: "Kelvin Ayinbisa & Jesse" }],
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
   openGraph: {
     title: "ChattBiz — The Digital Employee for Your Business | Kevtech Corporation",
     description:
