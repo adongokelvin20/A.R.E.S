@@ -7,4 +7,4 @@ Allow: /embed
 Disallow: /api/
 Disallow: /ceo
 
-Sitemap: https://ares-two-eta.vercel.app/sitemap.xml
+Sitemap: https://www.chattbiz.com/sitemap.xml
