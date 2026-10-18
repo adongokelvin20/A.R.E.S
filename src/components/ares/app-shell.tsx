@@ -82,12 +82,15 @@ export function AresAppShell({
   useEffect(() => {
     try {
       const seen = localStorage.getItem("chattbiz_onboarding_seen");
-      if (!seen) {
+      const userBusinessId = localStorage.getItem("chattbiz_business_id");
+      // Show if: never seen before OR if the business ID changed (new account)
+      if (!seen || userBusinessId !== businessId) {
         setShowOnboarding(true);
         localStorage.setItem("chattbiz_onboarding_seen", "true");
+        localStorage.setItem("chattbiz_business_id", businessId);
       }
     } catch {}
-  }, []);
+  }, [businessId]);
   const [showPricing, setShowPricing] = useState(locked); // if locked server-side, show pricing immediately
 
   // Check subscription status on mount

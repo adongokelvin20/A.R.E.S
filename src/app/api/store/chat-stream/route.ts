@@ -160,6 +160,36 @@ export async function POST(req: NextRequest) {
                 }
               }
 
+              // ===== EXTRACT LEARNED PATTERNS (Global Brain) =====
+              const rawReply = fullReply; // Save before cleaning
+              const learnedMatch = rawReply.match(/LEARNED:\s*(.+)/i);
+              const brainLearnedMatch = rawReply.match(/BRAIN_LEARNED:\s*(.+)/i);
+
+              // Save learned facts to GlobalBrain table (background, non-blocking)
+              if (learnedMatch?.[1] || brainLearnedMatch?.[1]) {
+                (async () => {
+                  try {
+                    // Ensure GlobalBrain table exists
+                    try {
+                      await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "GlobalBrain" ("id" TEXT NOT NULL, "pattern" TEXT NOT NULL, "category" TEXT NOT NULL DEFAULT 'conversation', "source" TEXT NOT NULL DEFAULT 'auto', "weight" INTEGER NOT NULL DEFAULT 1, "status" TEXT NOT NULL DEFAULT 'ACTIVE', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "GlobalBrain_pkey" PRIMARY KEY ("id"))`);
+                    } catch {}
+
+                    if (learnedMatch?.[1]) {
+                      const fact = learnedMatch[1].trim().slice(0, 200);
+                      await db.$executeRawUnsafe(`INSERT INTO "GlobalBrain" ("id", "pattern", "category", "source", "weight", "status", "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, 'learned_fact', 'auto', 1, 'ACTIVE', NOW(), NOW())`, fact);
+                      console.log(`[chat-stream] Global Brain learned fact: ${fact.slice(0, 80)}`);
+                    }
+                    if (brainLearnedMatch?.[1]) {
+                      const pattern = brainLearnedMatch[1].trim().slice(0, 200);
+                      await db.$executeRawUnsafe(`INSERT INTO "GlobalBrain" ("id", "pattern", "category", "source", "weight", "status", "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, 'human_pattern', 'auto', 1, 'ACTIVE', NOW(), NOW())`, pattern);
+                      console.log(`[chat-stream] Global Brain learned pattern: ${pattern.slice(0, 80)}`);
+                    }
+                  } catch (e: any) {
+                    console.error("[chat-stream] Global Brain save failed:", e?.message?.slice(0, 100));
+                  }
+                })().catch(() => {});
+              }
+
               // Clean the reply (strip markers)
               fullReply = fullReply
                 .replace(/^LEARNED:\s*.+$/gim, "")

@@ -156,7 +156,8 @@ export async function POST(req: NextRequest) {
     // If no manual imageAlt was provided, analyze the image in the background
     // This doesn't block the product creation response — it happens after
     if (imageData && !imageAlt && product.id) {
-      (async () => {
+      // Use waitUntil to keep the function alive after response (Vercel supports this)
+      const vlmPromise = (async () => {
         try {
           const { getVisionClient } = await import("@/lib/ai-client");
           const vision = await getVisionClient();
@@ -198,7 +199,16 @@ export async function POST(req: NextRequest) {
         } catch (e: any) {
           console.error("[products] VLM background analysis failed:", e?.message);
         }
-      })().catch(() => {});
+      })();
+
+      // Try to use Vercel's waitUntil to keep the function alive
+      try {
+        const { waitUntil } = await import("@vercel/functions");
+        waitUntil(vlmPromise);
+      } catch {
+        // Fallback: just let it run (may be killed if function exits)
+        vlmPromise.catch(() => {});
+      }
     }
 
     // Clear the store chat context cache so the new product shows up in the AI's context
