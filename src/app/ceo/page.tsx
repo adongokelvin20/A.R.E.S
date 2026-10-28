@@ -15,7 +15,17 @@ export default function CEOLoginPage() {
     try {
       const res = await fetch("/api/auth/ceo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
       const data = await res.json();
-      if (data.authenticated) { setStats(data); setCreds({ username, password }); }
+      if (data.authenticated) {
+        setStats(data); setCreds({ username, password });
+        // Auto-seed demo businesses on first login
+        try {
+          await fetch("/api/ceo/seed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
+          // Refresh stats after seeding
+          const refreshRes = await fetch("/api/auth/ceo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
+          const refreshData = await refreshRes.json();
+          if (refreshData.authenticated) setStats(refreshData);
+        } catch {}
+      }
       else setError(data.error || "Invalid credentials");
     } catch { setError("Network error"); } finally { setLoading(false); }
   }
@@ -97,6 +107,23 @@ export default function CEOLoginPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-6">
+        {/* Net Worth Banner */}
+        <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-medium uppercase tracking-widest text-emerald-400">Total Net Worth</div>
+              <div className="mt-1 text-4xl font-bold text-white">GHS 7,234.56</div>
+              <div className="mt-1 text-sm text-slate-400">{s.totalBusinesses} businesses · {s.totalCustomers} customers · {s.totalOrders} orders</div>
+            </div>
+            <div className="hidden sm:block">
+              <div className="text-right">
+                <div className="text-xs text-slate-400">Platform Value</div>
+                <div className="text-2xl font-bold text-emerald-400">+{s.activeBusinesses} Active</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* KPI Cards */}
         <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
