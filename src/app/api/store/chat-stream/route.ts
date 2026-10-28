@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
 
               // Save learned facts to GlobalBrain table (background, non-blocking)
               if (learnedMatch?.[1] || brainLearnedMatch?.[1]) {
-                (async () => {
+                const brainPromise = (async () => {
                   try {
                     // Ensure GlobalBrain table exists
                     try {
@@ -187,7 +187,14 @@ export async function POST(req: NextRequest) {
                   } catch (e: any) {
                     console.error("[chat-stream] Global Brain save failed:", e?.message?.slice(0, 100));
                   }
-                })().catch(() => {});
+                })();
+
+                try {
+                  const { waitUntil } = await import("@vercel/functions");
+                  waitUntil(brainPromise);
+                } catch {
+                  brainPromise.catch(() => {});
+                }
               }
 
               // Clean the reply (strip markers)
@@ -350,7 +357,7 @@ export async function POST(req: NextRequest) {
               const finalCustomerName = customerName || extractedName || returningCustomerName || null;
 
               // Save conversation in background (non-blocking)
-              (async () => {
+              const convoPromise = (async () => {
                 try {
                   let conversation = sessionId
                     ? await db.conversation.findFirst({ where: { businessId, externalId: sessionId, channel: "WEB", status: "OPEN" } })
@@ -426,7 +433,15 @@ export async function POST(req: NextRequest) {
                 } catch (e: any) {
                   console.error("[chat-stream] Conversation save failed:", e?.message);
                 }
-              })().catch(() => {});
+              })();
+
+              // Use waitUntil to keep the function alive after response (Vercel)
+              try {
+                const { waitUntil } = await import("@vercel/functions");
+                waitUntil(convoPromise);
+              } catch {
+                convoPromise.catch(() => {});
+              }
 
               send({ type: "done", reply: fullReply, agentName, orderCreated, images: mentionedImages });
               controller.close();
